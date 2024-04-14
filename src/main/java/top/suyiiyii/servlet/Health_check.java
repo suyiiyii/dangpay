@@ -14,6 +14,6 @@ public class Health_check extends BaseHttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        WebUtils.respWrite(resp, "ok");
+        WebUtils.respWrite(resp, "health check success!");
     }
 }

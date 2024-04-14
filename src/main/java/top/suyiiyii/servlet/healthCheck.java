@@ -9,11 +9,11 @@ import top.suyiiyii.su.servlet.BaseHttpServlet;
 
 import java.io.IOException;
 
-@WebServlet(urlPatterns = "/health")
-public class Health_check extends BaseHttpServlet {
+@WebServlet("/health")
+public class healthCheck extends BaseHttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        WebUtils.respWrite(resp, "healthy");
+        WebUtils.respWrite(resp, "healthy from "+System.getenv("HOSTNAME"));
     }
 }

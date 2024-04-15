@@ -191,4 +191,14 @@ public class IOCmanager {
         localBeans.put(bean.getClass(), bean);
         log.info("收到局部单例对象: {}", bean.getClass().getSimpleName());
     }
+
+    /**
+     * 通过类的全限定名创建对象
+     *
+     * @param fullClassName 类的全限定名
+     */
+    public <T> T createObj(String fullClassName) throws ClassNotFoundException {
+        Class<?> clazz = Class.forName(fullClassName);
+        return getObj((Class<T>) clazz);
+    }
 }

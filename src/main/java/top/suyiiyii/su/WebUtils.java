@@ -3,6 +3,7 @@ package top.suyiiyii.su;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import top.suyiiyii.su.validator.Validator;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -59,7 +60,9 @@ public class WebUtils {
         if (str.isEmpty()) {
             throw new IOException("请求体为空");
         }
-        return MAPPER.readValue(str, valueType);
+        T t = MAPPER.readValue(str, valueType);
+        Validator.check(t);
+        return t;
     }
 
     /**

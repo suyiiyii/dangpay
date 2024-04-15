@@ -1,5 +1,7 @@
 package top.suyiiyii.su;
 
+import top.suyiiyii.su.validator.Validator;
+
 import java.io.IOException;
 import java.lang.reflect.Field;
 

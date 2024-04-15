@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import top.suyiiyii.models.User;
 import top.suyiiyii.service.UserService;
 import top.suyiiyii.su.servlet.BaseHttpServlet;
+import top.suyiiyii.su.validator.Regex;
 
 import java.io.IOException;
 
@@ -27,7 +28,10 @@ public class Register extends BaseHttpServlet {
 
 
 class RegisterRequest {
+    @Regex("^[a-zA-Z0-9_-]{3,16}$")
     public String username;
+    @Regex("^[a-zA-Z0-9_-]{6,18}$")
     public String password;
+    @Regex("^1[3-9]\\d{9}$")
     public String phone;
 }

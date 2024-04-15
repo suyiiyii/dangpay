@@ -1,17 +1,18 @@
 package top.suyiiyii.service;
 
+import top.suyiiyii.dto.UserRoles;
+import top.suyiiyii.models.RBACRole;
 import top.suyiiyii.models.RBACUser;
 import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.orm.core.Session;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 
 @Repository
 public class RBACServiceImpl implements RBACService {
-    private Session db;
+    private final Session db;
 
     public RBACServiceImpl(Session db) {
         this.db = db;
@@ -31,9 +32,44 @@ public class RBACServiceImpl implements RBACService {
             for (RBACUser user : rbacUser) {
                 roles.add(user.getRole());
             }
+            roles.add("guest");
             return roles;
-        } catch (SQLException | RuntimeException e) {
+        } catch (RuntimeException e) {
             return new ArrayList<>();
         }
+    }
+
+    @Override
+    public boolean checkPermission(String role, String permission) {
+        List<RBACRole> rbacRoles = db.query(RBACRole.class).eq("role", role).eq("permission", permission).all();
+        return rbacRoles.size() > 0;
+    }
+
+    @Override
+    public boolean checkPermission(List<String> roles, String permission) {
+        for (String role : roles) {
+            if (checkPermission(role, permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 通过uid检查用户是否有权限
+     *
+     * @param uid        用户id
+     * @param permission 权限
+     * @return 是否有权限
+     */
+    @Override
+    public boolean checkPermission(int uid, String permission) {
+        List<String> roles = getRoles(uid);
+        return checkPermission(roles, permission);
+    }
+
+    @Override
+    public boolean checkPermission(UserRoles userRoles, String permission) {
+        return checkPermission(userRoles.getRoles(), permission);
     }
 }

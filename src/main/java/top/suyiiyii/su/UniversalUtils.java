@@ -1,7 +1,5 @@
 package top.suyiiyii.su;
 
-import top.suyiiyii.su.validator.Validator;
-
 import java.io.IOException;
 import java.lang.reflect.Field;
 
@@ -164,5 +162,14 @@ public class UniversalUtils {
 
     public static int getNow() {
         return (int) (System.currentTimeMillis() / 1000);
+    }
+
+    public static String capitalizeFirstLetter(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+        char firstChar = str.charAt(0);
+        char capitalizedFirstChar = Character.toUpperCase(firstChar);
+        return capitalizedFirstChar + str.substring(1);
     }
 }

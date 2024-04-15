@@ -182,8 +182,12 @@ public class Wrapper {
      *
      * @throws SQLException SQL异常
      */
-    public void execute() throws SQLException {
-        callBack.call(this);
+    public void execute() {
+        try {
+            callBack.call(this);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -194,8 +198,12 @@ public class Wrapper {
      * @return 结果列表
      * @throws SQLException SQL异常
      */
-    public <T> List<T> all() throws SQLException {
-        return (List<T>) callBack.call(this);
+    public <T> List<T> all() {
+        try {
+            return (List<T>) callBack.call(this);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -207,7 +215,7 @@ public class Wrapper {
      * @return 结果
      * @throws SQLException SQL异常
      */
-    public <T> T first() throws SQLException, NoSuchElementException {
+    public <T> T first() throws NoSuchElementException {
         pageNum = 1;
         pageSize = 1;
         List<T> list = all();

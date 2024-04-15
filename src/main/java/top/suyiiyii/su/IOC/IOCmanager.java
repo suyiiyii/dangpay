@@ -1,11 +1,14 @@
 package top.suyiiyii.su.IOC;
 
 import lombok.extern.slf4j.Slf4j;
+import top.suyiiyii.dto.UserRoles;
+import top.suyiiyii.service.RBACService;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -114,7 +117,7 @@ public class IOCmanager {
      * @param <T>   需要的实例的类型
      * @return 需要的实例
      */
-    public <T> T getObj(Class<T> clazz) {
+    public <T> T getObj(Class<T> clazz, boolean isNeedAuthorization) {
         log.info("开始注入对象: {}", clazz.getSimpleName());
         try {
             // 如果保存过这个类的局部实例，直接返回
@@ -125,9 +128,19 @@ public class IOCmanager {
             if (globalBeans.containsKey(clazz)) {
                 return (T) globalBeans.get(clazz);
             }
+            Class<?> clazzInterface = null;
             // 如果是接口，获取实现类
             if (clazz.isInterface()) {
+                clazzInterface = clazz;
                 clazz = (Class<T>) Interface2Impl.get(clazz);
+            }
+            if (clazz.isAnnotationPresent(RBACAuthorization.class) || clazzInterface != null && clazzInterface.isAnnotationPresent(RBACAuthorization.class)) {
+                if (clazz.isAnnotationPresent(RBACAuthorization.class) && !clazz.getAnnotation(RBACAuthorization.class).isNeedAuthorization()) {
+                    isNeedAuthorization = false;
+                }
+                if (clazzInterface != null && clazzInterface.isAnnotationPresent(RBACAuthorization.class) && !clazzInterface.getAnnotation(RBACAuthorization.class).isNeedAuthorization()) {
+                    isNeedAuthorization = false;
+                }
             }
             // 默认注入参数最多的构造函数
             Constructor<?>[] constructors = clazz.getConstructors();
@@ -141,10 +154,18 @@ public class IOCmanager {
             // 递归调用，直到所有的依赖都注入完成
             Object[] objects = new Object[parameterTypes.length];
             for (int i = 0; i < parameterTypes.length; i++) {
-                objects[i] = getObj(parameterTypes[i]);
+                objects[i] = getObj(parameterTypes[i], isNeedAuthorization);
             }
             // 用获得的参数，执行构造器，返回实例
             T obj = (T) clazz.getConstructors()[0].newInstance(objects);
+            // 如果对象或者接口有@RBACAuthorization注解，检查是否需要权限验证
+            if (clazz.isAnnotationPresent(RBACAuthorization.class) || clazzInterface != null && clazzInterface.isAnnotationPresent(RBACAuthorization.class)) {
+                // 如果需要权限验证，创建代理对象
+                if (isNeedAuthorization) {
+                    log.info("创建代理对象: {}", clazz.getSimpleName());
+                    return (T) Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), new AuthorizationInvocationHandler(obj, getObj(UserRoles.class, false), getObj(RBACService.class, false)));
+                }
+            }
             log.info("注入对象完成: {}", clazz.getSimpleName());
             return obj;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
@@ -217,6 +238,6 @@ public class IOCmanager {
      */
     public <T> T createObj(String fullClassName) throws ClassNotFoundException {
         Class<?> clazz = Class.forName(fullClassName);
-        return getObj((Class<T>) clazz);
+        return getObj((Class<T>) clazz, true);
     }
 }

@@ -60,7 +60,7 @@ public class UserServiceImpl implements UserService {
         User user = null;
         try {
             user = db.query(User.class).eq("username", username).first();
-        } catch (NoSuchElementException | SQLException e) {
+        } catch (NoSuchElementException e) {
             throw new Http_400_BadRequestException("用户不存在");
         }
         if (!checkPassword(password, user)) {
@@ -77,7 +77,7 @@ public class UserServiceImpl implements UserService {
     public User getUser(int uid) {
         try {
             return db.query(User.class).eq("id", uid).first();
-        } catch (SQLException e) {
+        } catch (NoSuchElementException e) {
             throw new Http_400_BadRequestException("用户不存在");
         }
     }
@@ -93,7 +93,7 @@ public class UserServiceImpl implements UserService {
         boolean isExist = true;
         try {
             db.query(User.class).eq("username", username).first();
-        } catch (NoSuchElementException | SQLException e) {
+        } catch (NoSuchElementException e) {
             isExist = false;
         }
         if (isExist) {

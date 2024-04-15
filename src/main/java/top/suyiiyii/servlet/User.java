@@ -11,8 +11,8 @@ import top.suyiiyii.su.servlet.BaseHttpServlet;
 import java.io.IOException;
 
 public class User extends BaseHttpServlet {
-    private Session db;
-    private UserRoles userRoles;
+    private final Session db;
+    private final UserRoles userRoles;
 
     public User(Session db,
                 UserRoles userRoles) {

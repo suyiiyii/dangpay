@@ -1,10 +1,9 @@
 package top.suyiiyii.service;
 
 import top.suyiiyii.models.User;
+import top.suyiiyii.su.IOC.RBACAuthorization;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
+@RBACAuthorization
 public interface UserService {
 
     String login(String username, String password);

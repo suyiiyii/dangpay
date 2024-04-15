@@ -17,4 +17,6 @@ public class User {
     String phone;
     @ColumnSetting(stringLength = 100, isNotNull = true)
     String iconUrl;
+    @ColumnSetting(stringLength = 20, isNotNull = true)
+    String status;
 }

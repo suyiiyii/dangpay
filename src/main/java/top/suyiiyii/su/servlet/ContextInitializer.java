@@ -28,8 +28,8 @@ public class ContextInitializer implements ServletContextListener {
         String url = configManger.get("JDBC_URL");
         String user = configManger.get("JDBC_USER");
         String password = configManger.get("JDBC_PASSWORD");
-        log.info("JDBC_URL: " + url);
-        log.info("JDBC_USER: " + user);
+        log.info("JDBC_URL: {}", url);
+        log.info("JDBC_USER: {}", user);
 
         ConnectionBuilder builder = new ConnectionBuilder(url, user, password);
 
@@ -38,8 +38,8 @@ public class ContextInitializer implements ServletContextListener {
         ServletContext servletContext = sce.getServletContext();
         servletContext.setAttribute("ModelManger", modelManger);
         servletContext.setAttribute("ConfigManger", configManger);
-        DImanager.registerBean(modelManger);
-        DImanager.registerBean(configManger);
+        DImanager.registerGlobalBean(modelManger);
+        DImanager.registerGlobalBean(configManger);
         log.info("依赖注入完成");
     }
 }

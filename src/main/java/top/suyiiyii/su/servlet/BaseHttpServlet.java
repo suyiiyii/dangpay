@@ -26,64 +26,33 @@ public class BaseHttpServlet extends HttpServlet {
     protected ConfigManger configManger;
     protected int uid = -1;
     protected String role = "guest";
-    protected int statusCode = 0;
 
     /**
-     * 依赖注入
-     * 注意： ServletConfig是全局上下文，用于保存全局信息；而HttpServletRequest是请求上下文，用于保存请求信息
-     * init方法是在servlet初始化时调用的，service方法是在每次请求时调用的
+     * 收到一个http请求，自动路由到本实例的对应的操作方法
      *
      * @param req  the {@link HttpServletRequest} object that contains the request the client made of the servlet
      * @param resp the {@link HttpServletResponse} object that contains the response the servlet returns to the client
-     * @throws ServletException if an exception occurs that interferes with the servlet's normal operation
-     * @throws IOException      if an input or output exception occurs
+     * @throws ServletException
+     * @throws IOException
      */
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        inject(req);
-        try {
-            if ("PATCH".equals(req.getMethod())) {
-                doPatch(req, resp);
-            } else {
-                super.service(req, resp);
-            }
-        } finally {
-            db.close();
-            req.setAttribute("statusCode", statusCode);
+        if ("GET".equals(req.getMethod())) {
+            doGet(req, resp);
+        } else if ("POST".equals(req.getMethod())) {
+            doPost(req, resp);
+        } else if ("PUT".equals(req.getMethod())) {
+            doPut(req, resp);
+        } else if ("DELETE".equals(req.getMethod())) {
+            doDelete(req, resp);
+        } else if ("PATCH".equals(req.getMethod())) {
+            doPatch(req, resp);
+        } else {
+            resp.setStatus(405);
+            resp.getWriter().write("Method Not Allowed");
         }
     }
 
-    /**
-     * 依赖注入
-     * 功能同上
-     * 为了解决依赖注入的顺序问题，提供回调函数接口，在上层依赖注入后再注入下层依赖
-     * //PROBLEM 这里遇到了依赖注入的顺序问题，如果在service方法中注入，会导致在doPatch方法中无法使用db，所以提供了回调函数接口，有更好的解决方法吗？
-     *
-     * @param req      the {@link HttpServletRequest} object that contains the request the client made of the servlet
-     * @param resp     the {@link HttpServletResponse} object that contains the response the servlet returns to the client
-     * @param callable the {@link Runnable} object that contains the code to be executed
-     * @throws ServletException if an exception occurs that interferes with the servlet's normal operation
-     * @throws IOException      if an input or output exception occurs
-     */
-    protected void service(HttpServletRequest req, HttpServletResponse resp, Runnable callable) throws IOException, ServletException {
-
-        inject(req);
-        try {
-            callable.run();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            if ("PATCH".equals(req.getMethod())) {
-                doPatch(req, resp);
-            } else {
-                super.service(req, resp);
-            }
-        } finally {
-            db.close();
-            req.setAttribute("statusCode", statusCode);
-        }
-    }
 
     private void inject(HttpServletRequest req) {
         ServletConfig config = getServletConfig();

@@ -382,4 +382,11 @@ public class Session {
             throw new RuntimeException(e);
         }
     }
+    public void destroy() {
+        try {
+            this.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

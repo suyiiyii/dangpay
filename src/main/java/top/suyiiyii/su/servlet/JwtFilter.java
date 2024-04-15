@@ -43,7 +43,7 @@ public class JwtFilter implements Filter {
         } else {
             String token = authHeader.substring(7);
             // 验证token
-            String tokenStr = verifyToken(token, configManger.get("secret"));
+            String tokenStr = verifyToken(token, configManger.get("SECRET"));
             // 注入tokenData
             tokenData = UniversalUtils.json2Obj(tokenStr, TokenData.class);
         }

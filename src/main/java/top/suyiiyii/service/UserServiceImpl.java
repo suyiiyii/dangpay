@@ -67,7 +67,7 @@ public class UserServiceImpl implements UserService {
         }
         TokenData tokenData = new TokenData();
         tokenData.uid = user.getId();
-        String token = JwtUtils.createToken(tokenData, configManger.get("secret"), 60 * 60 * 24 * 7);
+        String token = JwtUtils.createToken(tokenData, configManger.get("SECRET"), 60 * 60 * 24 * 7);
         log.info("签发token：" + token);
         return token;
     }

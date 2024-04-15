@@ -1,7 +1,7 @@
 package top.suyiiyii.su.exception;
 
 public class BaseHttpException extends RuntimeException {
-    BaseHttpException(String message) {
+    public BaseHttpException(String message) {
         super(message);
     }
 }

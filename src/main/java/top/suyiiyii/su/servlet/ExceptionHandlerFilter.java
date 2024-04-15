@@ -29,6 +29,7 @@ public class ExceptionHandlerFilter implements Filter {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
+        HttpServletResponse resp = (HttpServletResponse) servletResponse;
         log.info("开始处理请求： " + req.getRequestURI());
         try {
             filterChain.doFilter(servletRequest, servletResponse);
@@ -37,12 +38,35 @@ public class ExceptionHandlerFilter implements Filter {
             String stackTrace = Arrays.stream(e.getStackTrace())
                     .map(StackTraceElement::toString)
                     .collect(Collectors.joining("\n"));
-            log.error("请求处理失败： " + e.getMessage() + "\n" + stackTrace);
-            HttpServletResponse resp = (HttpServletResponse) servletResponse;
-            // 暂时不考虑使用不同的状态码，待后续使用Spring等框架再进行优化
-            resp.setStatus(500);
+            log.error("请求处理失败： " + e.getMessage() + "\n" + e.getClass().getName() + "\n" + stackTrace);
 
-            WebUtils.respWrite(resp, e.getMessage());
+            int flag = -1;
+            switch (e.getClass().getSimpleName()) {
+                case "Http_400_BadRequestException":
+                    resp.setStatus(400);
+                    break;
+                case "Http_401_UnauthorizedException":
+                    resp.setStatus(401);
+                    break;
+                case "Http_403_ForbiddenException":
+                    resp.setStatus(403);
+                    break;
+                case "Http_404_NotFoundException":
+                    resp.setStatus(404);
+                    break;
+                case "Http_405_MethodNotAllowedException":
+                    resp.setStatus(405);
+                    break;
+                default:
+                    resp.setStatus(500);
+                    flag = 1;
+                    break;
+            }
+            if (flag == 1) {
+                WebUtils.respWrite(resp, "服务器内部错误");
+            } else {
+                WebUtils.respWrite(resp, e.getMessage());
+            }
         }
         log.info("请求处理完成： " + req.getRequestURI());
     }

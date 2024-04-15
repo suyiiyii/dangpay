@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 public class IOCmanager {
+    private static final Map<Class<?>, Class<?>> Interface2Impl = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Object> globalBeans = new ConcurrentHashMap<>();
     private final Map<Class<?>, Object> localBeans = new ConcurrentHashMap<>();
     private final Map<Class<?>, Integer> beanCount = new ConcurrentHashMap<>();
@@ -31,41 +32,53 @@ public class IOCmanager {
     }
 
     /**
-     * 递归扫描指定包下的所有类的所有字段，如果有@Repository注解，取出并且放到beans中
+     * 注册一个接口的实现类
+     */
+    public static void registerInterface2Impl(Class<?> interfaceClass, Class<?> implClass) {
+        Interface2Impl.put(interfaceClass, implClass);
+        log.info("收到接口实现类: {} -> {}", interfaceClass.getSimpleName(), implClass.getSimpleName());
+    }
+
+    /**
+     * 递归扫描指定包下的所有类，如果有@Repository注解，注册为接口的实现类
      * 使用流程待完善
      *
      * @param packageName 包名
      */
-    public static void scan(String packageName) {
-        log.info("DI scan start");
+    public static void implScan(String packageName) {
+        log.info("DI Impl scan start");
         try {
+            // 获取当前线程的类加载器
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            String path = packageName.replace(".", "/");
-            Enumeration<URL> resources = classLoader.getResources(path);
-            Iterable<URL> iterable = Collections.list(resources);
-            for (URL url : iterable) {
-                File file = new File(url.getFile());
+            Enumeration<URL> resources = classLoader.getResources(packageName.replace(".", "/"));
+            // 遍历所有的资源
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                // 获取文件夹
+                String path = url.getPath();
+                File file = new File(path);
+                // 遍历文件夹下的所有文件
                 for (File f : Objects.requireNonNull(file.listFiles())) {
                     String name = f.getName();
+                    // 如果是文件夹，递归调用
                     if (f.isDirectory()) {
-                        scan(packageName + "." + name);
+                        implScan(packageName + "." + name);
                     } else if (name.endsWith(".class")) {
+                        // 如果是类文件，获取类名
                         String className = packageName + "." + name.substring(0, name.length() - 6);
                         Class<?> clazz = Class.forName(className);
+                        // 如果有@Repository注解，注册为接口的实现类
                         if (clazz.isAnnotationPresent(Repository.class)) {
-                            Repository repository = clazz.getAnnotation(Repository.class);
-                            String beanName = repository.value();
-                            Object bean = clazz.newInstance();
-                            registerGlobalBean(bean);
-                            log.info("DI register bean: {}", beanName);
+                            registerInterface2Impl(clazz.getInterfaces()[0], clazz);
                         }
                     }
                 }
             }
-        } catch (IOException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
+
 
     /**
      * 根据类型，返回实例
@@ -111,6 +124,10 @@ public class IOCmanager {
             // 如果保存过这个类的全局实例，直接返回
             if (globalBeans.containsKey(clazz)) {
                 return (T) globalBeans.get(clazz);
+            }
+            // 如果是接口，获取实现类
+            if (clazz.isInterface()) {
+                clazz = (Class<T>) Interface2Impl.get(clazz);
             }
             // 默认注入参数最多的构造函数
             Constructor<?>[] constructors = clazz.getConstructors();

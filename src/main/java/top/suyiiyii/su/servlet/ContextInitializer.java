@@ -40,6 +40,7 @@ public class ContextInitializer implements ServletContextListener {
         servletContext.setAttribute("ConfigManger", configManger);
         IOCmanager.registerGlobalBean(modelManger);
         IOCmanager.registerGlobalBean(configManger);
+        IOCmanager.implScan("top.suyiiyii.service");
         log.info("依赖注入完成");
     }
 }

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+         id="WebApp_ID" version="3.1">
+
+    <!-- 显示名称 -->
+    <display-name>Web Application from Archetype for Servlet 3.1</display-name>
+
+    <!-- 注册Filter -->
+    <filter>
+        <filter-name>OptionsFilter</filter-name>
+        <filter-class>top.suyiiyii.su.servlet.OptionsFilter</filter-class>
+
+        <!-- 可选：添加初始化参数 -->
+        <!--        <init-param>-->
+        <!--            <param-name>secretKey</param-name>-->
+        <!--            <param-value>your-secret-key</param-value>-->
+        <!--        </init-param>-->
+    </filter>
+    <filter>
+        <filter-name>ExceptionHandlerFilter</filter-name>
+        <filter-class>top.suyiiyii.su.servlet.ExceptionHandlerFilter</filter-class>
+    </filter>
+    <filter>
+        <filter-name>JwtFilter</filter-name>
+        <filter-class>top.suyiiyii.su.servlet.JwtFilter</filter-class>
+    </filter>
+
+    <!-- 将Filter映射到特定的URL或者所有请求 -->
+    <filter-mapping>
+        <filter-name>ExceptionHandlerFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>OptionsFilter</filter-name>
+        <url-pattern>/*</url-pattern> <!-- 这将会应用到所有请求 -->
+        <!-- 或者指定特定的URL -->
+        <!-- <url-pattern>/api/*</url-pattern> -->
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>JwtFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+</web-app>

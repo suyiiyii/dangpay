@@ -2,6 +2,7 @@ package top.suyiiyii.su;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import top.suyiiyii.su.exception.Http_401_UnauthorizedException;
 
 import java.io.IOException;
 import java.util.Date;
@@ -50,7 +51,7 @@ public class JwtUtils {
             JWT.require(algorithm).build().verify(token);
             return JWT.decode(token).getClaim("sub").asString();
         } catch (Exception e) {
-            throw new RuntimeException("verify token failed");
+            throw new Http_401_UnauthorizedException("verify token failed");
         }
     }
 }

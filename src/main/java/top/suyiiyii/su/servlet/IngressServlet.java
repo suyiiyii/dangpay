@@ -65,9 +65,12 @@ public class IngressServlet extends HttpServlet {
         } catch (ClassNotFoundException e) {
             throw new Http_404_NotFoundException("404 Not Found");
         }
-        // 执行方法，调用servlet的service方法
-        servlet.service(req, resp);
-        // 销毁对象，递归调用字段的destroy方法
-        IOCmanager.destroyObj(servlet);
+        try {
+            // 执行方法，调用servlet的service方法
+            servlet.service(req, resp);
+        } finally {
+            // 销毁对象，递归调用字段的destroy方法
+            IOCmanager.destroyObj(servlet);
+        }
     }
 }

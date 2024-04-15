@@ -7,6 +7,7 @@ import top.suyiiyii.service.RBACService;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.net.URL;
@@ -25,6 +26,13 @@ public class IOCmanager {
     private static final Map<Class<?>, Object> globalBeans = new ConcurrentHashMap<>();
     private final Map<Class<?>, Object> localBeans = new ConcurrentHashMap<>();
     private final Map<Class<?>, Integer> beanCount = new ConcurrentHashMap<>();
+
+    /**
+     * 获取一个全局单例对象
+     */
+    public static <T> T getGlobalBean(Class<T> clazz) {
+        return (T) globalBeans.get(clazz);
+    }
 
     /**
      * 注册一个全局的单例对象
@@ -180,9 +188,20 @@ public class IOCmanager {
      * 销毁一个对象
      * 递归调用字段的destroy方法，除了单例对象
      */
-    public void destroyObj(Object obj) {
+    public void destroyObj(Object obj, boolean force) {
+        // 如果是动态代理对象，获取目标对象
+        if (Proxy.isProxyClass(obj.getClass())) {
+            try {
+                Field field = Proxy.getInvocationHandler(obj).getClass().getDeclaredField("target");
+                field.setAccessible(true);
+                obj = field.get(Proxy.getInvocationHandler(obj));
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         // 如果这个类的实例数量小于1，不销毁
-        if (beanCount.getOrDefault(obj.getClass(), 0) < 1) {
+        if (beanCount.getOrDefault(obj.getClass(), 0) < 1 && !force) {
             return;
         }
         log.info("开始销毁对象: {}", obj.getClass().getSimpleName());
@@ -219,8 +238,14 @@ public class IOCmanager {
             throw new RuntimeException(e);
         } finally {
             // 减少这个类的实例数量
-            beanCount.put(obj.getClass(), beanCount.get(obj.getClass()) - 1);
+            if (!force) {
+                beanCount.put(obj.getClass(), beanCount.get(obj.getClass()) - 1);
+            }
         }
+    }
+
+    public void destroyObj(Object obj) {
+        destroyObj(obj, false);
     }
 
     /**
@@ -239,5 +264,14 @@ public class IOCmanager {
     public <T> T createObj(String fullClassName) throws ClassNotFoundException {
         Class<?> clazz = Class.forName(fullClassName);
         return getObj((Class<T>) clazz, true);
+    }
+
+    /**
+     * 销毁所有的局部对象
+     */
+    public void destroy() {
+        for (Map.Entry entry : localBeans.entrySet()) {
+            destroyObj(entry.getValue(), true);
+        }
     }
 }

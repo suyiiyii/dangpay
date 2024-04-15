@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.su.IOC.IOCmanager;
 import top.suyiiyii.su.exception.Http_404_NotFoundException;
+import top.suyiiyii.su.orm.core.ModelManger;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -31,7 +32,7 @@ public class IngressServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         // 创建IOC管理器
-        IOCmanager IOCmanager = new IOCmanager();
+        IOCmanager ioCmanager = new IOCmanager();
         // 创建对象，通过依赖注入管理器获取对应的servlet
         // 获取调用的路径
         String path = req.getRequestURI();
@@ -56,12 +57,14 @@ public class IngressServlet extends HttpServlet {
 
         // 添加本地依赖，tokenData
         TokenData tokenData = (TokenData) req.getAttribute("tokenData");
-        IOCmanager.registerLocalBean(tokenData);
+        ioCmanager.registerLocalBean(tokenData);
+        ioCmanager.registerLocalBean(IOCmanager.getGlobalBean(ModelManger.class).getSession());
+
 
         // 通过反射创建对象
         BaseHttpServlet servlet;
         try {
-            servlet = IOCmanager.createObj(fullClassName);
+            servlet = ioCmanager.createObj(fullClassName);
         } catch (ClassNotFoundException e) {
             throw new Http_404_NotFoundException("404 Not Found");
         }
@@ -70,7 +73,8 @@ public class IngressServlet extends HttpServlet {
             servlet.service(req, resp);
         } finally {
             // 销毁对象，递归调用字段的destroy方法
-            IOCmanager.destroyObj(servlet);
+            ioCmanager.destroyObj(servlet);
+            ioCmanager.destroy();
         }
     }
 }

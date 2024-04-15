@@ -25,6 +25,15 @@ public class AuthorizationInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        // 跳过toString方法
+        if (method.getName().equals("toString")) {
+            return "Proxy for " + target.getClass().getName();
+        }
+        // 跳过destroy方法
+        if (method.getName().equals("destroy")) {
+            return null;
+        }
+
         // 权限验证
         checkAuthorization(method);
         try {
@@ -33,6 +42,9 @@ public class AuthorizationInvocationHandler implements InvocationHandler {
             // invoke方法抛出的是一个包装过的异常，需要通过getTargetException获取原始异常
             throw e.getTargetException();
         }
+    }
+
+    public void destroy() {
     }
 
     private void checkAuthorization(Method method) {

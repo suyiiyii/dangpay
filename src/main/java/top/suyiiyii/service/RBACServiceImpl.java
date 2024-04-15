@@ -1,6 +1,5 @@
 package top.suyiiyii.service;
 
-import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.RBACRole;
 import top.suyiiyii.models.RBACUser;
@@ -9,10 +8,8 @@ import top.suyiiyii.su.orm.core.Session;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 
-@Slf4j
 @Repository
 public class RBACServiceImpl implements RBACService {
     private final Session db;
@@ -44,15 +41,8 @@ public class RBACServiceImpl implements RBACService {
 
     @Override
     public boolean checkPermission(String role, String permission) {
-        try {
-            log.info("role: {}, permission: {}", role, permission);
-            db.query(RBACRole.class).eq("role", role).eq("permission", permission).first();
-            log.info("check permission success");
-            return true;
-        } catch (NoSuchElementException e) {
-            log.info("check permission failed");
-            return false;
-        }
+        List<RBACRole> rbacRoles = db.query(RBACRole.class).eq("role", role).eq("permission", permission).all();
+        return rbacRoles.size() > 0;
     }
 
     @Override

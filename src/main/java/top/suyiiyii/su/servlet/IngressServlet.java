@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.su.IOC.IOCmanager;
 import top.suyiiyii.su.exception.Http_404_NotFoundException;
 
@@ -52,6 +53,11 @@ public class IngressServlet extends HttpServlet {
         fullClassName = String.join(".", fullClassNames);
 
         log.info("请求路径：" + path + "，类名：" + fullClassName + "，id：" + id);
+
+        // 添加本地依赖，tokenData
+        TokenData tokenData = (TokenData) req.getAttribute("tokenData");
+        IOCmanager.registerLocalBean(tokenData);
+
         // 通过反射创建对象
         BaseHttpServlet servlet;
         try {

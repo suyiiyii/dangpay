@@ -33,35 +33,22 @@ public class JwtFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         // 获取token
         HttpServletRequest req = (HttpServletRequest) servletRequest;
-        log.info("JwtFilter: " + req.getRequestURI());
-        // 白名单机制，跳过登录注册接口以及健康检查接口
-        if (req.getRequestURI().equals("/user/login") ||
-                req.getRequestURI().equals("/user/register") ||
-                req.getRequestURI().equals("/health_check")) {
-            log.info("跳过登录注册接口");
-            filterChain.doFilter(servletRequest, servletResponse);
-            return;
-        }
+        TokenData tokenData;
         String authHeader = req.getHeader("Authorization");
-        if ("GET".equals(req.getMethod())) {
-            log.info("跳过纯获取信息接口");
-            filterChain.doFilter(servletRequest, servletResponse);
-            return;
-        }
-
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            servletRequest.setAttribute("statusCode", 401);
-            throw new ServletException("缺少Authorization头或者Authorization头不以Bearer开头");
+            // 如果没有token，注入一个guest的tokenData
+            tokenData = new TokenData();
+            // 定义uid=-1为访客
+            tokenData.uid = -1;
+        } else {
+            String token = authHeader.substring(7);
+            // 验证token
+            String tokenStr = verifyToken(token, configManger.get("secret"));
+            // 注入tokenData
+            tokenData = UniversalUtils.json2Obj(tokenStr, TokenData.class);
         }
-        String token = authHeader.substring(7);
-
-        // 验证token
-        String tokenStr = verifyToken(token, configManger.get("secret"));
-
-        // 注入tokenData
-        TokenData tokenData = UniversalUtils.json2Obj(tokenStr, TokenData.class);
         req.setAttribute("tokenData", tokenData);
-        log.info("token verify success");
+        log.info("JwtFilter: 接收到用户请求，uid:" + tokenData.uid);
         filterChain.doFilter(servletRequest, servletResponse);
     }
 

@@ -4,12 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -114,8 +112,11 @@ public class IOCmanager {
             if (globalBeans.containsKey(clazz)) {
                 return (T) globalBeans.get(clazz);
             }
+            // 默认注入参数最多的构造函数
+            Constructor<?>[] constructors = clazz.getConstructors();
+            Arrays.sort(constructors, Comparator.comparingInt(Constructor::getParameterCount));
             // 获取构造器需要的参数
-            Class<?>[] parameterTypes = clazz.getConstructors()[0].getParameterTypes();
+            Class<?>[] parameterTypes = constructors[0].getParameterTypes();
             // 如果没有参数，直接返回实例
             if (parameterTypes.length == 0) {
                 return getBean(clazz);

@@ -1,14 +1,11 @@
 package top.suyiiyii.su.servlet;
 
-import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.su.ConfigManger;
-import top.suyiiyii.su.orm.core.ModelManger;
 import top.suyiiyii.su.orm.core.Session;
 
 import java.io.IOException;
@@ -55,17 +52,17 @@ public class BaseHttpServlet extends HttpServlet {
 
 
     private void inject(HttpServletRequest req) {
-        ServletConfig config = getServletConfig();
-        this.db = ((ModelManger) config.getServletContext().getAttribute("ModelManger")).getSession();
-        this.configManger = (ConfigManger) config.getServletContext().getAttribute("ConfigManger");
-        TokenData tokenData = (TokenData) req.getAttribute("tokenData");
-        if (tokenData != null) {
-            this.uid = tokenData.uid;
-            this.role = tokenData.role;
-            if (this.role.equals("admin")) {
-                this.uid = -1;
-            }
-        }
+//        ServletConfig config = getServletConfig();
+//        this.db = ((ModelManger) config.getServletContext().getAttribute("ModelManger")).getSession();
+//        this.configManger = (ConfigManger) config.getServletContext().getAttribute("ConfigManger");
+//        TokenData tokenData = (TokenData) req.getAttribute("tokenData");
+//        if (tokenData != null) {
+//            this.uid = tokenData.uid;
+//            this.role = tokenData.role;
+//            if (this.role.equals("admin")) {
+//                this.uid = -1;
+//            }
+//        }
     }
 
     protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws IOException {

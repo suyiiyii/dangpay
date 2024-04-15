@@ -1,7 +1,7 @@
 package top.suyiiyii.su.orm.utils;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+
+import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.su.orm.struct.ConnectionPool;
 
 import java.sql.Connection;
@@ -19,12 +19,12 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author suyiiyii
  */
+@Slf4j
 public class SuConnectionPool implements ConnectionPool {
     /**
      * 线程安全：所有的操作都在锁内完成，使用消息通知来唤醒线程，保证线程安全
      */
     // 日志
-    private final Log logger = LogFactory.getLog(SuConnectionPool.class);
     // 建立连接的最大数量
     private final int maxSize;
     // 建立连接的最小数量
@@ -62,7 +62,7 @@ public class SuConnectionPool implements ConnectionPool {
                 availableConnections.add(connection);
             } catch (Exception e) {
                 // 这里由于.call()方法的异常声明，所以必须写Exception
-                logger.error("Init connection pool error: %s".formatted(e));
+                log.error("Init connection pool error: %s".formatted(e));
             }
         }
         startDaemon();
@@ -82,7 +82,7 @@ public class SuConnectionPool implements ConnectionPool {
             waitBalance.signalAll();
             while (availableConnections.isEmpty()) {
                 try {
-                    logger.warn("No available connection, waiting");
+                    log.warn("No available connection, waiting");
                     waitConnection.await();
                 } catch (InterruptedException e) {
                     // 理论上不会收到中断信号
@@ -94,7 +94,7 @@ public class SuConnectionPool implements ConnectionPool {
             availableConnections.remove(connection);
             usedConnections.add(connection);
             if (!connection.isValid(1)) {
-                logger.warn("获取到的连接已失效，重新获取");
+                log.warn("获取到的连接已失效，重新获取");
                 usedConnections.remove(connection);
                 connection = this.getConnection();
             }
@@ -144,9 +144,9 @@ public class SuConnectionPool implements ConnectionPool {
                     availableConnections.add(connection);
                 }
             } catch (Exception e) {
-                logger.warn("Add connection error: %s".formatted(e));
+                log.warn("Add connection error: %s".formatted(e));
             }
-            logger.info("Add connection current available: %d, used: %d".formatted(availableConnections.size(), usedConnections.size()));
+            log.info("Add connection current available: %d, used: %d".formatted(availableConnections.size(), usedConnections.size()));
             return true;
         } finally {
             lock.unlock();
@@ -171,10 +171,10 @@ public class SuConnectionPool implements ConnectionPool {
                 try {
                     connection.close();
                 } catch (SQLException e) {
-                    logger.warn("Close connection error: %s".formatted(e));
+                    log.warn("Close connection error: %s".formatted(e));
                 }
             }
-            logger.info("Remove connection current available: %d, used: %d".formatted(availableConnections.size(), usedConnections.size()));
+            log.info("Remove connection current available: %d, used: %d".formatted(availableConnections.size(), usedConnections.size()));
             return true;
         } finally {
             lock.unlock();
@@ -187,7 +187,7 @@ public class SuConnectionPool implements ConnectionPool {
     private void rebanlance() {
         try {
             lock.lock();
-            logger.info("Rebalancing available: %d, used: %d".formatted(availableConnections.size(), usedConnections.size()));
+            log.info("Rebalancing available: %d, used: %d".formatted(availableConnections.size(), usedConnections.size()));
             // 检查是否需要扩容
             while (availableConnections.size() + usedConnections.size() < maxSize && availableConnections.size() < THRESHOLD) {
                 addConnection(STEP);
@@ -210,13 +210,13 @@ public class SuConnectionPool implements ConnectionPool {
         waitDaemon.signalAll();
         while (true) {
             try {
-                logger.info("Daemon paused available: %d, used: %d".formatted(availableConnections.size(), usedConnections.size()));
+                log.info("Daemon paused available: %d, used: %d".formatted(availableConnections.size(), usedConnections.size()));
                 waitBalance.await();
             } catch (InterruptedException e) {
                 // 理论上不会收到中断信号
                 throw new RuntimeException(e);
             }
-            logger.info("Daemon running available: %d, used: %d".formatted(availableConnections.size(), usedConnections.size()));
+            log.info("Daemon running available: %d, used: %d".formatted(availableConnections.size(), usedConnections.size()));
             rebanlance();
             waitConnection.signalAll();
         }

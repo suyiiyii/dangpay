@@ -2,8 +2,7 @@ package top.suyiiyii.su.servlet;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.UniversalUtils;
@@ -20,8 +19,8 @@ import static top.suyiiyii.su.JwtUtils.verifyToken;
  *
  * @author suyiiyii
  */
+@Slf4j
 public class JwtFilter implements Filter {
-    Log logger = LogFactory.getLog(JwtFilter.class);
     ConfigManger configManger;
 
     @Override
@@ -34,18 +33,18 @@ public class JwtFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         // 获取token
         HttpServletRequest req = (HttpServletRequest) servletRequest;
-        logger.info("JwtFilter: " + req.getRequestURI());
+        log.info("JwtFilter: " + req.getRequestURI());
         // 白名单机制，跳过登录注册接口以及健康检查接口
         if (req.getRequestURI().equals("/user/login") ||
                 req.getRequestURI().equals("/user/register") ||
                 req.getRequestURI().equals("/health_check")) {
-            logger.info("跳过登录注册接口");
+            log.info("跳过登录注册接口");
             filterChain.doFilter(servletRequest, servletResponse);
             return;
         }
         String authHeader = req.getHeader("Authorization");
         if ("GET".equals(req.getMethod())) {
-            logger.info("跳过纯获取信息接口");
+            log.info("跳过纯获取信息接口");
             filterChain.doFilter(servletRequest, servletResponse);
             return;
         }
@@ -62,7 +61,7 @@ public class JwtFilter implements Filter {
         // 注入tokenData
         TokenData tokenData = UniversalUtils.json2Obj(tokenStr, TokenData.class);
         req.setAttribute("tokenData", tokenData);
-        logger.info("token verify success");
+        log.info("token verify success");
         filterChain.doFilter(servletRequest, servletResponse);
     }
 

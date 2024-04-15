@@ -1,7 +1,7 @@
 package top.suyiiyii.su.orm.core;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+
+import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.su.orm.annotation.TableRegister;
 import top.suyiiyii.su.orm.struct.Table;
 import top.suyiiyii.su.orm.utils.SqlExecutor;
@@ -22,7 +22,7 @@ import java.util.concurrent.Callable;
  * @author suyiiyii
  */
 
-
+@Slf4j
 public class ModelManger {
     /**
      * 线程安全：对象在构造函数中初始化，次后只读，不涉及线程安全问题
@@ -40,7 +40,6 @@ public class ModelManger {
     // 表名到表对象的映射
     private final Map<String, Table> tableName2Table = new HashMap<>();
     private final ConnectionManger connectionManger;
-    Log logger = LogFactory.getLog(ModelManger.class);
 
     /**
      * 框架入口，提供包名和创建连接方法
@@ -84,7 +83,7 @@ public class ModelManger {
         try {
             boolean value = executor.createTable(table);
             if (value) {
-                logger.warn("表 " + tableName + " 不存在，已成功创建");
+                log.warn("表 " + tableName + " 不存在，已成功创建");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -98,7 +97,7 @@ public class ModelManger {
      * @param packageName 包名
      */
     private void scan(String packageName) {
-        logger.info("开始扫描" + packageName);
+        log.info("开始扫描" + packageName);
         try {
             // 获取当前线程的上下文类加载器
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -123,7 +122,7 @@ public class ModelManger {
                             TableRegister tableRegister = clazz.getAnnotation(TableRegister.class);
                             // 将类注册到TableInfo中
                             register(tableRegister.value(), clazz);
-                            logger.info("扫描到 " + clazz.getName() + " 注册到 " + tableRegister.value());
+                            log.info("扫描到 " + clazz.getName() + " 注册到 " + tableRegister.value());
                         }
                     }
                 }
@@ -131,7 +130,7 @@ public class ModelManger {
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-        logger.info("扫描结束");
+        log.info("扫描结束");
     }
 
 

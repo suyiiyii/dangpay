@@ -5,8 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.orm.core.ModelManger;
@@ -20,13 +19,14 @@ import java.io.IOException;
  *
  * @author suyiiyii
  */
+
+@Slf4j
 public class BaseHttpServlet extends HttpServlet {
     protected Session db;
     protected ConfigManger configManger;
     protected int uid = -1;
     protected String role = "guest";
     protected int statusCode = 0;
-    protected Log logger;
 
     /**
      * 依赖注入
@@ -86,7 +86,6 @@ public class BaseHttpServlet extends HttpServlet {
     }
 
     private void inject(HttpServletRequest req) {
-        logger = LogFactory.getLog(this.getClass());
         ServletConfig config = getServletConfig();
         this.db = ((ModelManger) config.getServletContext().getAttribute("ModelManger")).getSession();
         this.configManger = (ConfigManger) config.getServletContext().getAttribute("ConfigManger");

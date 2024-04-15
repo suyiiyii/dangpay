@@ -72,4 +72,30 @@ public class RBACServiceImpl implements RBACService {
     public boolean checkPermission(UserRoles userRoles, String permission) {
         return checkPermission(userRoles.getRoles(), permission);
     }
+
+    @Override
+    public void addRolePermission(String role, String permission) {
+        RBACRole rbacRole = new RBACRole();
+        rbacRole.setRole(role);
+        rbacRole.setPermission(permission);
+        db.insert(rbacRole);
+    }
+
+    @Override
+    public void deleteRolePermission(String role, String permission) {
+        db.delete(RBACRole.class).eq("role", role).eq("permission", permission).execute();
+    }
+
+    @Override
+    public void addUserRole(int uid, String role) {
+        RBACUser rbacUser = new RBACUser();
+        rbacUser.setUid(uid);
+        rbacUser.setRole(role);
+        db.insert(rbacUser);
+    }
+
+    @Override
+    public void deleteUserRole(int uid, String role) {
+        db.delete(RBACUser.class).eq("uid", uid).eq("role", role).execute();
+    }
 }

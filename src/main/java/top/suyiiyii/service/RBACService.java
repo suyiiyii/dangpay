@@ -16,5 +16,13 @@ public interface RBACService {
     boolean checkPermission(int uid, String permission);
 
     boolean checkPermission(UserRoles userRoles, String permission);
+
+    void addRolePermission(String role, String permission);
+
+    void deleteRolePermission(String role, String permission);
+
+    void addUserRole(int uid, String role);
+
+    void deleteUserRole(int uid, String role);
 }
 

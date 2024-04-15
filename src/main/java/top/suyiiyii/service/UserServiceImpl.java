@@ -11,7 +11,6 @@ import top.suyiiyii.su.orm.core.Session;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
 import java.util.NoSuchElementException;
 
 @Repository
@@ -101,9 +100,25 @@ public class UserServiceImpl implements UserService {
         }
         try {
             db.insert(user);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             throw new Http_400_BadRequestException("注册失败");
         }
+        return user;
+    }
+
+    @Override
+    public User banUser(int uid) {
+        User user = db.query(User.class).eq("id", uid).first();
+        user.setStatus("banned");
+        db.commit();
+        return user;
+    }
+
+    @Override
+    public User unbanUser(int uid) {
+        User user = db.query(User.class).eq("id", uid).first();
+        user.setStatus("normal");
+        db.commit();
         return user;
     }
 }

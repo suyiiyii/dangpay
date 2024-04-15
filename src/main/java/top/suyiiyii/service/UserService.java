@@ -11,4 +11,8 @@ public interface UserService {
     User getUser(int uid);
 
     User register(String username, String password, String phone);
+
+    User banUser(int uid);
+
+    User unbanUser(int uid);
 }

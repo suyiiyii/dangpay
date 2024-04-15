@@ -99,21 +99,26 @@ public class Session {
      * 提交事务
      * 提交暂存区的数据
      */
-    public void commit() throws SQLException {
-        // 提交插入
-        for (Map.Entry<Class<?>, List<Object>> entry : insertCache.entrySet()) {
-            try {
-                batchInsert(entry.getValue());
-            } catch (Exception e) {
-                throw new RuntimeException("插入失败" + e);
+    public void commit() {
+        try {
+
+            // 提交插入
+            for (Map.Entry<Class<?>, List<Object>> entry : insertCache.entrySet()) {
+                try {
+                    batchInsert(entry.getValue());
+                } catch (Exception e) {
+                    throw new RuntimeException("插入失败" + e);
+                }
             }
-        }
-        if (!cache.isEmpty()) {
-            checkUpdate();
-        }
-        // 提交事务
-        if (!sqlExecutor.isAutoCommit()) {
-            sqlExecutor.commit();
+            if (!cache.isEmpty()) {
+                checkUpdate();
+            }
+            // 提交事务
+            if (!sqlExecutor.isAutoCommit()) {
+                sqlExecutor.commit();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -173,7 +178,7 @@ public class Session {
      * @param obj 待插入的对象
      * @param <T> 待插入的对象的类型
      */
-    public <T> void insert(T obj) throws SQLException {
+    public <T> void insert(T obj) {
 
         Table table = modelManger.getClass2Table().get(obj.getClass());
         String sql = RowSqlGenerater.getInsertSql(table);
@@ -195,7 +200,7 @@ public class Session {
                 preparedStatement.setObject(cnt++, field.get(obj));
             }
             sqlExecutor.execute(preparedStatement);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
+        } catch (NoSuchFieldException | IllegalAccessException | SQLException e) {
             throw new RuntimeException(e);
         }
     }

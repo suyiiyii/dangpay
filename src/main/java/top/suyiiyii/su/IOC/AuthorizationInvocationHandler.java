@@ -42,6 +42,6 @@ public class AuthorizationInvocationHandler implements InvocationHandler {
         if (!result) {
             throw new Http_403_ForbiddenException("权限不足");
         }
-        log.info("权限校验通过：" + userRoles.uid + " " + permission);
+        log.info("权限校验通过 uid:{}\tpermission:{}", userRoles.uid, permission);
     }
 }

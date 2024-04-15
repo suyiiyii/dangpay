@@ -1,4 +1,4 @@
-package top.suyiiyii.su.DI;
+package top.suyiiyii.su.IOC;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,9 +19,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author suyiiyii
  */
 @Slf4j
-public class DImanager {
+public class IOCmanager {
     private static final Map<Class<?>, Object> globalBeans = new ConcurrentHashMap<>();
     private final Map<Class<?>, Object> localBeans = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Integer> beanCount = new ConcurrentHashMap<>();
 
     /**
      * 注册一个全局的单例对象
@@ -96,18 +97,18 @@ public class DImanager {
     /**
      * 根据类型，自动执行构造器依赖注入，返回实例
      * 在需要的时候进行递归调用，直到所有的依赖都注入完成
+     * 优先使用局部单例对象，其次使用全局单例对象
      *
-     * @param clazz     需要的实例的类型
-     * @param <T>       需要的实例的类型
-     * @param diManager 如果是局部的，需要传入一个DImanager对象，用于注入局部的单例对象
+     * @param clazz 需要的实例的类型
+     * @param <T>   需要的实例的类型
      * @return 需要的实例
      */
-    public static <T> T getObj(Class<T> clazz, DImanager diManager) {
+    public <T> T getObj(Class<T> clazz) {
         log.info("开始注入对象: {}", clazz.getSimpleName());
         try {
             // 如果保存过这个类的局部实例，直接返回
-            if (diManager != null && diManager.localBeans.containsKey(clazz)) {
-                return (T) diManager.localBeans.get(clazz);
+            if (localBeans.containsKey(clazz)) {
+                return (T) localBeans.get(clazz);
             }
             // 如果保存过这个类的全局实例，直接返回
             if (globalBeans.containsKey(clazz)) {
@@ -122,7 +123,7 @@ public class DImanager {
             // 递归调用，直到所有的依赖都注入完成
             Object[] objects = new Object[parameterTypes.length];
             for (int i = 0; i < parameterTypes.length; i++) {
-                objects[i] = getObj(parameterTypes[i], diManager);
+                objects[i] = getObj(parameterTypes[i]);
             }
             // 用获得的参数，执行构造器，返回实例
             T obj = (T) clazz.getConstructors()[0].newInstance(objects);
@@ -130,26 +131,21 @@ public class DImanager {
             return obj;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
+        } finally {
+            // 记录这个类的实例数量
+            beanCount.put(clazz, beanCount.getOrDefault(clazz, 0) + 1);
         }
-    }
-
-    /**
-     * 根据类型，自动执行构造器依赖注入，返回实例
-     * 只会使用全局的单例对象
-     *
-     * @param clazz 需要的实例的类型
-     * @param <T>   需要的实例的类型
-     * @return 需要的实例
-     */
-    public static <T> T getObj(Class<T> clazz) {
-        return getObj(clazz, null);
     }
 
     /**
      * 销毁一个对象
      * 递归调用字段的destroy方法，除了单例对象
      */
-    public static void destroyObj(Object obj, DImanager diManager) {
+    public void destroyObj(Object obj) {
+        // 如果这个类的实例数量小于1，不销毁
+        if (beanCount.getOrDefault(obj.getClass(), 0) < 1) {
+            return;
+        }
         log.info("开始销毁对象: {}", obj.getClass().getSimpleName());
         try {
             // 循环销毁字段
@@ -167,25 +163,25 @@ public class DImanager {
                 if (globalBeans.containsKey(field.getType())) {
                     continue;
                 }
-                if (diManager != null && diManager.localBeans.containsKey(field.getType())) {
+                if (localBeans.containsKey(field.getType())) {
                     continue;
                 }
                 // 递归调用字段的destroy方法
-                destroyObj(field.get(obj), diManager);
+                destroyObj(field.get(obj));
             }
-            // 判断是否有destroy方法
-            if (obj.getClass().getDeclaredMethod("destroy") != null) {
-                // 有的话，执行destroy方法
+            try {
+                // 执行destroy方法
                 obj.getClass().getDeclaredMethod("destroy").invoke(obj);
+            } catch (NoSuchMethodException e) {
+                // 没有destroy方法，跳过
             }
             log.info("销毁对象完成: {}", obj.getClass().getSimpleName());
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
+        } finally {
+            // 减少这个类的实例数量
+            beanCount.put(obj.getClass(), beanCount.get(obj.getClass()) - 1);
         }
-    }
-
-    public static void destroyObj(Object obj) {
-        destroyObj(obj, null);
     }
 
     /**

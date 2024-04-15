@@ -6,7 +6,7 @@ import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.su.ConfigManger;
-import top.suyiiyii.su.DI.DImanager;
+import top.suyiiyii.su.IOC.IOCmanager;
 import top.suyiiyii.su.orm.core.ModelManger;
 import top.suyiiyii.su.orm.utils.ConnectionBuilder;
 
@@ -38,8 +38,8 @@ public class ContextInitializer implements ServletContextListener {
         ServletContext servletContext = sce.getServletContext();
         servletContext.setAttribute("ModelManger", modelManger);
         servletContext.setAttribute("ConfigManger", configManger);
-        DImanager.registerGlobalBean(modelManger);
-        DImanager.registerGlobalBean(configManger);
+        IOCmanager.registerGlobalBean(modelManger);
+        IOCmanager.registerGlobalBean(configManger);
         log.info("依赖注入完成");
     }
 }

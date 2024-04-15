@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import top.suyiiyii.servlet.User;
-import top.suyiiyii.su.DI.DImanager;
+import top.suyiiyii.su.IOC.IOCmanager;
 
 import java.io.IOException;
 
@@ -24,11 +24,12 @@ public class IngressServlet extends HttpServlet {
      */
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        IOCmanager IOCmanager = new IOCmanager();
         // 创建对象，通过依赖注入管理器获取对应的servlet
-        BaseHttpServlet servlet = DImanager.getObj(User.class);
+        BaseHttpServlet servlet = IOCmanager.getObj(User.class);
         // 执行方法，调用servlet的service方法
         servlet.service(req, resp);
         // 销毁对象，递归调用字段的destroy方法
-        DImanager.destroyObj(servlet);
+        IOCmanager.destroyObj(servlet);
     }
 }

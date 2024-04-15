@@ -3,7 +3,6 @@ package top.suyiiyii.su;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 
-import javax.security.sasl.AuthenticationException;
 import java.io.IOException;
 import java.util.Date;
 
@@ -24,15 +23,15 @@ public class JwtUtils {
      * @return token
      * @throws IOException 异常
      */
-    public static String createToken(Object data, String secret, int expSecond) throws IOException {
-        String sub = UniversalUtils.obj2Json(data);
-        long exp = System.currentTimeMillis() + expSecond * 1000L;
-        Date expDate = new Date(exp);
+    public static String createToken(Object data, String secret, int expSecond) {
         try {
+            String sub = UniversalUtils.obj2Json(data);
+            long exp = System.currentTimeMillis() + expSecond * 1000L;
+            Date expDate = new Date(exp);
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.create().withSubject(sub).withExpiresAt(expDate).sign(algorithm);
         } catch (Exception e) {
-            throw new IOException("create token failed");
+            throw new RuntimeException("create token failed");
         }
     }
 
@@ -45,13 +44,13 @@ public class JwtUtils {
      * @throws IOException 异常
      */
 
-    public static String verifyToken(String token, String secret) throws IOException {
+    public static String verifyToken(String token, String secret) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             JWT.require(algorithm).build().verify(token);
             return JWT.decode(token).getClaim("sub").asString();
         } catch (Exception e) {
-            throw new AuthenticationException("verify token failed");
+            throw new RuntimeException("verify token failed");
         }
     }
 }

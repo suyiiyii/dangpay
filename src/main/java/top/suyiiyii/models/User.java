@@ -9,7 +9,7 @@ import top.suyiiyii.su.orm.annotation.TableRegister;
 public class User {
     @ColumnSetting(isPrimaryKey = true, isAutoIncrement = true)
     int id;
-    @ColumnSetting(stringLength = 100, isNotNull = true)
+    @ColumnSetting(isUnique = true, stringLength = 100, isNotNull = true)
     String username;
     @ColumnSetting(stringLength = 100, isNotNull = true)
     String password;

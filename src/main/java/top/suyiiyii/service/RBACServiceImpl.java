@@ -101,4 +101,14 @@ public class RBACServiceImpl implements RBACService {
     public void deleteUserRole(int uid, String role) {
         db.delete(RBACUser.class).eq("uid", uid).eq("role", role).execute();
     }
+
+    @Override
+    public boolean isAdmin(UserRoles userRoles) {
+        return isAdmin(userRoles.getRoles());
+    }
+
+    @Override
+    public boolean isAdmin(List<String> roles) {
+        return roles.contains("admin") || roles.contains("superadmin");
+    }
 }

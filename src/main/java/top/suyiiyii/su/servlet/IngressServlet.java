@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.TokenData;
+import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.su.IOC.IOCmanager;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.WebUtils;
@@ -64,13 +65,14 @@ public class IngressServlet extends HttpServlet {
         fullClassNames[fullClassNames.length - 1] = fullClassNames[fullClassNames.length - 1].substring(0, 1).toUpperCase() + fullClassNames[fullClassNames.length - 1].substring(1);
         fullClassName = String.join(".", fullClassNames);
 
-        log.info("请求路径：" + path + "，类名：" + fullClassName + "，id：" + id);
+        log.info("请求路径：" + path + "，类名：" + fullClassName + "，id：" + id + "，子方法：" + subMethod.getName());
 
         // 添加本地依赖，tokenData
         TokenData tokenData = (TokenData) req.getAttribute("tokenData");
         ioCmanager.registerLocalBean(tokenData);
         ioCmanager.registerLocalBean(IOCmanager.getGlobalBean(ModelManger.class).getSession());
         ioCmanager.registerLocalBean(subMethod);
+        ioCmanager.registerLocalBean(ioCmanager.getObj(UserRoles.class, false));
 
 
         // 通过反射创建对象
@@ -98,9 +100,17 @@ public class IngressServlet extends HttpServlet {
         }
         try {
             // 通过反射调用对应的方法
-            Method method = obj.getClass().getDeclaredMethod(methodName, HttpServletRequest.class, HttpServletResponse.class);
-            method.setAccessible(true);
-            Object ret = method.invoke(obj, req, resp);
+            Method method = null;
+            Object ret = null;
+            try {
+                method = obj.getClass().getDeclaredMethod(methodName, HttpServletRequest.class, HttpServletResponse.class);
+                method.setAccessible(true);
+                ret = method.invoke(obj, req, resp);
+            } catch (NoSuchMethodException e) {
+                method = obj.getClass().getDeclaredMethod(methodName);
+                method.setAccessible(true);
+                ret = method.invoke(obj);
+            }
             if (ret != null) {
                 WebUtils.respWrite(resp, ret);
             }

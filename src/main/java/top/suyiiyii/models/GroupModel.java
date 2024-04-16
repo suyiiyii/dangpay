@@ -21,4 +21,7 @@ public class GroupModel {
     private String address;
     @ColumnSetting(stringLength = 100, isNotNull = true)
     private String contact;
+    @ColumnSetting(stringLength = 20, isNotNull = true)
+    private String status;
+
 }

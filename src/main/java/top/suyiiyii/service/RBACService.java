@@ -24,5 +24,9 @@ public interface RBACService {
     void addUserRole(int uid, String role);
 
     void deleteUserRole(int uid, String role);
+
+    boolean isAdmin(UserRoles userRoles);
+
+    boolean isAdmin(List<String> roles);
 }
 

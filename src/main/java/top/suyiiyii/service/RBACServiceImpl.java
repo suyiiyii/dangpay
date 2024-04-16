@@ -41,6 +41,9 @@ public class RBACServiceImpl implements RBACService {
 
     @Override
     public boolean checkPermission(String role, String permission) {
+        if ("superadmin".equals(role)) {
+            return true;
+        }
         List<RBACRole> rbacRoles = db.query(RBACRole.class).eq("role", role).eq("permission", permission).all();
         return rbacRoles.size() > 0;
     }

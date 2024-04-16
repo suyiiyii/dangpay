@@ -3,27 +3,33 @@ package top.suyiiyii.servlet;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import top.suyiiyii.su.WebUtils;
-import top.suyiiyii.su.orm.core.Session;
+import top.suyiiyii.models.User;
+import top.suyiiyii.service.UserService;
 import top.suyiiyii.su.servlet.IngressServlet;
 
 import java.io.IOException;
 
 public class UserID {
-    private final Session db;
+    private UserService userService;
     private IngressServlet.SubMethod subMethod;
 
-    public UserID(Session db,
+    public UserID(UserService userService,
                   IngressServlet.SubMethod subMethod) {
-        this.db = db;
+        this.userService = userService;
         this.subMethod = subMethod;
     }
 
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        WebUtils.respWrite(resp, "你好" + subMethod.getId() + "\n" + "你调用的是：" + subMethod.getName());
+    protected User doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        return userService.getUser(subMethod.getId());
     }
 
-    protected void doGetBan(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        WebUtils.respWrite(resp, "你好" + subMethod.getId() + "\n" + "你调用的是：" + subMethod.getName());
+    protected boolean doPostBan(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        userService.banUser(subMethod.getId());
+        return true;
+    }
+
+    protected boolean doPostUnban(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        userService.unbanuser(subMethod.getId());
+        return true;
     }
 }

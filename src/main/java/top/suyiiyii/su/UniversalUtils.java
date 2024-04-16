@@ -138,27 +138,58 @@ public class UniversalUtils {
 
     /**
      * 使用反射，用新对象的非空属性更新旧对象的对应属性
+     * 新旧类型可以不一致
+     * 如果新对象存在而旧对象不存在的属性，会被忽略
      */
     public static void updateObj(Object oldObj, Object newObj) {
-        try {
-            Field[] fields = oldObj.getClass().getDeclaredFields();
-            for (Field field : fields) {
-                field.setAccessible(true);
-                Object value = field.get(newObj);
-                //判断是不是null
-                if (value == null) {
-                    continue;
+        if (oldObj == null || newObj == null) {
+            throw new IllegalArgumentException("对象不能为空");
+        }
+        if (oldObj.getClass() == newObj.getClass()) {
+            try {
+                Field[] fields = oldObj.getClass().getDeclaredFields();
+                for (Field field : fields) {
+                    field.setAccessible(true);
+                    Object value = field.get(newObj);
+                    //判断是不是null
+                    if (value == null) {
+                        continue;
+                    }
+                    //判断是不是0
+                    if (field.getType().equals(int.class) && (int) value == 0) {
+                        continue;
+                    }
+                    field.set(oldObj, value);
                 }
-                //判断是不是0
-                if (field.getType().equals(int.class) && (int) value == 0) {
-                    continue;
-                }
-                field.set(oldObj, value);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+        } else {
+            try {
+                Field[] oldFields = oldObj.getClass().getDeclaredFields();
+                Field[] newFields = newObj.getClass().getDeclaredFields();
+                for (Field oldField : oldFields) {
+                    oldField.setAccessible(true);
+                    for (Field newField : newFields) {
+                        newField.setAccessible(true);
+                        if (oldField.getName().equals(newField.getName())) {
+                            Object value = newField.get(newObj);
+                            if (value == null) {
+                                continue;
+                            }
+                            if (newField.getType().equals(int.class) && (int) value == 0) {
+                                continue;
+                            }
+                            oldField.set(oldObj, value);
+                        }
+                    }
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
+
 
     public static int getNow() {
         return (int) (System.currentTimeMillis() / 1000);
@@ -168,7 +199,6 @@ public class UniversalUtils {
         if (str == null || str.isEmpty()) {
             return str;
         }
-        str = str.toLowerCase();
         char firstChar = str.charAt(0);
         char capitalizedFirstChar = Character.toUpperCase(firstChar);
         return capitalizedFirstChar + str.substring(1);

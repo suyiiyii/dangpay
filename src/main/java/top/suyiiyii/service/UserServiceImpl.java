@@ -2,6 +2,7 @@ package top.suyiiyii.service;
 
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.TokenData;
+import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.User;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.IOC.Repository;
@@ -11,6 +12,7 @@ import top.suyiiyii.su.orm.core.Session;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 @Repository
@@ -18,11 +20,12 @@ import java.util.NoSuchElementException;
 public class UserServiceImpl implements UserService {
     Session db;
     ConfigManger configManger;
+    RBACService rbacService;
 
-    public UserServiceImpl(Session db,
-                           ConfigManger configManger) {
+    public UserServiceImpl(Session db, ConfigManger configManger, RBACService rbacService) {
         this.db = db;
         this.configManger = configManger;
+        this.rbacService = rbacService;
     }
 
     static String getHashed(String password) {
@@ -82,6 +85,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<User> getUsers(UserRoles userRoles) {
+//        rbacService.checkPermission(userRoles, "UserServiceGetUsers");
+        return db.query(User.class).all();
+    }
+
+    @Override
     public User register(String username, String password, String phone) {
         User user = new User();
         user.setUsername(username);
@@ -108,8 +117,26 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User banUser(int uid) {
-        User user = db.query(User.class).eq("id", uid).first();
+        User user;
+        try {
+            user = db.query(User.class).eq("id", uid).first();
+        } catch (NoSuchElementException e) {
+            throw new Http_400_BadRequestException("用户不存在");
+        }
         user.setStatus("banned");
+        db.commit();
+        return user;
+    }
+
+    @Override
+    public User unbanuser(int uid) {
+        User user;
+        try {
+            user = db.query(User.class).eq("id", uid).first();
+        } catch (NoSuchElementException e) {
+            throw new Http_400_BadRequestException("用户不存在");
+        }
+        user.setStatus("normal");
         db.commit();
         return user;
     }

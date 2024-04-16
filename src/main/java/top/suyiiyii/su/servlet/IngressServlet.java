@@ -6,10 +6,12 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.su.IOC.IOCmanager;
 import top.suyiiyii.su.UniversalUtils;
+import top.suyiiyii.su.WebUtils;
 import top.suyiiyii.su.exception.Http_404_NotFoundException;
 import top.suyiiyii.su.orm.core.ModelManger;
 
@@ -88,8 +90,9 @@ public class IngressServlet extends HttpServlet {
         }
     }
 
+    @SneakyThrows
     private void methodGateway(HttpServletRequest req, HttpServletResponse resp, SubMethod subMethod, Object obj) {
-        String methodName = "do" + UniversalUtils.capitalizeFirstLetter(req.getMethod());
+        String methodName = "do" + UniversalUtils.capitalizeFirstLetter(req.getMethod().toLowerCase());
         if (subMethod != null && subMethod.getName() != null) {
             methodName += UniversalUtils.capitalizeFirstLetter(subMethod.getName());
         }
@@ -97,9 +100,13 @@ public class IngressServlet extends HttpServlet {
             // 通过反射调用对应的方法
             Method method = obj.getClass().getDeclaredMethod(methodName, HttpServletRequest.class, HttpServletResponse.class);
             method.setAccessible(true);
-            method.invoke(obj, req, resp);
+            Object ret = method.invoke(obj, req, resp);
+            if (ret != null) {
+                WebUtils.respWrite(resp, ret);
+            }
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            // invoke方法抛出的是一个包装过的异常，需要通过getTargetException获取原始异常
+            throw e.getTargetException();
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (NoSuchMethodException e) {

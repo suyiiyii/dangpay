@@ -251,4 +251,12 @@ public class Wrapper {
         return list.get(0);
     }
 
+    public boolean exists() {
+        try {
+            first();
+            return true;
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
 }

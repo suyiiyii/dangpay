@@ -3,8 +3,12 @@ package top.suyiiyii.servlet;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.GroupModel;
 import top.suyiiyii.service.GroupService;
+import top.suyiiyii.service.GroupServiceImpl;
 import top.suyiiyii.service.RBACService;
+import top.suyiiyii.su.IOC.RBACAuthorization;
 import top.suyiiyii.su.servlet.IngressServlet;
+
+import java.util.List;
 
 public class GroupID {
     private GroupService groupService;
@@ -14,7 +18,7 @@ public class GroupID {
 
     public GroupID(GroupService groupService,
                    IngressServlet.SubMethod subMethod,
-                   RBACService rbacService,
+                   @RBACAuthorization(isNeedAuthorization = false) RBACService rbacService,
                    UserRoles userRoles) {
         this.groupService = groupService;
         this.subMethod = subMethod;
@@ -44,5 +48,19 @@ public class GroupID {
     boolean doPostUnhide() {
         groupService.unhideGroup(subMethod.getId());
         return true;
+    }
+
+    boolean doDeleteLeave() {
+        groupService.leaveGroup(subMethod.getId(), userRoles.getUid());
+        return true;
+    }
+
+    boolean doDeleteMember() {
+        groupService.deleteGroupMember(userRoles.getUid(), subMethod.getId());
+        return true;
+    }
+
+    List<GroupServiceImpl.MemberDto> doGetMembers() {
+        return groupService.getGroupMembers(subMethod.getId());
     }
 }

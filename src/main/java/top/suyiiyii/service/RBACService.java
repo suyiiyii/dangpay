@@ -13,9 +13,9 @@ public interface RBACService {
 
     boolean checkPermission(List<String> roles, String permission);
 
-    boolean checkPermission(int uid, String permission);
+    boolean checkUserPermission(int uid, String permission, int subId);
 
-    boolean checkPermission(UserRoles userRoles, String permission);
+    boolean checkUserPermission(UserRoles userRoles, String permission, int subId);
 
     void addRolePermission(String role, String permission);
 

@@ -11,8 +11,9 @@ import java.lang.annotation.Target;
  * 代理对象会在调用方法前进行权限验证
  * 如果不需要进行权限验证，可以在参数上加上@RBACAuthorization(isNeedAuthorization = false)，表示一个例外，不会注入代理对象
  */
-@Target({ElementType.PARAMETER, ElementType.TYPE})
+@Target({ElementType.PARAMETER, ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RBACAuthorization {
     boolean isNeedAuthorization() default true;
+    String subId() default "";
 }

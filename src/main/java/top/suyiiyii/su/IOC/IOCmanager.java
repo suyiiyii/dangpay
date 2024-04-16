@@ -154,7 +154,7 @@ public class IOCmanager {
             Constructor<?>[] constructors = clazz.getConstructors();
             Arrays.sort(constructors, Comparator.comparingInt(Constructor::getParameterCount));
             // 获取构造器需要的参数
-            Parameter[] parameters = constructors[0].getParameters();
+            Parameter[] parameters = constructors[constructors.length - 1].getParameters();
             // 如果没有参数，直接返回实例
             if (parameters.length == 0) {
                 return getBean(clazz);

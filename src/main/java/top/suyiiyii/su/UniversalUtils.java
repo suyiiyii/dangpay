@@ -1,7 +1,11 @@
 package top.suyiiyii.su;
 
+import top.suyiiyii.models.User;
+
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.stream.Collector;
 
 /**
  * 通用工具类
@@ -203,4 +207,5 @@ public class UniversalUtils {
         char capitalizedFirstChar = Character.toUpperCase(firstChar);
         return capitalizedFirstChar + str.substring(1);
     }
+
 }

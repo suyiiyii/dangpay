@@ -10,6 +10,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+/**
+ * RBAC权限控制服务
+ * <p>
+ * RBAC 权限设计
+ * 类名 + 方法名 （首字母大写）
+ * <p>
+ * RBAC 群组身份设计
+ * GroupMember/{groupId} 群组成员
+ * GroupAdmin/{groupId}  群组管理员
+ * 如果用户调用的对应群组id和角色id一致，则该角色生效
+ */
+
 @Repository
 public class RBACServiceImpl implements RBACService {
     private final Session db;
@@ -39,6 +51,13 @@ public class RBACServiceImpl implements RBACService {
         }
     }
 
+    /**
+     * 检查某个角色有没有某个权限
+     *
+     * @param role
+     * @param permission
+     * @return
+     */
     @Override
     public boolean checkPermission(String role, String permission) {
         if ("superadmin".equals(role)) {
@@ -63,17 +82,39 @@ public class RBACServiceImpl implements RBACService {
      *
      * @param uid        用户id
      * @param permission 权限
+     * @param subId      子id
      * @return 是否有权限
      */
     @Override
-    public boolean checkPermission(int uid, String permission) {
-        List<String> roles = getRoles(uid);
-        return checkPermission(roles, permission);
+    public boolean checkUserPermission(int uid, String permission, int subId) {
+//        List<String> roles = getRoles(uid);
+//        UserRoles userRoles = new UserRoles();
+//        userRoles.setUid(uid);
+//        userRoles.setRoles(roles);
+//        return checkUserPermission(userRoles, permission, subId);
+        return false;
     }
 
     @Override
-    public boolean checkPermission(UserRoles userRoles, String permission) {
-        return checkPermission(userRoles.getRoles(), permission);
+    public boolean checkUserPermission(UserRoles userRoles, String permission, int subId) {
+        List<String> roles = userRoles.getRoles();
+        if (subId != -1) {
+            // 过滤掉不是当前subId的角色
+            roles = roles.stream().filter(role -> {
+                if (role.contains("/")) {
+                    String[] split = role.split("/");
+                    return split[1].equals(String.valueOf(subId));
+                }
+                return true;
+            }).map(role -> {
+                if (role.contains("/")) {
+                    String[] split = role.split("/");
+                    return split[0];
+                }
+                return role;
+            }).toList();
+        }
+        return checkPermission(roles, permission);
     }
 
     @Override

@@ -31,7 +31,7 @@ public class Group {
         GroupDto groupDto = WebUtils.readRequestBody2Obj(req, GroupDto.class);
         GroupModel groupModel = new GroupModel();
         UniversalUtils.updateObj(groupModel, groupDto);
-        return groupService.createGroup(groupModel, userRoles);
+        return groupService.createGroup(userRoles, groupModel);
     }
 
     public List<GroupModel> doGet(HttpServletRequest req, HttpServletResponse resp) {

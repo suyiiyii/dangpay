@@ -32,6 +32,8 @@ public class Wrapper {
     // 分页信息
     private int pageNum = -1;
     private int pageSize = -1;
+    // 用于提前判断可不可能有结果
+    private boolean noResult = false;
 
     /**
      * 构造函数，记录了要操作的表和具体的操作
@@ -133,6 +135,27 @@ public class Wrapper {
         return this;
     }
 
+    /**
+     * in运算符，查询数据库中特定字段为一组特定值的数据
+     *
+     * @param key
+     * @param values
+     * @return
+     */
+    public Wrapper in(String key, List<Object> values) {
+        if (values.isEmpty()) {
+            noResult = true;
+            return this;
+        }
+        List<String> placeholders = new ArrayList<>();
+        for (int i = 0; i < values.size(); i++) {
+            placeholders.add("?");
+        }
+        whereStatement.add('`' + key + '`' + " IN (" + String.join(",", placeholders) + ")");
+        params.addAll(values);
+        return this;
+    }
+
 
     /**
      * 构建sql语句，将where条件和set条件拼接到基础sql上
@@ -199,6 +222,9 @@ public class Wrapper {
      * @throws SQLException SQL异常
      */
     public <T> List<T> all() {
+        if (noResult) {
+            return new ArrayList<>();
+        }
         try {
             return (List<T>) callBack.call(this);
         } catch (SQLException e) {

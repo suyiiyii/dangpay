@@ -56,6 +56,14 @@ public class GroupService {
         return getAllGroup(false);
     }
 
+    public List<GroupModel> getMyGroup(int uid) {
+        // 先获取用户的所有群组
+        List<GroupMember> groupMembers = db.query(GroupMember.class).eq("user_id", uid).all();
+        // 再获取群组的详细信息
+        List<GroupModel> groupModels = db.query(GroupModel.class).in("id", List.of(groupMembers.stream().map(GroupMember::getGroupId).toArray())).all();
+        return groupModels;
+    }
+
 
     public GroupModel getGroup(int id, boolean isSeeBan) {
         GroupModel groupModel = db.query(GroupModel.class).eq("id", id).first();

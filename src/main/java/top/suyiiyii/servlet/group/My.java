@@ -24,7 +24,7 @@ public class My {
         this.rbacService = rbacService;
     }
 
-    public List<GroupModel> doGet(HttpServletRequest req, HttpServletResponse resp) {
+    public List<GroupService.GroupDto> doGet(HttpServletRequest req, HttpServletResponse resp) {
         return groupService.getMyGroup(userRoles.getUid());
     }
 }

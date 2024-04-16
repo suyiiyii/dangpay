@@ -1,8 +1,10 @@
 package top.suyiiyii.service;
 
+import lombok.Data;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.GroupMember;
 import top.suyiiyii.models.GroupModel;
+import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.orm.core.Session;
 
@@ -56,12 +58,19 @@ public class GroupService {
         return getAllGroup(false);
     }
 
-    public List<GroupModel> getMyGroup(int uid) {
+    public List<GroupDto> getMyGroup(int uid) {
         // 先获取用户的所有群组
         List<GroupMember> groupMembers = db.query(GroupMember.class).eq("user_id", uid).all();
         // 再获取群组的详细信息
         List<GroupModel> groupModels = db.query(GroupModel.class).in("id", List.of(groupMembers.stream().map(GroupMember::getGroupId).toArray())).all();
-        return groupModels;
+        // 封装数据
+        List<GroupDto> groupDtos = groupModels.stream().map(groupModel -> {
+            GroupDto groupDto = new GroupDto();
+            UniversalUtils.updateObj(groupDto, groupModel);
+            groupDto.amIAdmin = groupMembers.stream().anyMatch(groupMember -> groupMember.getGroupId() == groupModel.getId() && groupMember.getRole().equals("admin"));
+            return groupDto;
+        }).toList();
+        return groupDtos;
     }
 
 
@@ -99,5 +108,18 @@ public class GroupService {
         GroupModel groupModel = db.query(GroupModel.class).eq("id", id).first();
         groupModel.setHide("false");
         db.commit();
+    }
+
+    @Data
+    public static class GroupDto {
+        String name;
+        String pepoleCount;
+        String enterpriseScale;
+        String industry;
+        String address;
+        String contact;
+        String status;
+        String hide;
+        boolean amIAdmin;
     }
 }

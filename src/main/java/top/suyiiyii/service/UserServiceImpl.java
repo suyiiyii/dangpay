@@ -7,7 +7,9 @@ import top.suyiiyii.models.User;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.JwtUtils;
+import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
+import top.suyiiyii.su.exception.Http_403_ForbiddenException;
 import top.suyiiyii.su.orm.core.Session;
 
 import java.security.MessageDigest;
@@ -146,11 +148,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User unbanUser(int uid) {
-        User user = db.query(User.class).eq("id", uid).first();
-        user.setStatus("normal");
-        db.commit();
-        return user;
+    public User updateUser(User user, UserRoles userRoles) {
+        User user1 = db.query(User.class).eq("id", user.getId()).first();
+        // 管理员可以修改任何用户信息
+        if (rbacService.isAdmin(userRoles)) {
+            UniversalUtils.updateObj(user1, user);
+            db.commit();
+        } else if (userRoles.uid == user.getId()) {
+            // 用户可以修改自己的信息
+            UniversalUtils.updateObj(user1, user);
+            db.commit();
+
+        } else {
+            throw new Http_403_ForbiddenException("权限不足");
+        }
+        return user1;
     }
 }
 

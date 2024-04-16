@@ -21,5 +21,5 @@ public interface UserService {
 
     User unbanuser(int uid);
 
-    User unbanUser(int uid);
+    User updateUser(User user, UserRoles userRoles);
 }

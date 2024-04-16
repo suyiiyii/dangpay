@@ -152,13 +152,16 @@ public class UserServiceImpl implements UserService {
         User user1 = db.query(User.class).eq("id", user.getId()).first();
         // 管理员可以修改任何用户信息
         if (rbacService.isAdmin(userRoles)) {
+            int id = user.getId();
             UniversalUtils.updateObj(user1, user);
+            user1.setId(id);
             db.commit();
         } else if (userRoles.uid == user.getId()) {
-            // 用户可以修改自己的信息
-            UniversalUtils.updateObj(user1, user);
+            // 用户可以修改自己的个人信息
+            user1.setUsername(user.getUsername());
+            user1.setPhone(user.getPhone());
+            user1.setIconUrl(user.getIconUrl());
             db.commit();
-
         } else {
             throw new Http_403_ForbiddenException("权限不足");
         }

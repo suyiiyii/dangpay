@@ -6,10 +6,7 @@ import top.suyiiyii.service.RBACService;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Proxy;
+import java.lang.reflect.*;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -138,40 +135,50 @@ public class IOCmanager {
             }
             Class<?> clazzInterface = null;
             // 如果是接口，获取实现类
+            log.info("开始构造对象: {}", clazz.getSimpleName());
             if (clazz.isInterface()) {
                 clazzInterface = clazz;
                 clazz = (Class<T>) Interface2Impl.get(clazz);
             }
-            if (clazz.isAnnotationPresent(RBACAuthorization.class) || clazzInterface != null && clazzInterface.isAnnotationPresent(RBACAuthorization.class)) {
-                if (clazz.isAnnotationPresent(RBACAuthorization.class) && !clazz.getAnnotation(RBACAuthorization.class).isNeedAuthorization()) {
-                    isNeedAuthorization = false;
-                }
-                if (clazzInterface != null && clazzInterface.isAnnotationPresent(RBACAuthorization.class) && !clazzInterface.getAnnotation(RBACAuthorization.class).isNeedAuthorization()) {
-                    isNeedAuthorization = false;
-                }
-            }
+//            // 检查类型有没有被@RBACAuthorization(isNeedAuthorization = false)注解, 如果有，则该类型的构造方法的所有参数不需要权限验证
+//            // 用于解决循环依赖问题
+//            if (clazz.isAnnotationPresent(RBACAuthorization.class) || clazzInterface != null && clazzInterface.isAnnotationPresent(RBACAuthorization.class)) {
+//                if (clazz.isAnnotationPresent(RBACAuthorization.class) && !clazz.getAnnotation(RBACAuthorization.class).isNeedAuthorization()) {
+//                    isNeedAuthorization = false;
+//                }
+//                if (clazzInterface != null && clazzInterface.isAnnotationPresent(RBACAuthorization.class) && !clazzInterface.getAnnotation(RBACAuthorization.class).isNeedAuthorization()) {
+//                    isNeedAuthorization = false;
+//                }
+//            }
             // 默认注入参数最多的构造函数
             Constructor<?>[] constructors = clazz.getConstructors();
             Arrays.sort(constructors, Comparator.comparingInt(Constructor::getParameterCount));
             // 获取构造器需要的参数
-            Class<?>[] parameterTypes = constructors[0].getParameterTypes();
+            Parameter[] parameters = constructors[0].getParameters();
             // 如果没有参数，直接返回实例
-            if (parameterTypes.length == 0) {
+            if (parameters.length == 0) {
                 return getBean(clazz);
             }
             // 递归调用，直到所有的依赖都注入完成
-            Object[] objects = new Object[parameterTypes.length];
-            for (int i = 0; i < parameterTypes.length; i++) {
-                objects[i] = getObj(parameterTypes[i], isNeedAuthorization);
+            Object[] objects = new Object[parameters.length];
+            for (int i = 0; i < parameters.length; i++) {
+                boolean isNeedAuthorization1 = isNeedAuthorization;
+                // 如果参数有@RBACAuthorization注解，检查是否需要权限验证
+                // 解决循环依赖问题，可以使得某一些参数不需要权限验证版本的实例
+                if (parameters[i].isAnnotationPresent(RBACAuthorization.class)) {
+                    isNeedAuthorization1 = parameters[i].getAnnotation(RBACAuthorization.class).isNeedAuthorization();
+                }
+                objects[i] = getObj(parameters[i].getType(), isNeedAuthorization1);
             }
             // 用获得的参数，执行构造器，返回实例
             T obj = (T) clazz.getConstructors()[0].newInstance(objects);
-            // 如果对象或者接口有@RBACAuthorization注解，检查是否需要权限验证
-            if (clazz.isAnnotationPresent(RBACAuthorization.class) || clazzInterface != null && clazzInterface.isAnnotationPresent(RBACAuthorization.class)) {
-                // 如果需要权限验证，创建代理对象
-                if (isNeedAuthorization) {
+            // 如果需要权限验证，创建代理对象
+            if (isNeedAuthorization) {
+                // 如果对象或者接口有@RBACAuthorization注解，表示可以被代理
+                if (clazz.isAnnotationPresent(RBACAuthorization.class) || clazzInterface != null && clazzInterface.isAnnotationPresent(RBACAuthorization.class)) {
                     log.info("创建代理对象: {}", clazz.getSimpleName());
-                    return (T) Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), new AuthorizationInvocationHandler(obj, getObj(UserRoles.class, false), getObj(RBACService.class, false)));
+                    AuthorizationInvocationHandler handler = new AuthorizationInvocationHandler(obj, getObj(UserRoles.class, false), getObj(RBACService.class, false));
+                    return (T) Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), handler);
                 }
             }
             log.info("注入对象完成: {}", clazz.getSimpleName());

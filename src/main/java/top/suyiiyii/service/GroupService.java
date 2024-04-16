@@ -1,5 +1,7 @@
 package top.suyiiyii.service;
 
+import top.suyiiyii.dto.UserRoles;
+import top.suyiiyii.models.GroupMember;
 import top.suyiiyii.models.GroupModel;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.orm.core.Session;
@@ -14,17 +16,31 @@ public class GroupService {
         this.db = db;
     }
 
-    public GroupModel addGroup(GroupModel groupModel) {
+    public GroupModel createGroup(GroupModel groupModel, UserRoles userRoles) {
         try {
             db.query(GroupModel.class).eq("name", groupModel.getName()).first();
             throw new Http_400_BadRequestException("群组名已存在");
         } catch (NoSuchElementException ignored) {
         }
-        groupModel.setStatus("normal");
-        groupModel.setHide("false");
-        db.insert(groupModel);
-        groupModel = db.query(GroupModel.class).eq("name", groupModel.getName()).first();
-        return groupModel;
+        try {
+            db.beginTransaction();
+            // 创建群组
+            groupModel.setStatus("normal");
+            groupModel.setHide("false");
+            db.insert(groupModel);
+            groupModel = db.query(GroupModel.class).eq("name", groupModel.getName()).first();
+            // 添加群组管理员
+            GroupMember groupMember = new GroupMember();
+            groupMember.setGroupId(groupModel.getId());
+            groupMember.setUserId(userRoles.getUid());
+            groupMember.setRole("admin");
+            db.insert(groupMember);
+            db.commitTransaction();
+            return groupModel;
+        } catch (Exception e) {
+            db.rollbackTransaction();
+            throw e;
+        }
     }
 
     public List<GroupModel> getAllGroup(boolean isSeeBan) {
@@ -39,6 +55,7 @@ public class GroupService {
     public List<GroupModel> getAllGroup() {
         return getAllGroup(false);
     }
+
 
     public GroupModel getGroup(int id, boolean isSeeBan) {
         GroupModel groupModel = db.query(GroupModel.class).eq("id", id).first();

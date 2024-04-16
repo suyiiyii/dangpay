@@ -108,8 +108,12 @@ public class UserServiceImpl implements UserService {
             throw new Http_400_BadRequestException("用户名已存在");
         }
         try {
+            db.beginTransaction();
             db.insert(user);
+            rbacService.addUserRole(user.getId(), "user");
+            db.commitTransaction();
         } catch (Exception e) {
+            db.rollbackTransaction();
             throw new Http_400_BadRequestException("注册失败");
         }
         return user;

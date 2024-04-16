@@ -11,7 +11,8 @@ import java.util.List;
 public interface GroupService {
     GroupModel createGroup(UserRoles userRoles, GroupModel groupModel);
 
-    void updateGroup(UserRoles userRoles, GroupModel groupModel);
+    @RBACAuthorization(subId = "gid")
+    void updateGroup(int gid, UserRoles userRoles, GroupModel groupModel);
 
     List<GroupModel> getAllGroup(boolean isSeeBan);
 
@@ -24,18 +25,24 @@ public interface GroupService {
 
     GroupModel getGroup(int gid);
 
+    @RBACAuthorization(subId = "gid")
     void banGroup(int gid);
 
+    @RBACAuthorization(subId = "gid")
     void unbanGroup(int gid);
 
+    @RBACAuthorization(subId = "gid")
     void hideGroup(int gid);
 
+    @RBACAuthorization(subId = "gid")
     void unhideGroup(int gid);
 
     void joinGroup(int gid, int uid);
 
+    @RBACAuthorization(subId = "gid")
     void leaveGroup(int gid, int uid);
 
+    @RBACAuthorization(subId = "gid")
     void deleteGroupMember(int gid, int uid);
 
     @RBACAuthorization(subId = "gid")

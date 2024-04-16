@@ -48,7 +48,6 @@ public class AuthorizationInvocationHandler implements InvocationHandler {
     }
 
     private void checkAuthorization(Method method, Object[] args) {
-        // 在这里添加权限校验的逻辑
         String permission = method.getDeclaringClass().getSimpleName() + UniversalUtils.capitalizeFirstLetter(method.getName());
         int subId = 0;
         if (method.isAnnotationPresent(RBACAuthorization.class)) {

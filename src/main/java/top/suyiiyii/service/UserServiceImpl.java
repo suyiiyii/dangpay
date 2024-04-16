@@ -5,6 +5,7 @@ import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.User;
 import top.suyiiyii.su.ConfigManger;
+import top.suyiiyii.su.IOC.RBACAuthorization;
 import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.JwtUtils;
 import top.suyiiyii.su.UniversalUtils;
@@ -24,7 +25,9 @@ public class UserServiceImpl implements UserService {
     ConfigManger configManger;
     RBACService rbacService;
 
-    public UserServiceImpl(Session db, ConfigManger configManger, RBACService rbacService) {
+    public UserServiceImpl(Session db,
+                           ConfigManger configManger,
+                           @RBACAuthorization(isNeedAuthorization = false) RBACService rbacService) {
         this.db = db;
         this.configManger = configManger;
         this.rbacService = rbacService;
@@ -129,6 +132,7 @@ public class UserServiceImpl implements UserService {
         try {
             db.beginTransaction();
             db.insert(user);
+            user = db.query(User.class).eq("username", username).eq("phone", phone).first();
             rbacService.addUserRole(user.getId(), "user");
             db.commitTransaction();
         } catch (Exception e) {

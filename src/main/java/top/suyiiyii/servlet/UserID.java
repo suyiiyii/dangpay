@@ -26,7 +26,7 @@ public class UserID {
     }
 
     protected User doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        return userService.getUser(subMethod.getId());
+        return userService.getUser(subMethod.getId(),userRoles);
     }
 
     protected boolean doPostBan(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -48,7 +48,7 @@ public class UserID {
     protected User doPostChangePassword(HttpServletRequest req, HttpServletResponse resp) {
         changePasswordRequest request = WebUtils.readRequestBody2Obj(req, changePasswordRequest.class);
         userService.changePassword(userRoles, subMethod.getId(), request.oldPassword, request.newPassword);
-        return userService.getUser(subMethod.getId());
+        return userService.getUser(subMethod.getId(),userRoles);
     }
 
 

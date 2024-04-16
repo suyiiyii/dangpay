@@ -13,7 +13,7 @@ public interface UserService {
 
     void changePassword(UserRoles userRoles, int uid, String oldPassword, String newPassword);
 
-    User getUser(int uid);
+    User getUser(int uid, UserRoles userRoles);
 
     List<User> getUsers(UserRoles userRoles);
 

@@ -98,7 +98,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User getUser(int uid) {
+    public User getUser(int uid, UserRoles userRoles) {
+        // 管理员可以查看任何用户信息,普通用户只能查看自己的信息
+        if (!rbacService.isAdmin(userRoles) && userRoles.uid != uid) {
+            throw new Http_403_ForbiddenException("普通用户只能查看自己的信息");
+        }
         try {
             return db.query(User.class).eq("id", uid).first();
         } catch (NoSuchElementException e) {

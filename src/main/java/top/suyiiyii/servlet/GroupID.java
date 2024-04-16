@@ -73,7 +73,7 @@ public class GroupID {
         return true;
     }
 
-    boolean doLeave() {
+    boolean doPostLeave() {
         groupService.leaveGroup(subMethod.getId(), userRoles.getUid());
         return true;
     }

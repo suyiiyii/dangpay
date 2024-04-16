@@ -7,12 +7,13 @@ import top.suyiiyii.su.IOC.RBACAuthorization;
 import java.util.List;
 
 @Data
-@RBACAuthorization(isNeedAuthorization = false)
+//@RBACAuthorization(isNeedAuthorization = false)
 public class UserRoles {
     public int uid;
     public List<String> roles;
 
-    public UserRoles(TokenData tokenData, RBACService rbacService) {
+    public UserRoles(TokenData tokenData,
+                     @RBACAuthorization(isNeedAuthorization = false) RBACService rbacService) {
         this.uid = tokenData.uid;
         this.roles = rbacService.getRoles(tokenData.uid);
     }

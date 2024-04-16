@@ -16,6 +16,7 @@ public class AuthorizationInvocationHandler implements InvocationHandler {
     private final Object target;
     private final UserRoles userRoles;
     private final RBACService rbacService;
+    private boolean isNeedAuthorization;
 
     public AuthorizationInvocationHandler(Object target, UserRoles userRoles, RBACService rbacService) {
         this.target = target;
@@ -34,8 +35,10 @@ public class AuthorizationInvocationHandler implements InvocationHandler {
             return null;
         }
 
-        // 权限验证
-        checkAuthorization(method);
+        if (isNeedAuthorization) {
+            // 权限验证
+            checkAuthorization(method);
+        }
         try {
             return method.invoke(target, args);
         } catch (InvocationTargetException e) {
@@ -45,6 +48,14 @@ public class AuthorizationInvocationHandler implements InvocationHandler {
     }
 
     public void destroy() {
+    }
+
+    public void disableAuthorization() {
+        this.isNeedAuthorization = false;
+    }
+
+    public void enableAuthorization() {
+        this.isNeedAuthorization = true;
     }
 
     private void checkAuthorization(Method method) {

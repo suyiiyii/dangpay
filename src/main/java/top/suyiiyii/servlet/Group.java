@@ -7,6 +7,7 @@ import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.GroupModel;
 import top.suyiiyii.service.GroupService;
 import top.suyiiyii.service.RBACService;
+import top.suyiiyii.su.IOC.RBACAuthorization;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.WebUtils;
 
@@ -19,7 +20,7 @@ public class Group {
 
     public Group(GroupService groupService,
                  UserRoles userRoles,
-                 RBACService rbacService) {
+                 @RBACAuthorization(isNeedAuthorization = false) RBACService rbacService) {
         this.groupService = groupService;
         this.userRoles = userRoles;
         this.rbacService = rbacService;

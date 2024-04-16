@@ -8,6 +8,7 @@ import top.suyiiyii.models.User;
 import top.suyiiyii.service.UserService;
 import top.suyiiyii.su.WebUtils;
 import top.suyiiyii.su.servlet.IngressServlet;
+import top.suyiiyii.su.validator.Regex;
 
 import java.io.IOException;
 
@@ -42,5 +43,18 @@ public class UserID {
         User user = WebUtils.readRequestBody2Obj(req, User.class);
         user.setId(subMethod.getId());
         return userService.updateUser(user, userRoles);
+    }
+
+    protected User doPostChangePassword(HttpServletRequest req, HttpServletResponse resp) {
+        changePasswordRequest request = WebUtils.readRequestBody2Obj(req, changePasswordRequest.class);
+        userService.changePassword(userRoles, subMethod.getId(), request.oldPassword, request.newPassword);
+        return userService.getUser(subMethod.getId());
+    }
+
+
+    public static class changePasswordRequest {
+        public String oldPassword;
+        @Regex("^[a-zA-Z0-9_-]{6,18}$")
+        public String newPassword;
     }
 }

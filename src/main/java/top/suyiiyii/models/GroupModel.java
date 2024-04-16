@@ -23,5 +23,7 @@ public class GroupModel {
     private String contact;
     @ColumnSetting(stringLength = 20, isNotNull = true)
     private String status;
+    @ColumnSetting(stringLength = 20, isNotNull = true)
+    private String hide;
 
 }

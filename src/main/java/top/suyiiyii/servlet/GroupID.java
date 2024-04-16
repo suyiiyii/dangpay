@@ -35,4 +35,14 @@ public class GroupID {
         groupService.unbanGroup(subMethod.getId());
         return true;
     }
+
+    boolean doPostHide() {
+        groupService.hideGroup(subMethod.getId());
+        return true;
+    }
+
+    boolean doPostUnhide() {
+        groupService.unhideGroup(subMethod.getId());
+        return true;
+    }
 }

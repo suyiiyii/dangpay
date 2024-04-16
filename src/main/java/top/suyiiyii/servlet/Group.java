@@ -10,6 +10,7 @@ import top.suyiiyii.service.RBACService;
 import top.suyiiyii.su.IOC.RBACAuthorization;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.WebUtils;
+import top.suyiiyii.su.validator.Regex;
 
 import java.util.List;
 
@@ -39,11 +40,17 @@ public class Group {
 
     @Data
     static class GroupDto {
+        @Regex(".{3,100}")
         String name;
+        @Regex(".{3,100}")
         String pepoleCount;
+        @Regex(".{3,100}")
         String enterpriseScale;
+        @Regex(".{3,100}")
         String industry;
+        @Regex(".{3,100}")
         String address;
+        @Regex(".{3,100}")
         String contact;
     }
 }

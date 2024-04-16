@@ -21,6 +21,7 @@ public class GroupService {
         } catch (NoSuchElementException ignored) {
         }
         groupModel.setStatus("normal");
+        groupModel.setHide("false");
         db.insert(groupModel);
         groupModel = db.query(GroupModel.class).eq("name", groupModel.getName()).first();
         return groupModel;
@@ -30,6 +31,7 @@ public class GroupService {
         List<GroupModel> groupModels = db.query(GroupModel.class).all();
         if (!isSeeBan) {
             groupModels.removeIf(groupModel -> groupModel.getStatus().equals("ban"));
+            groupModels.removeIf(groupModel -> groupModel.getHide().equals("true"));
         }
         return groupModels;
     }
@@ -59,6 +61,18 @@ public class GroupService {
     public void unbanGroup(int id) {
         GroupModel groupModel = db.query(GroupModel.class).eq("id", id).first();
         groupModel.setStatus("normal");
+        db.commit();
+    }
+
+    public void hideGroup(int id) {
+        GroupModel groupModel = db.query(GroupModel.class).eq("id", id).first();
+        groupModel.setHide("true");
+        db.commit();
+    }
+
+    public void unhideGroup(int id) {
+        GroupModel groupModel = db.query(GroupModel.class).eq("id", id).first();
+        groupModel.setHide("false");
         db.commit();
     }
 }

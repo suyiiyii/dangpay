@@ -11,6 +11,8 @@ public interface UserService {
 
     String login(String username, String password);
 
+    void changePassword(UserRoles userRoles, int uid, String oldPassword, String newPassword);
+
     User getUser(int uid);
 
     List<User> getUsers(UserRoles userRoles);

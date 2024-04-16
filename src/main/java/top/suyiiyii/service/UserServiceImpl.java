@@ -78,6 +78,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void changePassword(UserRoles userRoles, int uid, String oldPassword, String newPassword) {
+        // 检查权限，只能修改自己的密码
+        if (userRoles.uid != uid) {
+            rbacService.isAdmin(userRoles);
+        }
+        // 判断用户是否存在
+        User user = db.query(User.class).eq("id", uid).first();
+        // 判断密码是否正确
+        if (!checkPassword(oldPassword, user)) {
+            throw new Http_400_BadRequestException("密码错误");
+        }
+        // 修改密码
+        user.setPassword(getHashed(newPassword));
+        db.commit();
+    }
+
+    @Override
     public User getUser(int uid) {
         try {
             return db.query(User.class).eq("id", uid).first();
@@ -147,10 +164,19 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
+    /**
+     * 更新用户信息
+     * 如果传入的密码不为空，则修改密码
+     *
+     * @param user      待更新的用户对象，可能包含新密码
+     * @param userRoles 当前操作用户的权限信息
+     * @return 更新后的用户对象
+     */
     @Override
     public User updateUser(User user, UserRoles userRoles) {
         User user1 = db.query(User.class).eq("id", user.getId()).first();
-        // 管理员可以修改任何用户信息
+
+        // 管理员可以修改任何用户信息（包括密码）
         if (rbacService.isAdmin(userRoles)) {
             int id = user.getId();
             UniversalUtils.updateObj(user1, user);
@@ -167,5 +193,6 @@ public class UserServiceImpl implements UserService {
         }
         return user1;
     }
+
 }
 

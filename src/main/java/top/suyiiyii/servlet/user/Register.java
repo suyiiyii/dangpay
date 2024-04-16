@@ -16,6 +16,7 @@ public class Register extends BaseHttpServlet {
     UserService userService;
 
     public Register(UserService userService) {
+        super();
         this.userService = userService;
     }
 

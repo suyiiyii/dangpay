@@ -5,13 +5,17 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.su.IOC.IOCmanager;
+import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_404_NotFoundException;
 import top.suyiiyii.su.orm.core.ModelManger;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 @Slf4j
@@ -42,9 +46,14 @@ public class IngressServlet extends HttpServlet {
         // 路径支持嵌套
         String fullClassName;
         int id = -1;
+        SubMethod subMethod = new SubMethod();
         if (paths[paths.length - 1].matches(".*\\d.*")) {
             fullClassName = SERVLET_PACKAGENAME + String.join(".", Arrays.copyOfRange(paths, 0, paths.length - 1)) + "ID";
-            id = Integer.parseInt(paths[paths.length - 1]);
+            subMethod.id = Integer.parseInt(paths[paths.length - 1]);
+        } else if (paths.length >= 3 && paths[paths.length - 2].matches(".*\\d.*")) {
+            fullClassName = SERVLET_PACKAGENAME + String.join(".", Arrays.copyOfRange(paths, 0, paths.length - 2)) + "ID";
+            subMethod.id = Integer.parseInt(paths[paths.length - 2]);
+            subMethod.name = paths[paths.length - 1];
         } else {
             fullClassName = SERVLET_PACKAGENAME + String.join(".", Arrays.copyOfRange(paths, 0, paths.length));
         }
@@ -59,10 +68,11 @@ public class IngressServlet extends HttpServlet {
         TokenData tokenData = (TokenData) req.getAttribute("tokenData");
         ioCmanager.registerLocalBean(tokenData);
         ioCmanager.registerLocalBean(IOCmanager.getGlobalBean(ModelManger.class).getSession());
+        ioCmanager.registerLocalBean(subMethod);
 
 
         // 通过反射创建对象
-        BaseHttpServlet servlet;
+        Object servlet;
         try {
             servlet = ioCmanager.createObj(fullClassName);
         } catch (ClassNotFoundException e) {
@@ -70,11 +80,36 @@ public class IngressServlet extends HttpServlet {
         }
         try {
             // 执行方法，调用servlet的service方法
-            servlet.service(req, resp);
+            methodGateway(req, resp, subMethod, servlet);
         } finally {
             // 销毁对象，递归调用字段的destroy方法
             ioCmanager.destroyObj(servlet);
             ioCmanager.destroy();
         }
+    }
+
+    private void methodGateway(HttpServletRequest req, HttpServletResponse resp, SubMethod subMethod, Object obj) {
+        String methodName = "do" + UniversalUtils.capitalizeFirstLetter(req.getMethod());
+        if (subMethod != null && subMethod.getName() != null) {
+            methodName += UniversalUtils.capitalizeFirstLetter(subMethod.getName());
+        }
+        try {
+            // 通过反射调用对应的方法
+            Method method = obj.getClass().getDeclaredMethod(methodName, HttpServletRequest.class, HttpServletResponse.class);
+            method.setAccessible(true);
+            method.invoke(obj, req, resp);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e) {
+            throw new Http_404_NotFoundException();
+        }
+    }
+
+    @Data
+    public static class SubMethod {
+        int id;
+        String name;
     }
 }

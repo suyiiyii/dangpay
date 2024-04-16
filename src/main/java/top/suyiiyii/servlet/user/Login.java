@@ -18,6 +18,7 @@ public class Login extends BaseHttpServlet {
     UserService userService;
 
     public Login(UserService userService) {
+        super();
         this.userService = userService;
     }
 

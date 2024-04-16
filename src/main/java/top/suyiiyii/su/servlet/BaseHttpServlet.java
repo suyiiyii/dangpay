@@ -5,8 +5,11 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import top.suyiiyii.su.UniversalUtils;
+import top.suyiiyii.su.exception.Http_404_NotFoundException;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * BaseHttpServlet
@@ -18,6 +21,16 @@ import java.io.IOException;
 @Slf4j
 public class BaseHttpServlet extends HttpServlet {
 
+    private IngressServlet.SubMethod subMethod;
+
+    public BaseHttpServlet(IngressServlet.SubMethod subMethod) {
+        this.subMethod = subMethod;
+    }
+
+    public BaseHttpServlet() {
+    }
+
+
     /**
      * 收到一个http请求，自动路由到本实例的对应的操作方法
      *
@@ -28,20 +41,7 @@ public class BaseHttpServlet extends HttpServlet {
      */
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if ("GET".equals(req.getMethod())) {
-            doGet(req, resp);
-        } else if ("POST".equals(req.getMethod())) {
-            doPost(req, resp);
-        } else if ("PUT".equals(req.getMethod())) {
-            doPut(req, resp);
-        } else if ("DELETE".equals(req.getMethod())) {
-            doDelete(req, resp);
-        } else if ("PATCH".equals(req.getMethod())) {
-            doPatch(req, resp);
-        } else {
-            resp.setStatus(405);
-            resp.getWriter().write("Method Not Allowed");
-        }
+
     }
 
 

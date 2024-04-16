@@ -189,6 +189,10 @@ public class IOCmanager {
      * 递归调用字段的destroy方法，除了单例对象
      */
     public void destroyObj(Object obj, boolean force) {
+        // 跳过null
+        if (obj == null) {
+            return;
+        }
         // 如果是动态代理对象，获取目标对象
         if (Proxy.isProxyClass(obj.getClass())) {
             try {

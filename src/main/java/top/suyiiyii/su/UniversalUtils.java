@@ -168,6 +168,7 @@ public class UniversalUtils {
         if (str == null || str.isEmpty()) {
             return str;
         }
+        str = str.toLowerCase();
         char firstChar = str.charAt(0);
         char capitalizedFirstChar = Character.toUpperCase(firstChar);
         return capitalizedFirstChar + str.substring(1);

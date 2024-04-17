@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.su.WebUtils;
+import top.suyiiyii.su.exception.Http_404_NotFoundException;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -56,6 +57,10 @@ public class ExceptionHandlerFilter implements Filter {
                     break;
                 case "Http_405_MethodNotAllowedException":
                     resp.setStatus(405);
+                    break;
+                case "NoSuchElementException":
+                    e = new Http_404_NotFoundException("资源不存在");
+                    resp.setStatus(404);
                     break;
                 default:
                     resp.setStatus(500);

@@ -5,12 +5,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+
 /**
- * Repository注解
- * 用于标记一个类为实现类
- * 当遇到接口时，会自动寻找对应的实现类
+ * 用于表示传入的参数是一个子区域
  */
-@Target(ElementType.TYPE)
+@Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Repository {
+public @interface SubRegion {
+    String areaPrefix() default "";
 }

@@ -49,20 +49,25 @@ public class WebUtils {
      * @return T
      * @throws IOException IOException
      */
-    public static <T> T readRequestBody2Obj(HttpServletRequest req, Class<T> valueType) throws IOException {
-        BufferedReader reader = req.getReader();
-        StringBuilder stringBuilder = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            stringBuilder.append(line);
+    public static <T> T readRequestBody2Obj(HttpServletRequest req, Class<T> valueType) {
+        BufferedReader reader = null;
+        try {
+            reader = req.getReader();
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+            String str = stringBuilder.toString();
+            if (str.isEmpty()) {
+                throw new IOException("请求体为空");
+            }
+            T t = MAPPER.readValue(str, valueType);
+            Validator.check(t);
+            return t;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        String str = stringBuilder.toString();
-        if (str.isEmpty()) {
-            throw new IOException("请求体为空");
-        }
-        T t = MAPPER.readValue(str, valueType);
-        Validator.check(t);
-        return t;
     }
 
     /**

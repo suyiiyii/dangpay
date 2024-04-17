@@ -12,6 +12,10 @@ import java.io.IOException;
 @WebServlet("/health")
 public class healthCheck extends BaseHttpServlet {
 
+    public healthCheck() {
+        super();
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         WebUtils.respWrite(resp, "healthy from " + System.getenv("HOSTNAME"));

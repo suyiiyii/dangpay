@@ -4,26 +4,30 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import top.suyiiyii.dto.UserRoles;
-import top.suyiiyii.su.WebUtils;
-import top.suyiiyii.su.orm.core.Session;
-import top.suyiiyii.su.servlet.BaseHttpServlet;
+import top.suyiiyii.service.UserService;
 
 import java.io.IOException;
 
-public class User extends BaseHttpServlet {
-    private final Session db;
+public class User {
+    private final UserService userService;
     private final UserRoles userRoles;
 
-    public User(Session db,
+    public User(UserService userService,
                 UserRoles userRoles) {
-        this.db = db;
+        this.userService = userService;
         this.userRoles = userRoles;
     }
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-        WebUtils.respWrite(resp, "你好" + userRoles.uid + "\n" + "你的身份是：" + userRoles.roles);
+    /**
+     * 获取用户信息接口
+     *
+     * @param req  an {@link HttpServletRequest} object that contains the request the client has made of the servlet
+     * @param resp an {@link HttpServletResponse} object that contains the response the servlet sends to the client
+     * @throws ServletException
+     * @throws IOException
+     */
+    protected Object doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        return userService.getUsers(userRoles);
     }
 
 }

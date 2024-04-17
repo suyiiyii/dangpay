@@ -16,12 +16,22 @@ public class Validator {
         Class<?> clazz = obj.getClass();
         for (Field field : clazz.getDeclaredFields()) {
             Regex re = field.getAnnotation(Regex.class);
+            // 如果为空则不需要验证
+            if (re == null) {
+                continue;
+            }
             String regex = re.value();
             Pattern pattern = Pattern.compile(regex);
             if (re != null) {
                 try {
                     field.setAccessible(true);
-                    String value = (String) field.get(obj);
+                    String value;
+                    // 如果是int转换成String
+                    if (field.getType().equals(int.class)) {
+                        value = String.valueOf(field.getInt(obj));
+                    } else {
+                        value = (String) field.get(obj);
+                    }
                     if (!pattern.matcher(value).matches()) {
                         throw new IllegalArgumentException();
                     }

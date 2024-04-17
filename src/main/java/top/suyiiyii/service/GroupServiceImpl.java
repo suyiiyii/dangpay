@@ -6,6 +6,7 @@ import top.suyiiyii.models.RBACUser;
 import top.suyiiyii.models.User;
 import top.suyiiyii.su.IOC.RBACAuthorization;
 import top.suyiiyii.su.IOC.Repository;
+import top.suyiiyii.su.IOC.SubRegion;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.orm.core.Session;
@@ -62,8 +63,7 @@ public class GroupServiceImpl implements GroupService {
      * 更新群组信息
      */
     @Override
-    @RBACAuthorization(subId = "gid")
-    public void updateGroup(int gid, UserRoles userRoles, GroupModel groupModel) {
+    public void updateGroup(@SubRegion(areaPrefix = "g") int gid, UserRoles userRoles, GroupModel groupModel) {
         GroupModel groupModel1 = db.query(GroupModel.class).eq("id", gid).first();
         if (!groupModel1.getName().equals(groupModel.getName())) {
             try {
@@ -134,7 +134,7 @@ public class GroupServiceImpl implements GroupService {
      */
 
     @Override
-    public GroupModel getGroup(int gid, boolean isSeeBan) {
+    public GroupModel getGroup(@SubRegion(areaPrefix = "g") int gid, boolean isSeeBan) {
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         if (groupModel.getStatus().equals("ban") && !isSeeBan) {
             throw new NoSuchElementException("群组不存在");
@@ -143,7 +143,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
-    public GroupModel getGroup(int gid) {
+    public GroupModel getGroup(@SubRegion(areaPrefix = "g") int gid) {
         return getGroup(gid, false);
     }
 
@@ -153,7 +153,7 @@ public class GroupServiceImpl implements GroupService {
      * @param gid 群组id
      */
     @Override
-    public void banGroup(int gid) {
+    public void banGroup(@SubRegion(areaPrefix = "g") int gid) {
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         groupModel.setStatus("ban");
         db.commit();
@@ -165,7 +165,7 @@ public class GroupServiceImpl implements GroupService {
      * @param gid 群组id
      */
     @Override
-    public void unbanGroup(int gid) {
+    public void unbanGroup(@SubRegion(areaPrefix = "g") int gid) {
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         groupModel.setStatus("normal");
         db.commit();
@@ -178,7 +178,7 @@ public class GroupServiceImpl implements GroupService {
      */
 
     @Override
-    public void hideGroup(int gid) {
+    public void hideGroup(@SubRegion(areaPrefix = "g") int gid) {
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         groupModel.setHide("true");
         db.commit();
@@ -191,7 +191,7 @@ public class GroupServiceImpl implements GroupService {
      */
 
     @Override
-    public void unhideGroup(int gid) {
+    public void unhideGroup(@SubRegion(areaPrefix = "g") int gid) {
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         groupModel.setHide("false");
         db.commit();
@@ -204,14 +204,9 @@ public class GroupServiceImpl implements GroupService {
      * @param uid 用户id
      */
     @Override
-    public void joinGroup(int gid, int uid) {
+    public void joinGroup(@SubRegion(areaPrefix = "g") int gid, int uid) {
         try {
-            db.beginTransaction();
-            RBACUser rbacUser = new RBACUser();
-            rbacUser.setUid(uid);
-            rbacUser.setRole("GroupMember/g" + gid);
-            db.insert(rbacUser);
-            db.commitTransaction();
+            rbacService.addUserRole(uid, "GroupMember/g" + gid);
         } catch (Exception e) {
             db.rollbackTransaction();
             throw e;
@@ -225,8 +220,7 @@ public class GroupServiceImpl implements GroupService {
      * @param uid
      */
     @Override
-    @RBACAuthorization(subId = "gid")
-    public void leaveGroup(int gid, int uid) {
+    public void leaveGroup(@SubRegion(areaPrefix = "g") int gid, int uid) {
         try {
             db.beginTransaction();
             rbacService.deleteUserRole(uid, "GroupMember/g" + gid);
@@ -245,8 +239,7 @@ public class GroupServiceImpl implements GroupService {
      * @param uid 用户id
      */
     @Override
-    @RBACAuthorization(subId = "gid")
-    public void deleteGroupMember(int gid, int uid) {
+    public void kickGroupMember(@SubRegion(areaPrefix = "g") int gid, int uid) {
         try {
             db.beginTransaction();
             rbacService.deleteUserRole(uid, "GroupMember/g" + gid);
@@ -265,8 +258,7 @@ public class GroupServiceImpl implements GroupService {
      * @return 成员列表
      */
     @Override
-    @RBACAuthorization(subId = "gid")
-    public List<MemberDto> getGroupMembers(int gid) {
+    public List<MemberDto> getGroupMembers(@SubRegion(areaPrefix = "g") int gid) {
         // 先获取群组的所有成员id
         List<RBACUser> rbacUsers = db.query(RBACUser.class).eq("role", "GroupMember/g" + gid).all();
         // 获取管理员的id
@@ -284,5 +276,36 @@ public class GroupServiceImpl implements GroupService {
         }).toList();
         return memberDtos;
     }
+
+    /**
+     * 邀请用户加入群组
+     *
+     * @param gid 群组id
+     * @param uid 用户id
+     */
+    @Override
+    public void inviteUser(@SubRegion(areaPrefix = "g") int gid, int uid) {
+        try {
+            db.beginTransaction();
+            rbacService.addUserRole(uid, "GroupMember/g" + gid);
+            db.commitTransaction();
+        } catch (Exception e) {
+            db.rollbackTransaction();
+            throw e;
+        }
+    }
+
+    @Override
+    public void addAdmin(@SubRegion(areaPrefix = "g") int gid, int uid) {
+        try {
+            db.beginTransaction();
+            rbacService.addUserRole(uid, "GroupAdmin/g" + gid);
+            db.commitTransaction();
+        } catch (Exception e) {
+            db.rollbackTransaction();
+            throw e;
+        }
+    }
+
 
 }

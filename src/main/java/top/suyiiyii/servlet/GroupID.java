@@ -2,6 +2,7 @@ package top.suyiiyii.servlet;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Data;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.GroupModel;
 import top.suyiiyii.service.GroupService;
@@ -11,6 +12,7 @@ import top.suyiiyii.su.IOC.RBACAuthorization;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.WebUtils;
 import top.suyiiyii.su.servlet.IngressServlet;
+import top.suyiiyii.su.validator.Regex;
 
 import java.util.List;
 
@@ -85,6 +87,30 @@ public class GroupID {
         groupModel.setId(subMethod.getId());
         groupService.updateGroup(subMethod.getId(), userRoles, groupModel);
         return groupDto;
+    }
+
+    boolean doPostInvite(HttpServletRequest req, HttpServletResponse resp) {
+        UserRequest userRequest = WebUtils.readRequestBody2Obj(req, UserRequest.class);
+        groupService.inviteUser(subMethod.getId(), userRequest.uid);
+        return true;
+    }
+
+    boolean doPostAddAdmin(HttpServletRequest req, HttpServletResponse resp) {
+        UserRequest userRequest = WebUtils.readRequestBody2Obj(req, UserRequest.class);
+        groupService.addAdmin(subMethod.getId(), userRequest.uid);
+        return true;
+    }
+
+    boolean doPostKick(HttpServletRequest req, HttpServletResponse resp) {
+        UserRequest userRequest = WebUtils.readRequestBody2Obj(req, UserRequest.class);
+        groupService.kickGroupMember(subMethod.getId(), userRequest.uid);
+        return true;
+    }
+
+    @Data
+    public static class UserRequest {
+        @Regex("[0-9]+")
+        private int uid;
     }
 
 }

@@ -8,6 +8,7 @@ import top.suyiiyii.su.orm.core.Session;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 /**
@@ -63,6 +64,17 @@ public class RBACServiceImpl implements RBACService {
         if ("superadmin".equals(role)) {
             return true;
         }
+        // 如果权限是带分区的，需要带有同样分区的角色才能通过
+        if (permission.contains("/")) {
+            String subRegion = permission.split("/")[1];
+            String[] splits = role.split("/");
+            if (splits.length < 2 || !splits[1].equals(subRegion)) {
+                return false;
+            }
+            // RBACRole 存的是不带分区的权限，所以需要去掉分区
+            permission = permission.split("/")[0];
+            role = role.split("/")[0];
+        }
         List<RBACRole> rbacRoles = db.query(RBACRole.class).eq("role", role).eq("permission", permission).all();
         return rbacRoles.size() > 0;
     }
@@ -77,48 +89,25 @@ public class RBACServiceImpl implements RBACService {
         return false;
     }
 
-    /**
-     * 通过uid检查用户是否有权限
-     *
-     * @param uid        用户id
-     * @param permission 权限
-     * @param subId      子id
-     * @return 是否有权限
-     */
     @Override
-    public boolean checkUserPermission(int uid, String permission, int subId) {
-//        List<String> roles = getRoles(uid);
-//        UserRoles userRoles = new UserRoles();
-//        userRoles.setUid(uid);
-//        userRoles.setRoles(roles);
-//        return checkUserPermission(userRoles, permission, subId);
-        return false;
+    public boolean checkUserPermission(int uid, String permission) {
+        List<String> roles = getRoles(uid);
+        return checkPermission(roles, permission);
     }
 
+
     @Override
-    public boolean checkUserPermission(UserRoles userRoles, String permission, int subId) {
+    public boolean checkUserPermission(UserRoles userRoles, String permission) {
         List<String> roles = userRoles.getRoles();
-        if (subId != -1) {
-            // 过滤掉不是当前subId的角色
-            roles = roles.stream().filter(role -> {
-                if (role.contains("/")) {
-                    String[] split = role.split("/");
-                    return split[1].equals(String.valueOf(subId));
-                }
-                return true;
-            }).map(role -> {
-                if (role.contains("/")) {
-                    String[] split = role.split("/");
-                    return split[0];
-                }
-                return role;
-            }).toList();
-        }
         return checkPermission(roles, permission);
     }
 
     @Override
     public void addRolePermission(String role, String permission) {
+        // 检查待添加的角色权限是否存在
+        if (db.query(RBACRole.class).eq("role", role).eq("permission", permission).exists()) {
+            return;
+        }
         RBACRole rbacRole = new RBACRole();
         rbacRole.setRole(role);
         rbacRole.setPermission(permission);
@@ -132,6 +121,10 @@ public class RBACServiceImpl implements RBACService {
 
     @Override
     public void addUserRole(int uid, String role) {
+        // 检查待添加的用户角色是否存在
+        if (db.query(RBACUser.class).eq("uid", uid).eq("role", role).exists()) {
+            return;
+        }
         RBACUser rbacUser = new RBACUser();
         rbacUser.setUid(uid);
         rbacUser.setRole(role);
@@ -152,4 +145,18 @@ public class RBACServiceImpl implements RBACService {
     public boolean isAdmin(List<String> roles) {
         return roles.contains("admin") || roles.contains("superadmin");
     }
+
+    /**
+     * 获得具有某个角色的用户
+     *
+     * @param role 角色（可以带有分组）
+     * @return 用户id列表
+     */
+    @Override
+    public List<Integer> getUserByRole(String role) {
+        List<RBACUser> rbacUsers = db.query(RBACUser.class).eq("role", role).all();
+        List<Integer> uids = rbacUsers.stream().map(RBACUser::getUid).collect(Collectors.toList());
+        return uids;
+    }
+
 }

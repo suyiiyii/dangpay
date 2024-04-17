@@ -4,6 +4,7 @@ import lombok.Data;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.GroupModel;
 import top.suyiiyii.su.IOC.RBACAuthorization;
+import top.suyiiyii.su.IOC.SubRegion;
 
 import java.util.List;
 
@@ -11,8 +12,8 @@ import java.util.List;
 public interface GroupService {
     GroupModel createGroup(UserRoles userRoles, GroupModel groupModel);
 
-    @RBACAuthorization(subId = "gid")
-    void updateGroup(int gid, UserRoles userRoles, GroupModel groupModel);
+
+    void updateGroup(@SubRegion(areaPrefix = "g") int gid, UserRoles userRoles, GroupModel groupModel);
 
     List<GroupModel> getAllGroup(boolean isSeeBan);
 
@@ -25,28 +26,28 @@ public interface GroupService {
 
     GroupModel getGroup(int gid);
 
-    @RBACAuthorization(subId = "gid")
-    void banGroup(int gid);
 
-    @RBACAuthorization(subId = "gid")
-    void unbanGroup(int gid);
+    void banGroup(@SubRegion(areaPrefix = "g") int gid);
 
-    @RBACAuthorization(subId = "gid")
-    void hideGroup(int gid);
 
-    @RBACAuthorization(subId = "gid")
-    void unhideGroup(int gid);
+    void unbanGroup(@SubRegion(areaPrefix = "g") int gid);
+
+
+    void hideGroup(@SubRegion(areaPrefix = "g") int gid);
+
+
+    void unhideGroup(@SubRegion(areaPrefix = "g") int gid);
 
     void joinGroup(int gid, int uid);
 
-    @RBACAuthorization(subId = "gid")
-    void leaveGroup(int gid, int uid);
 
-    @RBACAuthorization(subId = "gid")
-    void deleteGroupMember(int gid, int uid);
+    void leaveGroup(@SubRegion(areaPrefix = "g") int gid, int uid);
 
-    @RBACAuthorization(subId = "gid")
-    List<MemberDto> getGroupMembers(int gid);
+
+    void deleteGroupMember(@SubRegion(areaPrefix = "g") int gid, int uid);
+
+
+    List<MemberDto> getGroupMembers(@SubRegion(areaPrefix = "g") int gid);
 
     @Data
     public static class GroupDto {

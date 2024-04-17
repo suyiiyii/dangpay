@@ -49,28 +49,28 @@ public class AuthorizationInvocationHandler implements InvocationHandler {
 
     private void checkAuthorization(Method method, Object[] args) {
         String permission = method.getDeclaringClass().getSimpleName() + UniversalUtils.capitalizeFirstLetter(method.getName());
-        int subId = 0;
+        int subRegionId = 0;
         if (method.isAnnotationPresent(RBACAuthorization.class)) {
             RBACAuthorization annotation = method.getAnnotation(RBACAuthorization.class);
             // 如果方法上的注解标记为不需要权限校验，则直接返回
             if (!annotation.isNeedAuthorization()) {
                 return;
             }
-            // 如果方法上的注解标记了权限id的字段，则获取该字段的值
-            if (!annotation.subId().isEmpty()) {
-                subId = -1;
-                // 因为代理对象代理的是接口，所以无法通过反射获取参数名，只能通过参数类型来判断
-                // 从参数中获取subId的值，默认为第一个int类型的参数
-                Parameter[] parameters = method.getParameters();
-                for (int i = 0; i < parameters.length; i++) {
-                    if (parameters[i].getType().equals(int.class)) {
-                        subId = (int) args[i];
-                        break;
-                    }
-                }
+        }
+        // 检查有没有参数有子区域注解
+        Parameter[] parameters = method.getParameters();
+        for (int i = 0; i < parameters.length; i++) {
+            Parameter parameter = parameters[i];
+            if (parameter.isAnnotationPresent(SubRegion.class)) {
+                // 如果参数有子区域注解，则获取子区域id，并拼接权限字符串
+                SubRegion annotation = parameter.getAnnotation(SubRegion.class);
+                String areaPrefix = annotation.areaPrefix();
+                subRegionId = (int) args[i];
+                permission += "/" + areaPrefix + subRegionId;
+                break;
             }
         }
-        boolean result = rbacService.checkUserPermission(userRoles, permission, subId);
+        boolean result = rbacService.checkUserPermission(userRoles, permission);
         if (!result) {
             String message = "权限校验失败，请求用户: " + userRoles.uid + " 用户角色: " + userRoles.roles + " 请求权限: " + permission;
             log.info("权限校验失败，请求用户: {} 用户角色: {} 请求权限: {}", userRoles.uid, userRoles.roles, permission);

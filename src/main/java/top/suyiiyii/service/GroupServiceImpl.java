@@ -48,8 +48,8 @@ public class GroupServiceImpl implements GroupService {
             db.insert(groupModel);
             groupModel = db.query(GroupModel.class).eq("name", groupModel.getName()).first();
             // 添加群组管理员
-            rbacService.addUserRole(userRoles.getUid(), "GroupAdmin/" + groupModel.getId());
-            rbacService.addUserRole(userRoles.getUid(), "GroupMember/" + groupModel.getId());
+            rbacService.addUserRole(userRoles.getUid(), "GroupAdmin/g" + groupModel.getId());
+            rbacService.addUserRole(userRoles.getUid(), "GroupMember/g" + groupModel.getId());
             db.commitTransaction();
             return groupModel;
         } catch (Exception e) {
@@ -109,15 +109,15 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public List<GroupDto> getMyGroup(int uid) {
         // 先获取用户的所有群组
-        List<RBACUser> rbacUsers = db.query(RBACUser.class).eq("uid", uid).fuzzLike("role", "GroupMember/").all();
+        List<RBACUser> rbacUsers = db.query(RBACUser.class).eq("uid", uid).fuzzLike("role", "GroupMember/g").all();
         // 再获取群组的详细信息
-        List<GroupModel> groupModels = db.query(GroupModel.class).in("id", List.of(rbacUsers.stream().map(rbacUser -> Integer.parseInt(rbacUser.getRole().split("/")[1])).toArray())).all();
+        List<GroupModel> groupModels = db.query(GroupModel.class).in("id", List.of(rbacUsers.stream().map(rbacUser -> Integer.parseInt(rbacUser.getRole().split("/")[1].substring(1))).toArray())).all();
         // 封装数据
         List<GroupDto> groupDtos = groupModels.stream().map(groupModel -> {
             GroupDto groupDto = new GroupDto();
             UniversalUtils.updateObj(groupDto, groupModel);
 //            groupDto.setPepoleCount(String.valueOf(rbacUsers.stream().filter(rbacUser -> rbacUser.getRole().equals("GroupMember/" + groupModel.getId())).count()));
-            groupDto.setAmIAdmin(rbacUsers.stream().anyMatch(rbacUser -> rbacUser.getRole().equals("GroupAdmin/" + groupModel.getId())));
+            groupDto.setAmIAdmin(rbacUsers.stream().anyMatch(rbacUser -> rbacUser.getRole().equals("GroupAdmin/g" + groupModel.getId())));
             return groupDto;
         }).toList();
 
@@ -209,7 +209,7 @@ public class GroupServiceImpl implements GroupService {
             db.beginTransaction();
             RBACUser rbacUser = new RBACUser();
             rbacUser.setUid(uid);
-            rbacUser.setRole("GroupMember/" + gid);
+            rbacUser.setRole("GroupMember/g" + gid);
             db.insert(rbacUser);
             db.commitTransaction();
         } catch (Exception e) {
@@ -229,7 +229,8 @@ public class GroupServiceImpl implements GroupService {
     public void leaveGroup(int gid, int uid) {
         try {
             db.beginTransaction();
-            db.delete(RBACUser.class).eq("uid", uid).eq("role", "GroupMember/" + gid).execute();
+            rbacService.deleteUserRole(uid, "GroupMember/g" + gid);
+            rbacService.deleteUserRole(uid, "GroupAdmin/g" + gid);
             db.commitTransaction();
         } catch (Exception e) {
             db.rollbackTransaction();
@@ -248,8 +249,8 @@ public class GroupServiceImpl implements GroupService {
     public void deleteGroupMember(int gid, int uid) {
         try {
             db.beginTransaction();
-            db.delete(RBACUser.class).eq("uid", uid).eq("role", "GroupMember/" + gid).execute();
-            db.delete(RBACUser.class).eq("uid", uid).eq("role", "GroupAdmin/" + gid).execute();
+            rbacService.deleteUserRole(uid, "GroupMember/g" + gid);
+            rbacService.deleteUserRole(uid, "GroupAdmin/g" + gid);
             db.commitTransaction();
         } catch (Exception e) {
             db.rollbackTransaction();
@@ -267,9 +268,9 @@ public class GroupServiceImpl implements GroupService {
     @RBACAuthorization(subId = "gid")
     public List<MemberDto> getGroupMembers(int gid) {
         // 先获取群组的所有成员id
-        List<RBACUser> rbacUsers = db.query(RBACUser.class).eq("role", "GroupMember/" + gid).all();
+        List<RBACUser> rbacUsers = db.query(RBACUser.class).eq("role", "GroupMember/g" + gid).all();
         // 获取管理员的id
-        List<RBACUser> rbacAdmins = db.query(RBACUser.class).eq("role", "GroupAdmin/" + gid).all();
+        List<RBACUser> rbacAdmins = db.query(RBACUser.class).eq("role", "GroupAdmin/g" + gid).all();
         // 再获取成员的名字
         List<User> users = db.query(User.class).in("id", List.of(rbacUsers.stream().map(RBACUser::getUid).toArray())).all();
         Map<Integer, String> userMap = users.stream().collect(Collectors.toMap(User::getId, User::getUsername));

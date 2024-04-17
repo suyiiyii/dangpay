@@ -44,10 +44,14 @@ public interface GroupService {
     void leaveGroup(@SubRegion(areaPrefix = "g") int gid, int uid);
 
 
-    void deleteGroupMember(@SubRegion(areaPrefix = "g") int gid, int uid);
+    void kickGroupMember(@SubRegion(areaPrefix = "g") int gid, int uid);
 
 
     List<MemberDto> getGroupMembers(@SubRegion(areaPrefix = "g") int gid);
+
+    void inviteUser(@SubRegion(areaPrefix = "g") int gid, int uid);
+
+    void addAdmin(@SubRegion(areaPrefix = "g") int gid, int uid);
 
     @Data
     public static class GroupDto {

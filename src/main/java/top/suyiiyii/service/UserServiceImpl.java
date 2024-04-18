@@ -135,9 +135,8 @@ public class UserServiceImpl implements UserService {
         }
         try {
             db.beginTransaction();
-            db.insert(user);
-            user = db.query(User.class).eq("username", username).eq("phone", phone).first();
-            rbacService.addUserRole(user.getId(), "user");
+            int id = db.insert(user, true);
+            rbacService.addUserRole(id, "user");
             db.commitTransaction();
         } catch (Exception e) {
             db.rollbackTransaction();

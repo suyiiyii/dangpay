@@ -21,8 +21,7 @@ public class GroupServiceImpl implements GroupService {
     Session db;
     RBACService rbacService;
 
-    public GroupServiceImpl(Session db,
-                            @RBACAuthorization(isNeedAuthorization = false) RBACService rbacService) {
+    public GroupServiceImpl(Session db, @RBACAuthorization(isNeedAuthorization = false) RBACService rbacService) {
         this.db = db;
         this.rbacService = rbacService;
     }
@@ -46,11 +45,10 @@ public class GroupServiceImpl implements GroupService {
             // 创建群组
             groupModel.setStatus("normal");
             groupModel.setHide("false");
-            db.insert(groupModel);
-            groupModel = db.query(GroupModel.class).eq("name", groupModel.getName()).first();
+            int id = db.insert(groupModel, true);
             // 添加群组管理员
-            rbacService.addUserRole(userRoles.getUid(), "GroupAdmin/g" + groupModel.getId());
-            rbacService.addUserRole(userRoles.getUid(), "GroupMember/g" + groupModel.getId());
+            rbacService.addUserRole(userRoles.getUid(), "GroupAdmin/g" + id);
+            rbacService.addUserRole(userRoles.getUid(), "GroupMember/g" + id);
             db.commitTransaction();
             return groupModel;
         } catch (Exception e) {

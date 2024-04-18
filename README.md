@@ -143,9 +143,12 @@ sequenceDiagram
 
 ##### success(指定金额)
 
+表示希望对方转给自己的钱，正数为收款，负数为付款（主体为响应方）
+
 ```json
 {
   "status": "success",
+  "Platform": "string",
   "callback": "/startTransaction?code=xxx",
   "isSpecifiedAmount": true,
   "sepecifiedAmount": 100
@@ -163,12 +166,15 @@ sequenceDiagram
 
 ### POST /startTransaction?code=xxx
 
-开始交易，表示希望转给对方的金额，正数为支付，负数为收款
+开始交易，表示希望转给对方的金额，正数为支付，负数为收款（主体为请求方）
 
 #### Request
 
 ```json
 {
+  "Platform": "string",
+  "tradeName": "string",
+  "payeeName": "string",
   "amount": 100
 }
 ```

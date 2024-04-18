@@ -3,6 +3,7 @@ package top.suyiiyii.su;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.validator.Validator;
 
 import java.io.BufferedReader;
@@ -66,7 +67,7 @@ public class WebUtils {
             Validator.check(t);
             return t;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new Http_400_BadRequestException("请求体格式错误");
         }
     }
 

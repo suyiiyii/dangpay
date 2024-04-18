@@ -5,9 +5,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.GroupModel;
+import top.suyiiyii.models.Wallet;
 import top.suyiiyii.service.GroupService;
 import top.suyiiyii.service.GroupServiceImpl;
 import top.suyiiyii.service.RBACService;
+import top.suyiiyii.service.WalletService;
 import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.WebUtils;
@@ -21,14 +23,17 @@ public class GroupID {
     private IngressServlet.SubMethod subMethod;
     private RBACService rbacService;
     private UserRoles userRoles;
+    private WalletService walletService;
 
     public GroupID(GroupService groupService,
                    IngressServlet.SubMethod subMethod,
                    @Proxy(isNeedAuthorization = false) RBACService rbacService,
+                   WalletService walletService,
                    UserRoles userRoles) {
         this.groupService = groupService;
         this.subMethod = subMethod;
         this.rbacService = rbacService;
+        this.walletService = walletService;
         this.userRoles = userRoles;
     }
 
@@ -107,10 +112,31 @@ public class GroupID {
         return true;
     }
 
+    // 钱包部分
+    public boolean doPostWallet(HttpServletRequest req, HttpServletResponse resp) {
+        walletService.createGroupWallet(subMethod.getId());
+        return true;
+    }
+
+    public List<Wallet> doGetWallet(HttpServletRequest req, HttpServletResponse resp) {
+        return walletService.getGroupWallets(subMethod.getId());
+    }
+
+    public List<Wallet> doGetSubWallet(HttpServletRequest req, HttpServletResponse resp) {
+        return walletService.getGroupSubWallets(subMethod.getId());
+    }
+
+    public boolean doPostSubWallet(HttpServletRequest req, HttpServletResponse resp) {
+        UserRequest userRequest = WebUtils.readRequestBody2Obj(req, UserRequest.class);
+        walletService.createGroupSubWallet(subMethod.getId(), userRequest.uid);
+        return true;
+    }
+
     @Data
     public static class UserRequest {
         @Regex("[0-9]+")
         private int uid;
     }
+
 
 }

@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
 public @interface Proxy {
     boolean isNeedAuthorization() default true;
 
-    boolean transaction() default false;
+    boolean isTransaction() default false;
 
     boolean isNotProxy() default false;
 

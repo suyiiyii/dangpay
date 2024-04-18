@@ -45,21 +45,28 @@ public class ProxyInvocationHandler implements InvocationHandler {
 
         boolean isNeedAuthorization = false;
         boolean isTransaction = false;
-        // 检查对象上是否有Proxy注解
-        if (target.getClass().isAnnotationPresent(Proxy.class)) {
-            Proxy annotation = target.getClass().getAnnotation(Proxy.class);
-            isNeedAuthorization = annotation.isNeedAuthorization();
-        }
         // 检查对象的接口上是否有Proxy注解
         if (method.getDeclaringClass().isAnnotationPresent(Proxy.class)) {
             Proxy annotation = method.getDeclaringClass().getAnnotation(Proxy.class);
             isNeedAuthorization = annotation.isNeedAuthorization();
         }
-        // 检查方法上是否有Proxy注解
+        // 检查对象上是否有Proxy注解
+        if (target.getClass().isAnnotationPresent(Proxy.class)) {
+            Proxy annotation = target.getClass().getAnnotation(Proxy.class);
+            isNeedAuthorization = annotation.isNeedAuthorization();
+        }
+        // 检查接口的方法上是否有Proxy注解
         if (method.isAnnotationPresent(Proxy.class)) {
             Proxy annotation = method.getAnnotation(Proxy.class);
             isNeedAuthorization = annotation.isNeedAuthorization();
-            isTransaction = annotation.transaction();
+            isTransaction = annotation.isTransaction();
+        }
+        // 检查对象的方法上是否有Proxy注解
+        Method targetMethod = target.getClass().getMethod(method.getName(), method.getParameterTypes());
+        if (targetMethod.isAnnotationPresent(Proxy.class)) {
+            Proxy annotation = targetMethod.getAnnotation(Proxy.class);
+            isNeedAuthorization = annotation.isNeedAuthorization();
+            isTransaction = annotation.isTransaction();
         }
         // 如果需要权限校验，则进行权限校验
         if (isNeedAuthorization && this.isNeedAuthorization) {

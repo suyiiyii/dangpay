@@ -116,7 +116,9 @@ public class UserServiceImpl implements UserService {
         return db.query(User.class).all();
     }
 
+
     @Override
+    @Proxy(isTransaction = true)
     public User register(String username, String password, String phone) {
         User user = new User();
         user.setUsername(username);
@@ -133,15 +135,8 @@ public class UserServiceImpl implements UserService {
         if (isExist) {
             throw new Http_400_BadRequestException("用户名已存在");
         }
-        try {
-            db.beginTransaction();
-            int id = db.insert(user, true);
-            rbacService.addUserRole(id, "user");
-            db.commitTransaction();
-        } catch (Exception e) {
-            db.rollbackTransaction();
-            throw new Http_400_BadRequestException("注册失败");
-        }
+        int id = db.insert(user, true);
+        rbacService.addUserRole(id, "user");
         return user;
     }
 

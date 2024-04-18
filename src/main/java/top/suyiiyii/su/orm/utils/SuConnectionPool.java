@@ -47,6 +47,8 @@ public class SuConnectionPool implements ConnectionPool {
     private final Condition waitBalance = lock.newCondition();
     // 等待守护线程启动完毕信号
     private final Condition waitDaemon = lock.newCondition();
+    // 失败计数
+    private int failCount = 0;
 
     public SuConnectionPool(int maxSize, int minSize, Callable<Connection> newConnection) {
         lock.lock();
@@ -145,6 +147,10 @@ public class SuConnectionPool implements ConnectionPool {
                 }
             } catch (Exception e) {
                 log.warn("Add connection error: %s".formatted(e));
+                failCount++;
+                if (failCount > 250) {
+                    throw new RuntimeException("Add connection error too many times");
+                }
             }
             log.info("Add connection current available: %d, used: %d".formatted(availableConnections.size(), usedConnections.size()));
             return true;

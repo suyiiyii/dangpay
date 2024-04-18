@@ -3,12 +3,12 @@ package top.suyiiyii.service;
 import lombok.Data;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.GroupModel;
-import top.suyiiyii.su.IOC.RBACAuthorization;
+import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.IOC.SubRegion;
 
 import java.util.List;
 
-@RBACAuthorization
+@Proxy
 public interface GroupService {
     GroupModel createGroup(UserRoles userRoles, GroupModel groupModel);
 

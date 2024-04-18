@@ -5,6 +5,7 @@ import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.service.RBACService;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_403_ForbiddenException;
+import top.suyiiyii.su.orm.core.Session;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -12,16 +13,23 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
 @Slf4j
-@RBACAuthorization(isNeedAuthorization = false)
-public class AuthorizationInvocationHandler implements InvocationHandler {
+@Proxy(isNeedAuthorization = false)
+public class ProxyInvocationHandler implements InvocationHandler {
     private final Object target;
     private final UserRoles userRoles;
     private final RBACService rbacService;
+    private final Session db;
+    /**
+     * 在代理对象被创建时，设置整个代理对象是否需要权限校验
+     */
+    private final boolean isNeedAuthorization;
 
-    public AuthorizationInvocationHandler(Object target, UserRoles userRoles, RBACService rbacService) {
+    public ProxyInvocationHandler(Object target, UserRoles userRoles, RBACService rbacService, Session db, boolean isNeedAuthorization) {
         this.target = target;
         this.userRoles = userRoles;
         this.rbacService = rbacService;
+        this.db = db;
+        this.isNeedAuthorization = isNeedAuthorization;
     }
 
     @Override
@@ -35,9 +43,44 @@ public class AuthorizationInvocationHandler implements InvocationHandler {
             return null;
         }
 
-        checkAuthorization(method, args);
+        boolean isNeedAuthorization = false;
+        boolean isTransaction = false;
+        // 检查对象上是否有Proxy注解
+        if (target.getClass().isAnnotationPresent(Proxy.class)) {
+            Proxy annotation = target.getClass().getAnnotation(Proxy.class);
+            isNeedAuthorization = annotation.isNeedAuthorization();
+        }
+        // 检查对象的接口上是否有Proxy注解
+        if (method.getDeclaringClass().isAnnotationPresent(Proxy.class)) {
+            Proxy annotation = method.getDeclaringClass().getAnnotation(Proxy.class);
+            isNeedAuthorization = annotation.isNeedAuthorization();
+        }
+        // 检查方法上是否有Proxy注解
+        if (method.isAnnotationPresent(Proxy.class)) {
+            Proxy annotation = method.getAnnotation(Proxy.class);
+            isNeedAuthorization = annotation.isNeedAuthorization();
+            isTransaction = annotation.transaction();
+        }
+        // 如果需要权限校验，则进行权限校验
+        if (isNeedAuthorization && this.isNeedAuthorization) {
+            checkAuthorization(method, args);
+        }
+
         try {
-            return method.invoke(target, args);
+            // 如果需要事务，则开启事务
+            if (isTransaction) {
+                try {
+                    db.beginTransaction();
+                    Object result = method.invoke(target, args);
+                    db.commitTransaction();
+                    return result;
+                } catch (Exception e) {
+                    db.rollbackTransaction();
+                    throw e;
+                }
+            } else {
+                return method.invoke(target, args);
+            }
         } catch (InvocationTargetException e) {
             // invoke方法抛出的是一个包装过的异常，需要通过getTargetException获取原始异常
             throw e.getTargetException();
@@ -50,13 +93,6 @@ public class AuthorizationInvocationHandler implements InvocationHandler {
     private void checkAuthorization(Method method, Object[] args) {
         String permission = method.getDeclaringClass().getSimpleName() + UniversalUtils.capitalizeFirstLetter(method.getName());
         int subRegionId = 0;
-        if (method.isAnnotationPresent(RBACAuthorization.class)) {
-            RBACAuthorization annotation = method.getAnnotation(RBACAuthorization.class);
-            // 如果方法上的注解标记为不需要权限校验，则直接返回
-            if (!annotation.isNeedAuthorization()) {
-                return;
-            }
-        }
         // 检查有没有参数有子区域注解
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {

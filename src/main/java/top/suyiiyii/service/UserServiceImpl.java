@@ -5,7 +5,7 @@ import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.User;
 import top.suyiiyii.su.ConfigManger;
-import top.suyiiyii.su.IOC.RBACAuthorization;
+import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.JwtUtils;
 import top.suyiiyii.su.UniversalUtils;
@@ -27,7 +27,7 @@ public class UserServiceImpl implements UserService {
 
     public UserServiceImpl(Session db,
                            ConfigManger configManger,
-                           @RBACAuthorization(isNeedAuthorization = false) RBACService rbacService) {
+                           @Proxy(isNeedAuthorization = false) RBACService rbacService) {
         this.db = db;
         this.configManger = configManger;
         this.rbacService = rbacService;

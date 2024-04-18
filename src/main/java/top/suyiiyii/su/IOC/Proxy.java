@@ -7,13 +7,18 @@ import java.lang.annotation.Target;
 
 /**
  * 使用方法
- * 在需要进行权限验证的方法上加上@RBACAuthorization注解，则其他对象注入此方法时会注入一个代理对象
- * 代理对象会在调用方法前进行权限验证
- * 如果不需要进行权限验证，可以在参数上加上@RBACAuthorization(isNeedAuthorization = false)，表示一个例外，不会注入代理对象
+ * 只要是带了这个注解的类，都会被代理
+ * 会不会权限校验，是否需要事务，取决于这个注解的配置
+ * 设置isNotProxy为true，可以强制阻止代理
  */
 @Target({ElementType.PARAMETER, ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RBACAuthorization {
+public @interface Proxy {
     boolean isNeedAuthorization() default true;
+
+    boolean transaction() default false;
+
+    boolean isNotProxy() default false;
+
     String subId() default "";
 }

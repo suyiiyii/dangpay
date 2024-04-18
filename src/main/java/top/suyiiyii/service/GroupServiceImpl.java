@@ -4,7 +4,7 @@ import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.GroupModel;
 import top.suyiiyii.models.RBACUser;
 import top.suyiiyii.models.User;
-import top.suyiiyii.su.IOC.RBACAuthorization;
+import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.IOC.SubRegion;
 import top.suyiiyii.su.UniversalUtils;
@@ -21,7 +21,7 @@ public class GroupServiceImpl implements GroupService {
     Session db;
     RBACService rbacService;
 
-    public GroupServiceImpl(Session db, @RBACAuthorization(isNeedAuthorization = false) RBACService rbacService) {
+    public GroupServiceImpl(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService) {
         this.db = db;
         this.rbacService = rbacService;
     }

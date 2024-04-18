@@ -8,7 +8,7 @@ import top.suyiiyii.models.GroupModel;
 import top.suyiiyii.service.GroupService;
 import top.suyiiyii.service.GroupServiceImpl;
 import top.suyiiyii.service.RBACService;
-import top.suyiiyii.su.IOC.RBACAuthorization;
+import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.WebUtils;
 import top.suyiiyii.su.servlet.IngressServlet;
@@ -24,7 +24,7 @@ public class GroupID {
 
     public GroupID(GroupService groupService,
                    IngressServlet.SubMethod subMethod,
-                   @RBACAuthorization(isNeedAuthorization = false) RBACService rbacService,
+                   @Proxy(isNeedAuthorization = false) RBACService rbacService,
                    UserRoles userRoles) {
         this.groupService = groupService;
         this.subMethod = subMethod;

@@ -3,10 +3,14 @@ package top.suyiiyii.su.IOC;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.service.RBACService;
+import top.suyiiyii.su.orm.core.Session;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +18,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 依赖注入管理器
  * 通过注册几个简单的单例对象，实现简单的构造器注入
+ * <p>
+ * 实现逻辑
+ * 只要是带了@Proxy注解的类，都会被代理
+ * 会不会做权限检查，取决于注解的isNeedAuthorization属性，方法的注解优先级高于类的注解
+ * 调用方法前，检查方法有没有带@Proxy注解，如果有，检查有没有transaction属性，如果有，开启事务
  *
  * @author suyiiyii
  */
@@ -87,7 +96,6 @@ public class IOCmanager {
         }
     }
 
-
     /**
      * 根据类型，返回实例
      * 只适用于基本类型或者已经保存过的实例或者无依赖的实例
@@ -113,16 +121,25 @@ public class IOCmanager {
         }
     }
 
+    public <T> T getObj(Class<T> clazz) {
+        return getObj(clazz, false);
+    }
+
+    public <T> T getObj(Class<T> clazz, boolean isNotProxy) {
+        return getObj(clazz, isNotProxy, true);
+    }
+
     /**
      * 根据类型，自动执行构造器依赖注入，返回实例
      * 在需要的时候进行递归调用，直到所有的依赖都注入完成
      * 优先使用局部单例对象，其次使用全局单例对象
      *
-     * @param clazz 需要的实例的类型
-     * @param <T>   需要的实例的类型
+     * @param <T>        需要的实例的类型
+     * @param clazz      需要的实例的类型
+     * @param isNotProxy 是否禁用代理
      * @return 需要的实例
      */
-    public <T> T getObj(Class<T> clazz, boolean isNeedAuthorization) {
+    public <T> T getObj(Class<T> clazz, boolean isNotProxy, boolean isNeedAuthorization) {
         log.info("开始注入对象: {}", clazz.getSimpleName());
         try {
             // 如果保存过这个类的局部实例，直接返回
@@ -133,23 +150,13 @@ public class IOCmanager {
             if (globalBeans.containsKey(clazz)) {
                 return (T) globalBeans.get(clazz);
             }
+            log.info("开始构造对象: {}", clazz.getSimpleName());
             Class<?> clazzInterface = null;
             // 如果是接口，获取实现类
-            log.info("开始构造对象: {}", clazz.getSimpleName());
             if (clazz.isInterface()) {
                 clazzInterface = clazz;
                 clazz = (Class<T>) Interface2Impl.get(clazz);
             }
-//            // 检查类型有没有被@RBACAuthorization(isNeedAuthorization = false)注解, 如果有，则该类型的构造方法的所有参数不需要权限验证
-//            // 用于解决循环依赖问题
-//            if (clazz.isAnnotationPresent(RBACAuthorization.class) || clazzInterface != null && clazzInterface.isAnnotationPresent(RBACAuthorization.class)) {
-//                if (clazz.isAnnotationPresent(RBACAuthorization.class) && !clazz.getAnnotation(RBACAuthorization.class).isNeedAuthorization()) {
-//                    isNeedAuthorization = false;
-//                }
-//                if (clazzInterface != null && clazzInterface.isAnnotationPresent(RBACAuthorization.class) && !clazzInterface.getAnnotation(RBACAuthorization.class).isNeedAuthorization()) {
-//                    isNeedAuthorization = false;
-//                }
-//            }
             // 默认注入参数最多的构造函数
             Constructor<?>[] constructors = clazz.getConstructors();
             Arrays.sort(constructors, Comparator.comparingInt(Constructor::getParameterCount));
@@ -162,32 +169,39 @@ public class IOCmanager {
             // 递归调用，直到所有的依赖都注入完成
             Object[] objects = new Object[parameters.length];
             for (int i = 0; i < parameters.length; i++) {
-                boolean isNeedAuthorization1 = isNeedAuthorization;
+                boolean isNotProxy1 = false;
+                boolean isNeedAuthorization1 = true;
                 // 如果参数有@RBACAuthorization注解，检查是否需要权限验证
                 // 解决循环依赖问题，可以使得某一些参数不需要权限验证版本的实例
-                if (parameters[i].isAnnotationPresent(RBACAuthorization.class)) {
-                    isNeedAuthorization1 = parameters[i].getAnnotation(RBACAuthorization.class).isNeedAuthorization();
+                if (parameters[i].isAnnotationPresent(Proxy.class)) {
+                    isNotProxy1 = parameters[i].getAnnotation(Proxy.class).isNotProxy();
+                    isNeedAuthorization1 = parameters[i].getAnnotation(Proxy.class).isNeedAuthorization();
                 }
-                objects[i] = getObj(parameters[i].getType(), isNeedAuthorization1);
+                objects[i] = getObj(parameters[i].getType(), isNotProxy1, isNeedAuthorization1);
             }
             // 用获得的参数，执行构造器，返回实例
             T obj = (T) clazz.getConstructors()[0].newInstance(objects);
-            // 如果需要权限验证，创建代理对象
-            if (isNeedAuthorization) {
-                // 如果对象或者接口有@RBACAuthorization注解，表示可以被代理
-                if (clazz.isAnnotationPresent(RBACAuthorization.class) || clazzInterface != null && clazzInterface.isAnnotationPresent(RBACAuthorization.class)) {
-                    log.info("创建代理对象: {}", clazz.getSimpleName());
-                    AuthorizationInvocationHandler handler = new AuthorizationInvocationHandler(obj, getObj(UserRoles.class, false), getObj(RBACService.class, false));
-                    return (T) Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), handler);
-                }
+            boolean isHasProxyAnnotation = clazz.isAnnotationPresent(Proxy.class) || clazzInterface != null && clazzInterface.isAnnotationPresent(Proxy.class);
+
+            if (isNotProxy || !isHasProxyAnnotation) {
+                // 如果禁用代理或者没有设置@Proxy注解，直接返回实例
+                return obj;
+            } else {
+                // 否则创建代理对象
+                log.info("创建代理对象: {}", clazz.getSimpleName());
+                ProxyInvocationHandler handler = new ProxyInvocationHandler(obj,
+                        getObj(UserRoles.class, true, false),
+                        getObj(RBACService.class, true, false),
+                        getObj(Session.class, true, false),
+                        isNeedAuthorization);
+                return (T) java.lang.reflect.Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), handler);
             }
-            log.info("注入对象完成: {}", clazz.getSimpleName());
-            return obj;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         } finally {
             // 记录这个类的实例数量
             beanCount.put(clazz, beanCount.getOrDefault(clazz, 0) + 1);
+            log.info("注入对象完成: {}", clazz.getSimpleName());
         }
     }
 
@@ -201,11 +215,11 @@ public class IOCmanager {
             return;
         }
         // 如果是动态代理对象，获取目标对象
-        if (Proxy.isProxyClass(obj.getClass())) {
+        if (java.lang.reflect.Proxy.isProxyClass(obj.getClass())) {
             try {
-                Field field = Proxy.getInvocationHandler(obj).getClass().getDeclaredField("target");
+                Field field = java.lang.reflect.Proxy.getInvocationHandler(obj).getClass().getDeclaredField("target");
                 field.setAccessible(true);
-                obj = field.get(Proxy.getInvocationHandler(obj));
+                obj = field.get(java.lang.reflect.Proxy.getInvocationHandler(obj));
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
@@ -274,7 +288,7 @@ public class IOCmanager {
      */
     public <T> T createObj(String fullClassName) throws ClassNotFoundException {
         Class<?> clazz = Class.forName(fullClassName);
-        return getObj((Class<T>) clazz, true);
+        return getObj((Class<T>) clazz, false);
     }
 
     /**

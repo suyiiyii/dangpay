@@ -24,6 +24,29 @@ public class TransactionService {
         this.configManger = configManger;
     }
 
+    private String createIdentity(int WalletId, boolean isSpecifiedAmount, int amount, String type, String description) {
+        TransactionIdentity transactionIdentity = new TransactionIdentity();
+        transactionIdentity.setIdentity("i" + UUID.randomUUID().toString().replace("-", ""));
+        transactionIdentity.setWalletId(WalletId);
+        if (isSpecifiedAmount) {
+            transactionIdentity.setIsSpecifiedAmount(1);
+            transactionIdentity.setSpecifiedAmount(amount);
+        } else {
+            transactionIdentity.setIsSpecifiedAmount(0);
+        }
+        transactionIdentity.setType(type);
+        transactionIdentity.setDescription(description);
+        transactionIdentity.setStatus("active");
+        transactionIdentity.setCreatedAt(UniversalUtils.getNow());
+        transactionIdentity.setUpdatedAt(UniversalUtils.getNow());
+        db.insert(transactionIdentity, true);
+        return transactionIdentity.getIdentity();
+    }
+
+    public String createMoneyReceiveIdentity(int WalletId, boolean isSpecifiedAmount, int amount, String description) {
+        return createIdentity(WalletId, isSpecifiedAmount, amount, "money_receive", description);
+    }
+
     /**
      * 生成交易
      *

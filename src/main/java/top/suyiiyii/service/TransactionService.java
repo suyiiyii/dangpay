@@ -1,6 +1,7 @@
 package top.suyiiyii.service;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -17,6 +18,7 @@ import top.suyiiyii.su.orm.core.Session;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+@Slf4j
 public class TransactionService {
     Session db;
     RBACService rbacService;
@@ -121,6 +123,7 @@ public class TransactionService {
                 String responseBody = response.body().string();
                 // 解析响应体
                 requestTransactionResponse = UniversalUtils.json2Obj(responseBody, TransactionService.requestTransactionResponse.class);
+                log.debug("请求第三方接口成功，返回信息：" + requestTransactionResponse);
                 // 储存交易信息
                 transactionDao.createReceivedCode(requestTransactionResponse.exractCode(), requestTransactionResponse);
             } else {

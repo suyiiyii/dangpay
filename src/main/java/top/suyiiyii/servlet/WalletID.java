@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.Transaction;
 import top.suyiiyii.models.Wallet;
@@ -16,6 +17,7 @@ import top.suyiiyii.su.servlet.IngressServlet;
 
 import java.util.List;
 
+@Slf4j
 public class WalletID {
     private final GroupService groupService;
     private final UserRoles userRoles;
@@ -55,6 +57,7 @@ public class WalletID {
 
     public TransactionService.ScanQRCodeResponse doPostScanQRCode(HttpServletRequest req, HttpServletResponse resp) {
         ScanQRCodeRequest scanQRCodeRequest = WebUtils.readRequestBody2Obj(req, ScanQRCodeRequest.class);
+        log.debug("收到扫码请求，钱包ID：" + subMethod.getId() + "，回调地址：" + scanQRCodeRequest.getCallbackUrl() + "，开始扫码");
         return transactionService.scanQRCode(subMethod.getId(), scanQRCodeRequest.getCallbackUrl());
     }
 

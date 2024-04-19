@@ -229,7 +229,7 @@ public class IOCmanager {
         if (beanCount.getOrDefault(obj.getClass(), 0) < 1 && !force) {
             return;
         }
-        log.info("开始销毁对象: {}", obj.getClass().getSimpleName());
+//        log.info("开始销毁对象: {}", obj.getClass().getSimpleName());
         try {
             // 循环销毁字段
             for (var field : obj.getClass().getDeclaredFields()) {
@@ -258,7 +258,7 @@ public class IOCmanager {
             } catch (NoSuchMethodException e) {
                 // 没有destroy方法，跳过
             }
-            log.info("销毁对象完成: {}", obj.getClass().getSimpleName());
+//            log.info("销毁对象完成: {}", obj.getClass().getSimpleName());
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         } finally {

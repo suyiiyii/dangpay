@@ -129,9 +129,11 @@ sequenceDiagram
 
 ## Api
 
-### GET /requestTransaction?key=xxx
+### Post /requestTransaction?identity=xxx
 
 请求交易，返回当前接口的状态和回调地址
+
+key 是二维码的标识，应该是唯一且随机的
 
 #### Response
 
@@ -152,12 +154,15 @@ sequenceDiagram
 ```json
 {
   "status": "success",
-  "Platform": "string",
+  "message": "success",
+  "platform": "string",
   "callback": "/startTransaction?code=xxx",
   "isSpecifiedAmount": true,
-  "sepecifiedAmount": 100
+  "specifiedAmount": 100
 }
 ```
+
+code 是表示交易对象的标识，应该是在收到对方的交易请求后生成的，应该是系统临时生成且具有有效期的
 
 ##### error
 
@@ -168,7 +173,7 @@ sequenceDiagram
 }
 ```
 
-### POST /startTransaction?code=xxx
+### Post /startTransaction?code=xxx
 
 开始交易，表示希望转给对方的金额，正数为支付，负数为收款（主体为请求方）
 
@@ -194,12 +199,12 @@ sequenceDiagram
 }
 ```
 
-##### error
+##### error（code不存在或已过期）
 
 ```json
 {
   "status": "error",
-  "message": "error message"
+  "message": "code不存在或已过期"
 }
 ```
 

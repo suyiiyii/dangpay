@@ -49,5 +49,10 @@ public class ConfigManger {
             return value;
         });
     }
+
+
+    public int getInt(String key) {
+        return Integer.parseInt(get(key));
+    }
 }
 

@@ -2,6 +2,7 @@ package top.suyiiyii.models;
 
 import lombok.Data;
 import top.suyiiyii.su.orm.annotation.ColumnSetting;
+import top.suyiiyii.su.orm.annotation.TableRegister;
 
 /**
  * 交易记录表
@@ -9,6 +10,7 @@ import top.suyiiyii.su.orm.annotation.ColumnSetting;
  * 交易记录不可修改，删除
  */
 @Data
+@TableRegister("transaction")
 public class Transaction {
     @ColumnSetting(isPrimaryKey = true, isAutoIncrement = true)
     int id;

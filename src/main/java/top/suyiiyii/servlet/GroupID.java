@@ -132,10 +132,24 @@ public class GroupID {
         return true;
     }
 
+    public boolean doPostAllocate(HttpServletRequest req, HttpServletResponse resp) {
+        AllocateDto allocateDto = WebUtils.readRequestBody2Obj(req, AllocateDto.class);
+        walletService.allocateGroupWallet(subMethod.getId(), allocateDto.id, allocateDto.amount);
+        return true;
+    }
+
     @Data
     public static class UserRequest {
         @Regex("[0-9]+")
         private int uid;
+    }
+
+    @Data
+    public static class AllocateDto {
+        @Regex("[0-9]+")
+        private int id;
+        @Regex("[0-9]+")
+        private int amount;
     }
 
 

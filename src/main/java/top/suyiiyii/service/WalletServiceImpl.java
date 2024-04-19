@@ -70,11 +70,11 @@ public class WalletServiceImpl implements WalletService {
         wallet.setLastUpdate(UniversalUtils.getNow());
         wallet.setIsSubWallet(0);
         wallet.setFatherWalletId(0);
-        db.insert(wallet);
+        int id = db.insert(wallet, true);
         // 给群组管理员分配钱包权限
         List<Integer> admins = rbacService.getUserByRole("GroupAdmin/g" + gid);
         for (int uid : admins) {
-            rbacService.addUserRole(uid, "WalletAdmin/w" + wallet.getId());
+            rbacService.addUserRole(uid, "WalletAdmin/w" + id);
         }
     }
 
@@ -109,15 +109,14 @@ public class WalletServiceImpl implements WalletService {
         wallet.setLastUpdate(UniversalUtils.getNow());
         wallet.setIsSubWallet(1);
         wallet.setFatherWalletId(fatherWalletId);
-        db.insert(wallet);
+        int id = db.insert(wallet);
         // 给子账户拥有者分配钱包权限
-        rbacService.addUserRole(uid, "WalletAdmin/w" + wallet.getId());
+        rbacService.addUserRole(uid, "WalletAdmin/w" + id);
         return wallet;
     }
 
     /**
      * 创建群组的子钱包
-     *
      */
     @Override
     @Proxy(isTransaction = true)
@@ -141,9 +140,14 @@ public class WalletServiceImpl implements WalletService {
         wallet.setLastUpdate(UniversalUtils.getNow());
         wallet.setIsSubWallet(1);
         wallet.setFatherWalletId(groupWallet.getId());
-        db.insert(wallet);
+        int id = db.insert(wallet, true);
         // 给子账户拥有者分配钱包权限
-        rbacService.addUserRole(uid, "WalletAdmin/w" + wallet.getId());
+        rbacService.addUserRole(uid, "WalletAdmin/w" + id);
+    }
+
+    @Override
+    public Wallet getWallet(@SubRegion(areaPrefix = "w") int id) {
+        return db.query(Wallet.class).eq("id", id).first();
     }
 
     @Override
@@ -169,16 +173,16 @@ public class WalletServiceImpl implements WalletService {
     /**
      * 将父钱包里面的钱分配到子钱包
      *
-     * @param fatherAccountId 父账户id
-     * @param subAccountId    子账户id
-     * @param amount          金额
+     * @param fatherWalletId 父账户id
+     * @param subWalletId    子账户id
+     * @param amount         金额
      */
     @Override
     @Proxy(isTransaction = true)
-    public void allocate(@SubRegion(areaPrefix = "w") int fatherAccountId, int subAccountId, int amount) {
+    public void allocate(@SubRegion(areaPrefix = "w") int fatherWalletId, int subWalletId, int amount) {
         // 检查父子账户关系
-        Wallet fatherWallet = db.query(Wallet.class).eq("id", fatherAccountId).first();
-        Wallet subWallet = db.query(Wallet.class).eq("id", subAccountId).first();
+        Wallet fatherWallet = db.query(Wallet.class).eq("id", fatherWalletId).first();
+        Wallet subWallet = db.query(Wallet.class).eq("id", subWalletId).first();
         if (fatherWallet.getId() != subWallet.getFatherWalletId()) {
             throw new IllegalArgumentException("父子账户关系错误");
         }
@@ -190,9 +194,9 @@ public class WalletServiceImpl implements WalletService {
         fatherWallet.setAmount(fatherWallet.getAmount() - amount);
         fatherWallet.setAmountInFrozen(fatherWallet.getAmountInFrozen() + amount);
         subWallet.setAmount(subWallet.getAmount() + amount);
-        // 记录交易
+        // 记录交易（父钱包付款）
         String platform = configManger.get("PLATFORM_NAME");
-        String description = "父账户" + fatherAccountId + "向子账户" + subAccountId + "转账" + amount + "元";
+        String description = "父账户" + fatherWalletId + "向子账户" + subWalletId + "转账" + amount + "元";
         Transaction transaction = new Transaction();
         transaction.setAmount(amount);
         transaction.setType("allocate");
@@ -201,6 +205,33 @@ public class WalletServiceImpl implements WalletService {
         transaction.setLastUpdate(UniversalUtils.getNow());
         transaction.setPlatform(platform);
         transaction.setDescription(description);
+        transaction.setWalletId(fatherWalletId);
+        db.insert(transaction);
+        // 记录交易（子钱包收款）
+        transaction.setWalletId(subWalletId);
+        transaction.setAmount(-amount);
+        db.insert(transaction);
+    }
+
+    /**
+     * 将群组钱包的钱分配到子账户
+     */
+
+    @Override
+    @Proxy(isTransaction = true)
+    public void allocateGroupWallet(@SubRegion(areaPrefix = "g") int gid, int subWalletId, int amount) {
+        // 获取群组的主账户id
+        Wallet groupWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+        if (groupWallet == null) {
+            throw new IllegalArgumentException("群组钱包不存在");
+        }
+        allocate(groupWallet.getId(), subWalletId, amount);
+    }
+
+
+    @Override
+    public List<Transaction> getWalletTransactions(@SubRegion(areaPrefix = "w") int wid) {
+        return db.query(Transaction.class).eq("wallet_id", wid).all();
     }
 
 }

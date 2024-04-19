@@ -196,26 +196,22 @@ public class GroupServiceImpl implements GroupService {
     }
 
     /**
-     * 删除一个群组成员
+     * 用户主动加入群组
+     * 只能加入设置为公开并且未被封禁的群组
      *
      * @param gid 群组id
      * @param uid 用户id
      */
     @Override
     public void joinGroup(@SubRegion(areaPrefix = "g") int gid, int uid) {
-        try {
-            rbacService.addUserRole(uid, "GroupMember/g" + gid);
-        } catch (Exception e) {
-            db.rollbackTransaction();
-            throw e;
-        }
+        rbacService.addUserRole(uid, "GroupMember/g" + gid);
     }
 
     /**
      * 用户自己主动退出群组
      *
-     * @param gid
-     * @param uid
+     * @param gid 群组id
+     * @param uid 用户id
      */
     @Override
     public void leaveGroup(@SubRegion(areaPrefix = "g") int gid, int uid) {
@@ -283,21 +279,22 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void inviteUser(@SubRegion(areaPrefix = "g") int gid, int uid) {
-        // 判断用户存不存在
-        if (!db.query(User.class).eq("id", uid).exists()) {
-            throw new Http_400_BadRequestException("用户不存在");
-        }
-        // 拉人
         rbacService.addUserRole(uid, "GroupMember/g" + gid);
     }
 
+    /**
+     * 添加群组管理员
+     * 成为管理员之前必须是群组成员
+     *
+     * @param gid 群组id
+     * @param uid 用户id
+     */
     @Override
     public void addAdmin(@SubRegion(areaPrefix = "g") int gid, int uid) {
-        // 判断用户存不存在
-        if (!db.query(User.class).eq("id", uid).exists()) {
-            throw new Http_400_BadRequestException("用户不存在");
+        // 判断是不是群组成员
+        if (!rbacService.checkUserRole(uid, "GroupMember/g" + gid)) {
+            throw new Http_400_BadRequestException("用户不是群组成员");
         }
-        // 拉人
         rbacService.addUserRole(uid, "GroupAdmin/g" + gid);
     }
 

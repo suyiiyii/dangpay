@@ -17,6 +17,10 @@ public interface RBACService {
 
     boolean checkUserPermission(UserRoles userRoles, String permission);
 
+    boolean checkUserRole(UserRoles userRoles, String role);
+
+    boolean checkUserRole(int uid, String role);
+
     void addRolePermission(String role, String permission);
 
     void deleteRolePermission(String role, String permission);
@@ -30,5 +34,6 @@ public interface RBACService {
     boolean isAdmin(List<String> roles);
 
     List<Integer> getUserByRole(String role);
+
 }
 

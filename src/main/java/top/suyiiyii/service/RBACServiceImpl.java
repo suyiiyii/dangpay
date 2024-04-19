@@ -107,6 +107,18 @@ public class RBACServiceImpl implements RBACService {
     }
 
     @Override
+    public boolean checkUserRole(UserRoles userRoles, String role) {
+        List<String> roles = userRoles.getRoles();
+        return roles.contains(role);
+    }
+
+    @Override
+    public boolean checkUserRole(int uid, String role) {
+        List<String> roles = getRoles(uid);
+        return roles.contains(role);
+    }
+
+    @Override
     public void addRolePermission(String role, String permission) {
         // 检查待添加的角色权限是否存在
         if (db.query(RBACRole.class).eq("role", role).eq("permission", permission).exists()) {
@@ -123,11 +135,23 @@ public class RBACServiceImpl implements RBACService {
         db.delete(RBACRole.class).eq("role", role).eq("permission", permission).execute();
     }
 
+    /**
+     * 给用户添加角色
+     * 会判断用户是否存在，角色是否存在
+     * 若无法执行操作将抛异常
+     *
+     * @param uid  用户id
+     * @param role 角色
+     */
     @Override
     public void addUserRole(int uid, String role) {
+        // 判断用户是否存在
+        if (!db.query(RBACUser.class).eq("uid", uid).exists()) {
+            throw new IllegalArgumentException("用户不存在");
+        }
         // 检查待添加的用户角色是否存在
         if (db.query(RBACUser.class).eq("uid", uid).eq("role", role).exists()) {
-            return;
+            throw new IllegalArgumentException("用户已有该角色");
         }
         RBACUser rbacUser = new RBACUser();
         rbacUser.setUid(uid);

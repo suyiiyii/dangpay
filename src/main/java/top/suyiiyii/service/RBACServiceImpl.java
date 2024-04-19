@@ -66,10 +66,14 @@ public class RBACServiceImpl implements RBACService {
         }
         // 如果权限是带分区的，需要带有同样分区的角色才能通过
         if (permission.contains("/")) {
-            String subRegion = permission.split("/")[1];
-            String[] splits = role.split("/");
-            if (splits.length < 2 || !splits[1].equals(subRegion)) {
-                return false;
+            // admin不用考虑分区
+            if (!"admin".equals(role)) {
+                // 如果角色不带分区，直接返回false
+                String subRegion = permission.split("/")[1];
+                String[] splits = role.split("/");
+                if (splits.length < 2 || !splits[1].equals(subRegion)) {
+                    return false;
+                }
             }
             // RBACRole 存的是不带分区的权限，所以需要去掉分区
             permission = permission.split("/")[0];

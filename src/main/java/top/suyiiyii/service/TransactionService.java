@@ -127,7 +127,7 @@ public class TransactionService {
                 // 储存交易信息
                 transactionDao.createReceivedCode(requestTransactionResponse.exractCode(), requestTransactionResponse);
             } else {
-                throw new Http_400_BadRequestException("请求第三方接口失败");
+                throw new Http_400_BadRequestException("请求第三方接口失败，网络错误");
             }
         } catch (Exception e) {
             throw new Http_400_BadRequestException("请求第三方接口失败");

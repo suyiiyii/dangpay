@@ -46,10 +46,16 @@ public class ContextInitializer implements ServletContextListener {
         IOCmanager.implScan("top.suyiiyii.service");
         // redis
         Config config = new Config();
-        config.useSingleServer()
-                .setAddress(configManger.get("REDIS_URL"))
-                .setPassword(configManger.get("REDIS_PASSWORD"));
+        if (configManger.get("REDIS_PASSWORD").isEmpty()) {
+            config.useSingleServer()
+                    .setAddress(configManger.get("REDIS_URL"));
+        } else {
+            config.useSingleServer()
+                    .setAddress(configManger.get("REDIS_URL"))
+                    .setPassword(configManger.get("REDIS_PASSWORD"));
+        }
         log.error("REDIS_URL: {}", configManger.get("REDIS_URL"));
+        log.error("REDIS_PASSWORD: {}", configManger.get("REDIS_PASSWORD"));
         RedissonClient redisson = Redisson.create(config);
         IOCmanager.registerGlobalBean(redisson);
 

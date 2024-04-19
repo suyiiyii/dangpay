@@ -49,6 +49,7 @@ public class ContextInitializer implements ServletContextListener {
         config.useSingleServer()
                 .setAddress(configManger.get("REDIS_URL"))
                 .setPassword(configManger.get("REDIS_PASSWORD"));
+        log.error("REDIS_URL: {}", configManger.get("REDIS_URL"));
         RedissonClient redisson = Redisson.create(config);
         IOCmanager.registerGlobalBean(redisson);
 

@@ -283,26 +283,22 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void inviteUser(@SubRegion(areaPrefix = "g") int gid, int uid) {
-        try {
-            db.beginTransaction();
-            rbacService.addUserRole(uid, "GroupMember/g" + gid);
-            db.commitTransaction();
-        } catch (Exception e) {
-            db.rollbackTransaction();
-            throw e;
+        // 判断用户存不存在
+        if (!db.query(User.class).eq("id", uid).exists()) {
+            throw new Http_400_BadRequestException("用户不存在");
         }
+        // 拉人
+        rbacService.addUserRole(uid, "GroupMember/g" + gid);
     }
 
     @Override
     public void addAdmin(@SubRegion(areaPrefix = "g") int gid, int uid) {
-        try {
-            db.beginTransaction();
-            rbacService.addUserRole(uid, "GroupAdmin/g" + gid);
-            db.commitTransaction();
-        } catch (Exception e) {
-            db.rollbackTransaction();
-            throw e;
+        // 判断用户存不存在
+        if (!db.query(User.class).eq("id", uid).exists()) {
+            throw new Http_400_BadRequestException("用户不存在");
         }
+        // 拉人
+        rbacService.addUserRole(uid, "GroupAdmin/g" + gid);
     }
 
 

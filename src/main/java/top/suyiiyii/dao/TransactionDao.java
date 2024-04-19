@@ -1,6 +1,8 @@
 package top.suyiiyii.dao;
 
 
+import top.suyiiyii.service.TransactionService;
+
 /**
  * 平台向第三方平台发起交易请求，会返回一个code，下次发送请求时需要携带这个code
  * 同时code有过期时间，过期后无法使用
@@ -10,5 +12,12 @@ package top.suyiiyii.dao;
 public class TransactionDao {
     //TODO
 
+    public void createSendedCode(String code, TransactionService.requestTransactionResponse response) {
+        //TODO
+    }
+
+    public void createReceivedCode(String code, TransactionService.requestTransactionResponse response) {
+        //TODO
+    }
 
 }

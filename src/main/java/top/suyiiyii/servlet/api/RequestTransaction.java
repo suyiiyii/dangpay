@@ -25,7 +25,7 @@ public class RequestTransaction {
         response.callback = configManger.get("BASE_URL") + "/api/transaction/verify?code=" + code;
         response.isSpecifiedAmount = false;
         response.setExpiredAt(-1);
-        //TODO
+        //TODO 过期时间需要设置
         return response;
     }
 

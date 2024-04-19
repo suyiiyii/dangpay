@@ -53,6 +53,16 @@ public class WalletID {
         return configManger.get("BASE_URL") + "/api/requestTransaction?identity=" + identity;
     }
 
+    public TransactionService.ScanQRCodeResponse doPostScanQRCode(HttpServletRequest req, HttpServletResponse resp) {
+        ScanQRCodeRequest scanQRCodeRequest = WebUtils.readRequestBody2Obj(req, ScanQRCodeRequest.class);
+        return transactionService.scanQRCode(subMethod.getId(), scanQRCodeRequest.getCallbackUrl());
+    }
+
+    @Data
+    public static class ScanQRCodeRequest {
+        String callbackUrl;
+    }
+
     @Data
     public static class createIdentityDto {
         //这个错误是由于在尝试将JSON数据映射到createIdentityDto类时，Jackson找不到名为isSpecifiedAmount的属性。在Java中，布尔类型的getter方法通常以is开头，而setter方法则没有is。因此，Jackson期望找到的属性名是specifiedAmount，而不是isSpecifiedAmount。

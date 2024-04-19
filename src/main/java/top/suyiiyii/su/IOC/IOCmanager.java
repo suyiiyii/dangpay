@@ -140,7 +140,7 @@ public class IOCmanager {
      * @return 需要的实例
      */
     public <T> T getObj(Class<T> clazz, boolean isNotProxy, boolean isNeedAuthorization) {
-        log.info("开始注入对象: {}", clazz.getSimpleName());
+//        log.info("开始注入对象: {}", clazz.getSimpleName());
         try {
             // 如果保存过这个类的局部实例，直接返回
             if (localBeans.containsKey(clazz)) {
@@ -188,7 +188,7 @@ public class IOCmanager {
                 return obj;
             } else {
                 // 否则创建代理对象
-                log.info("创建代理对象: {}", clazz.getSimpleName());
+//                log.info("创建代理对象: {}", clazz.getSimpleName());
                 ProxyInvocationHandler handler = new ProxyInvocationHandler(obj,
                         getObj(UserRoles.class, true, false),
                         getObj(RBACService.class, true, false),
@@ -201,7 +201,7 @@ public class IOCmanager {
         } finally {
             // 记录这个类的实例数量
             beanCount.put(clazz, beanCount.getOrDefault(clazz, 0) + 1);
-            log.info("注入对象完成: {}", clazz.getSimpleName());
+//            log.info("注入对象完成: {}", clazz.getSimpleName());
         }
     }
 

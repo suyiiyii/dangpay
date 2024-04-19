@@ -2,8 +2,13 @@ package top.suyiiyii.su;
 
 import top.suyiiyii.models.User;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Map;
 import java.util.stream.Collector;
 
@@ -208,4 +213,59 @@ public class UniversalUtils {
         return capitalizedFirstChar + str.substring(1);
     }
 
+    /**
+     * AES加密
+     * 把字符串加密成base64编码的字符串
+     */
+    public static String encrypt(String content, String secretKey) {
+        try {
+            // 把密钥转换成16字节的字节数组
+            byte[] key = new byte[16];
+            byte[] secretKeyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+            System.arraycopy(secretKeyBytes, 0, key, 0, Math.min(secretKeyBytes.length, 16));
+            // 创建一个AESKeySpec对象
+            SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+
+            // 创建一个全0的初始化向量
+            IvParameterSpec ivSpec = new IvParameterSpec(new byte[16]);
+
+            // 创建一个Cipher对象并初始化它，设置为加密模式
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+
+            // 加密数据
+            byte[] encrypted = cipher.doFinal(content.getBytes(StandardCharsets.UTF_8));
+
+            // 返回Base64编码的加密数据
+            return Base64.getEncoder().encodeToString(encrypted);
+        } catch (Exception e) {
+            throw new RuntimeException("Encryption error", e);
+        }
+    }
+
+    /**
+     * AES解密
+     * 把base64编码的字符串解密成原始字符串
+     */
+    public static String decrypt(String base64Content, String secretKey) {
+        try {
+            // 创建一个AESKeySpec对象
+            SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), "AES");
+
+            // 创建一个全0的初始化向量
+            IvParameterSpec ivSpec = new IvParameterSpec(new byte[16]);
+
+            // 创建一个Cipher对象并初始化它，设置为解密模式
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
+
+            // 解密数据
+            byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(base64Content));
+
+            // 返回解密后的数据
+            return new String(decrypted, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException("Decryption error", e);
+        }
+    }
 }

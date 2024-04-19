@@ -24,7 +24,8 @@ public class RequestTransaction {
         response.platform = configManger.get("PLATFORM_NAME");
         response.callback = configManger.get("BASE_URL") + "/api/transaction/verify?code=" + code;
         response.isSpecifiedAmount = false;
-        response.setExpiredAt();
+        response.setExpiredAt(-1);
+        //TODO
         return response;
     }
 

@@ -91,34 +91,34 @@ public class TransactionService {
      * 7. 如果支付失败，设置transaction为fail，解冻用户资金
      * 8. 将交易信息返回给用户
      */
-
-    public ScanQRCodeResponse scanQRCode(String callbackUrl) {
-        // 请求第三方接口，获取交易信息
-        // 创建transaction，设置为pending状态，并返回给用户
-        OkHttpClient client = new OkHttpClient();
-        // 创建请求
-        Request request = new Request.Builder()
-                .url(callbackUrl)
-                .build();
-        // 发送请求
-        try {
-            okhttp3.Response response = client.newCall(request).execute();
-            if (response.isSuccessful()) {
-                // 获取响应体
-                String responseBody = response.body().string();
-                // 解析响应体
-                requestTransactionResponse requestTransactionResponse = UniversalUtils.json2Obj(responseBody, requestTransactionResponse.class);
-            } else {
-                throw new Http_400_BadRequestException("请求第三方接口失败");
-            }
-        } catch (Exception e) {
-            throw new Http_400_BadRequestException("请求第三方接口失败");
-        }
-        // 创建transaction，设置为pending状态，并返回给用户
-        Transaction transaction = new Transaction();
-
-
-    }
+    //TODO
+//    public ScanQRCodeResponse scanQRCode(String callbackUrl) {
+//        // 请求第三方接口，获取交易信息
+//        // 创建transaction，设置为pending状态，并返回给用户
+//        OkHttpClient client = new OkHttpClient();
+//        // 创建请求
+//        Request request = new Request.Builder()
+//                .url(callbackUrl)
+//                .build();
+//        // 发送请求
+//        try {
+//            okhttp3.Response response = client.newCall(request).execute();
+//            if (response.isSuccessful()) {
+//                // 获取响应体
+//                String responseBody = response.body().string();
+//                // 解析响应体
+//                requestTransactionResponse requestTransactionResponse = UniversalUtils.json2Obj(responseBody, requestTransactionResponse.class);
+//            } else {
+//                throw new Http_400_BadRequestException("请求第三方接口失败");
+//            }
+//        } catch (Exception e) {
+//            throw new Http_400_BadRequestException("请求第三方接口失败");
+//        }
+//        // 创建transaction，设置为pending状态，并返回给用户
+//        Transaction transaction = new Transaction();
+//
+//
+//    }
 
     @Data
     public static class requestTransactionResponse {

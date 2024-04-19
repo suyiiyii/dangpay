@@ -5,6 +5,9 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.IOC.IOCmanager;
 import top.suyiiyii.su.orm.core.ModelManger;
@@ -41,6 +44,14 @@ public class ContextInitializer implements ServletContextListener {
         IOCmanager.registerGlobalBean(modelManger);
         IOCmanager.registerGlobalBean(configManger);
         IOCmanager.implScan("top.suyiiyii.service");
+        // redis
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress(configManger.get("REDIS_URL"))
+                .setPassword(configManger.get("REDIS_PASSWORD"));
+        RedissonClient redisson = Redisson.create(config);
+        IOCmanager.registerGlobalBean(redisson);
+
         log.info("依赖注入完成");
     }
 }

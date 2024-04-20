@@ -27,7 +27,7 @@ public class ContextInitializer implements ServletContextListener {
     public void contextInitialized(ServletContextEvent sce) {
         log.info("初始化依赖注入");
 
-        ConfigManger configManger = new ConfigManger("application.properties");
+        ConfigManger configManger = new ConfigManger("application.yaml");
         String url = configManger.get("JDBC_URL");
         String user = configManger.get("JDBC_USER");
         String password = configManger.get("JDBC_PASSWORD");

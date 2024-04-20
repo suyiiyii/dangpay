@@ -1,6 +1,8 @@
 package top.suyiiyii.su;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.su.exception.ConfigNotFoundException;
 
@@ -26,12 +28,20 @@ public class ConfigManger {
         // 读取配置文件
         try {
             log.info("尝试读取配置文件 " + propertiesPath);
-            InputStream in = ConfigManger.class.getClassLoader().getResourceAsStream(propertiesPath);
-            java.util.Properties properties = new java.util.Properties();
-            properties.load(in);
-            for (String key : properties.stringPropertyNames()) {
-                config.put(key, properties.getProperty(key));
+            if (propertiesPath.contains(".properties")) {
+                InputStream in = ConfigManger.class.getClassLoader().getResourceAsStream(propertiesPath);
+                java.util.Properties properties = new java.util.Properties();
+                properties.load(in);
+                for (String key : properties.stringPropertyNames()) {
+                    config.put(key, properties.getProperty(key));
+                }
+            } else if (propertiesPath.contains(".yml") || propertiesPath.contains(".yaml")) {
+                InputStream in = ConfigManger.class.getClassLoader().getResourceAsStream(propertiesPath);
+                ObjectMapper mapper = new YAMLMapper();
+                Map<String, String> map = mapper.readValue(in, Map.class);
+                config.putAll(map);
             }
+
             log.info("读取配置文件成功，一共 " + config.size() + " 条配置");
         } catch (Exception e) {
             log.info("读取配置文件失败，将会从环境变量读取配置 " + e);

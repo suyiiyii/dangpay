@@ -14,6 +14,7 @@ import top.suyiiyii.service.WalletService;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.WebUtils;
 import top.suyiiyii.su.servlet.IngressServlet;
+import top.suyiiyii.su.validator.Regex;
 
 import java.util.List;
 
@@ -52,7 +53,9 @@ public class WalletID {
     public String doPostCreateReceiveIdentity(HttpServletRequest req, HttpServletResponse resp) {
         createIdentityDto dto = WebUtils.readRequestBody2Obj(req, createIdentityDto.class);
         String identity = transactionService.createMoneyReceiveIdentity(subMethod.getId(), dto.isSpecifiedAmount, dto.amount, dto.description);
-        return configManger.get("BASE_URL") + "/api/requestTransaction?identity=" + identity;
+        String callbackUrl = configManger.get("BASE_URL") + "/api/requestTransaction?identity=" + identity;
+        log.debug("创建收款标识，钱包ID：" + subMethod.getId() + "，回调地址：" + callbackUrl);
+        return callbackUrl;
     }
 
     public TransactionService.ScanQRCodeResponse doPostScanQRCode(HttpServletRequest req, HttpServletResponse resp) {
@@ -63,6 +66,7 @@ public class WalletID {
 
     @Data
     public static class ScanQRCodeRequest {
+        @Regex("https?://.*api/requestTransaction\\?identity=.*")
         String callbackUrl;
     }
 

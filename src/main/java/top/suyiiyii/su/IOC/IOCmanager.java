@@ -150,7 +150,7 @@ public class IOCmanager {
             if (globalBeans.containsKey(clazz)) {
                 return (T) globalBeans.get(clazz);
             }
-            log.info("开始构造对象: {}", clazz.getSimpleName());
+//            log.info("开始构造对象: {}", clazz.getSimpleName());
             Class<?> clazzInterface = null;
             // 如果是接口，获取实现类
             if (clazz.isInterface()) {

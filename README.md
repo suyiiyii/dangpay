@@ -136,7 +136,7 @@ sequenceDiagram
 请求交易，返回当前接口的状态和回调地址
 
 key 是二维码的标识，应该是唯一且随机的
-
+//TODO 需要使用签名算法验证平台
 #### Response
 
 ##### success(未指定金额)

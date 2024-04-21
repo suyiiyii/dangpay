@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.service.TransactionService;
-import top.suyiiyii.service.TransactionServiceImpl;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.WebUtils;
@@ -22,10 +21,10 @@ public class StartTransaction {
         this.configManger = configManger;
     }
 
-    public TransactionServiceImpl.StartTransactionResponse doPost(HttpServletRequest req, HttpServletResponse resp) {
+    public TransactionService.StartTransactionResponse doPost(HttpServletRequest req, HttpServletResponse resp) {
         // 读取请求体
         String requestBody = WebUtils.readRequestBody(req);
-        TransactionServiceImpl.StartTransactionRequest request = UniversalUtils.json2Obj(requestBody, TransactionServiceImpl.StartTransactionRequest.class);
+        TransactionService.StartTransactionRequest request = UniversalUtils.json2Obj(requestBody, TransactionService.StartTransactionRequest.class);
         String sign = req.getHeader("X-Signature");
         // 验证签名
         if (!UniversalUtils.verify(requestBody, sign, request.getPlatform(), configManger)) {
@@ -34,7 +33,7 @@ public class StartTransaction {
         }
 
         String identity = req.getParameter("code");
-        TransactionServiceImpl.StartTransactionResponse response = transactionService.startTransaction(identity, request);
+        TransactionService.StartTransactionResponse response = transactionService.startTransaction(identity, request);
 
         // 添加签名
         String responseBody = UniversalUtils.obj2Json(response);

@@ -10,7 +10,6 @@ import top.suyiiyii.models.Transaction;
 import top.suyiiyii.models.Wallet;
 import top.suyiiyii.service.GroupService;
 import top.suyiiyii.service.TransactionService;
-import top.suyiiyii.service.TransactionServiceImpl;
 import top.suyiiyii.service.WalletService;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.WebUtils;
@@ -66,14 +65,14 @@ public class WalletID {
         return callbackUrl;
     }
 
-    public TransactionServiceImpl.ScanQRCodeResponse doPostScanQRCode(HttpServletRequest req, HttpServletResponse resp) {
+    public TransactionService.ScanQRCodeResponse doPostScanQRCode(HttpServletRequest req, HttpServletResponse resp) {
         ScanQRCodeRequest scanQRCodeRequest = WebUtils.readRequestBody2Obj(req, ScanQRCodeRequest.class);
         log.debug("收到扫码请求，钱包ID：" + subMethod.getId() + "，回调地址：" + scanQRCodeRequest.getCallbackUrl() + "，开始扫码");
         return transactionService.scanQRCode(subMethod.getId(), scanQRCodeRequest.getCallbackUrl());
     }
 
-    public TransactionServiceImpl.UserPayResponse doPostPay(HttpServletRequest req, HttpServletResponse resp) {
-        TransactionServiceImpl.UserPayRequest userPayRequest = WebUtils.readRequestBody2Obj(req, TransactionServiceImpl.UserPayRequest.class);
+    public TransactionService.UserPayResponse doPostPay(HttpServletRequest req, HttpServletResponse resp) {
+        TransactionService.UserPayRequest userPayRequest = WebUtils.readRequestBody2Obj(req, TransactionService.UserPayRequest.class);
         log.debug("收到用户支付请求，钱包ID：" + subMethod.getId() + "，用户ID：" + userRoles.getUid() + "，开始支付");
         return transactionService.userPay(subMethod.getId(), userRoles.getUid(), userPayRequest);
     }

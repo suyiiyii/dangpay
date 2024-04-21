@@ -115,7 +115,7 @@ public class TransactionService {
         requestTransactionRequest.setRequestId(UUID.randomUUID().toString());
         String requestTransactionRequestJson = UniversalUtils.obj2Json(requestTransactionRequest);
         // 给请求体签名
-        String sign = UniversalUtils.rsaSign(requestTransactionRequestJson, configManger.get("ID_RSA"));
+        String sign = UniversalUtils.sign(requestTransactionRequestJson, configManger);
         // 创建请求
         Request request = new Request.Builder()
                 .url(callbackUrl)
@@ -132,12 +132,19 @@ public class TransactionService {
                 // 解析响应体
                 requestTransactionResponse = UniversalUtils.json2Obj(responseBody, TransactionService.requestTransactionResponse.class);
                 log.debug("请求第三方接口成功，返回信息：" + requestTransactionResponse);
+                // 验证签名
+                if (!UniversalUtils.verify(responseBody, response.header("X-Signature"), requestTransactionResponse.getPlatform(), configManger)) {
+                    log.error("请求第三方接口失败，签名错误，Platform：" + requestTransactionResponse.getPlatform() + "，X-Signature：" + response.header("X-Signature") + "，ResponseBody：" + responseBody);
+                    throw new Http_400_BadRequestException("请求第三方接口失败，签名错误");
+                }
                 // 储存交易信息
                 transactionDao.createReceivedCode(requestTransactionResponse.exractCode(), requestTransactionResponse);
             } else {
+                log.error("请求第三方接口失败，网络错误");
                 throw new Http_400_BadRequestException("请求第三方接口失败，网络错误");
             }
         } catch (Exception e) {
+            log.error("请求第三方接口失败", e);
             throw new Http_400_BadRequestException("请求第三方接口失败");
         }
         // 加密code

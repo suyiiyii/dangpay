@@ -361,4 +361,24 @@ public class UniversalUtils {
 
          */
     }
+
+    /**
+     * sign 签名方法
+     * 上层方法，直接调用
+     */
+    public static String sign(String content, ConfigManger configManger) {
+        String privateKey = configManger.get("ID_RSA");
+        return rsaSign(content, privateKey);
+    }
+
+    /**
+     * verify 验证方法
+     * 上层方法，直接调用
+     */
+
+    public static boolean verify(String content, String signed, String platform, ConfigManger configManger) {
+        String key = "ID_RSA_PUB_" + platform.toUpperCase();
+        String publicKey = configManger.get("key");
+        return rsaVerify(content, signed, publicKey);
+    }
 }

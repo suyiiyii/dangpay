@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import top.suyiiyii.su.WebUtils;
-import top.suyiiyii.su.servlet.BaseHttpServlet;
 
 import java.io.IOException;
 

@@ -3,7 +3,7 @@ package top.suyiiyii.dao;
 
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
-import top.suyiiyii.service.TransactionService;
+import top.suyiiyii.service.TransactionServiceImpl;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.UniversalUtils;
 
@@ -32,16 +32,16 @@ public class TransactionDao {
         this.redisson = redisson;
     }
 
-    public void insertSentCode(String code, TransactionService.CodeInCache response) {
+    public void insertSentCode(String code, TransactionServiceImpl.CodeInCache response) {
         String key = configManger.get("PLATFORM_NAME") + "_Sent_" + code;
         String value = UniversalUtils.obj2Json(response);
         Duration duration = Duration.ofMinutes(response.getExpiredAt() - UniversalUtils.getNow());
         insert(key, value, duration);
     }
 
-    public TransactionService.CodeInCache getSentCode(String code) {
+    public TransactionServiceImpl.CodeInCache getSentCode(String code) {
         String key = configManger.get("PLATFORM_NAME") + "_Sent_" + code;
-        return UniversalUtils.json2Obj(get(key), TransactionService.CodeInCache.class);
+        return UniversalUtils.json2Obj(get(key), TransactionServiceImpl.CodeInCache.class);
     }
 
     public void deleteSentCode(String code) {
@@ -50,7 +50,7 @@ public class TransactionDao {
     }
 
 
-    public void insertReceivedCode(String code, TransactionService.RequestTransactionResponse response) {
+    public void insertReceivedCode(String code, TransactionServiceImpl.RequestTransactionResponse response) {
         String key = configManger.get("PLATFORM_NAME") + "_Received_" + code;
         String value = UniversalUtils.obj2Json(response);
         Duration duration = Duration.ofMinutes(response.getExpiredAt() - UniversalUtils.getNow());
@@ -58,9 +58,9 @@ public class TransactionDao {
     }
 
 
-    public TransactionService.RequestTransactionResponse getReceivedCode(String code) {
+    public TransactionServiceImpl.RequestTransactionResponse getReceivedCode(String code) {
         String key = configManger.get("PLATFORM_NAME") + "_Received_" + code;
-        return UniversalUtils.json2Obj(get(key), TransactionService.RequestTransactionResponse.class);
+        return UniversalUtils.json2Obj(get(key), TransactionServiceImpl.RequestTransactionResponse.class);
     }
 
     public void deleteReceivedCode(String code) {

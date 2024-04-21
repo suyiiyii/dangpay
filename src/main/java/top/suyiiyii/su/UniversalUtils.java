@@ -16,6 +16,8 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.Base64;
 
 /**
@@ -234,12 +236,16 @@ public class UniversalUtils {
      */
     public static String encrypt(String content, String secretKey) {
         try {
-            // 把密钥转换成16字节的字节数组
-            byte[] key = new byte[16];
-            byte[] secretKeyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
-            System.arraycopy(secretKeyBytes, 0, key, 0, Math.min(secretKeyBytes.length, 16));
+
+            // 使用SHA-1算法计算哈希值
+            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+            byte[] hash = sha1.digest(secretKey.getBytes(StandardCharsets.UTF_8));
+
+            // 把哈希转换成16字节的字节数组
+            byte[] secretKeyBytes = Arrays.copyOf(hash, 16);
+
             // 创建一个AESKeySpec对象
-            SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+            SecretKeySpec keySpec = new SecretKeySpec(secretKeyBytes, "AES");
 
             // 创建一个全0的初始化向量
             IvParameterSpec ivSpec = new IvParameterSpec(new byte[16]);
@@ -264,8 +270,15 @@ public class UniversalUtils {
      */
     public static String decrypt(String base64Content, String secretKey) {
         try {
+            // 使用SHA-1算法计算哈希值
+            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+            byte[] hash = sha1.digest(secretKey.getBytes(StandardCharsets.UTF_8));
+
+            // 把哈希值转换成16字节的字节数组
+            byte[] secretKeyBytes = Arrays.copyOf(hash, 16);
+
             // 创建一个AESKeySpec对象
-            SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), "AES");
+            SecretKeySpec keySpec = new SecretKeySpec(secretKeyBytes, "AES");
 
             // 创建一个全0的初始化向量
             IvParameterSpec ivSpec = new IvParameterSpec(new byte[16]);

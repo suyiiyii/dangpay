@@ -224,7 +224,7 @@ public class Session {
      * @param obj 待更新的对象
      * @param <T> 待更新的对象的类型
      */
-    public <T> void update(T obj) throws SQLException {
+    public <T> void update(T obj) {
         Table table = modelManger.getClass2Table().get(obj.getClass());
         String sql = RowSqlGenerater.getUpdateSql(table);
         PreparedStatement preparedStatement;
@@ -257,7 +257,7 @@ public class Session {
                 }
             }
             sqlExecutor.execute(preparedStatement);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
+        } catch (NoSuchFieldException | IllegalAccessException | SQLException e) {
             throw new RuntimeException(e);
         }
     }

@@ -9,6 +9,8 @@ import java.util.List;
 @Proxy
 public interface UserService {
 
+    boolean checkPassword(String password, int uid);
+
     String login(String username, String password);
 
     void changePassword(UserRoles userRoles, int uid, String oldPassword, String newPassword);

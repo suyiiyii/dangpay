@@ -64,6 +64,13 @@ public class WalletID {
         return transactionService.scanQRCode(subMethod.getId(), scanQRCodeRequest.getCallbackUrl());
     }
 
+    public TransactionService.UserPayResponse doPostPay(HttpServletRequest req, HttpServletResponse resp) {
+        TransactionService.UserPayRequest userPayRequest = WebUtils.readRequestBody2Obj(req, TransactionService.UserPayRequest.class);
+        log.debug("收到用户支付请求，钱包ID：" + subMethod.getId() + "，用户ID：" + userRoles.getUid() + "，开始支付");
+        return transactionService.userPay(subMethod.getId(), userRoles.getUid(), userPayRequest);
+    }
+
+
     @Data
     public static class ScanQRCodeRequest {
         @Regex("https?://.*api/requestTransaction\\?identity=.*")

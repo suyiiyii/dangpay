@@ -64,8 +64,9 @@ sequenceDiagram
     B ->> C: 发起支付请求
     C -> C: 创建交易（未完成）
     C ->> B: 支付结果
-    B -> B: 交易成功
+    B ->> C: ACK
     C -> C: 交易成功
+    B -> B: 交易成功
     B ->> A: 交易完成
 ```
 
@@ -95,8 +96,9 @@ sequenceDiagram
     B ->> C: 发起支付请求
     C -> C: 创建交易（未完成）
     C ->> B: 支付结果
-    B -> B: 交易成功
+    B ->> C: ACK
     C -> C: 交易成功
+    B -> B: 交易成功
     B ->> A: 交易完成
 ```
 
@@ -125,8 +127,9 @@ sequenceDiagram
     B ->> C: 发起交易请求
     C -> C: 处理交易
     C ->> B: 交易结果
-    B -> B: 交易成功
+    B ->> C: ACK
     C -> C: 交易成功
+    B -> B: 交易成功
     B ->> A: 收款成功
 ```
 
@@ -208,8 +211,8 @@ code 是表示交易对象的标识，应该是在收到对方的交易请求后
 
 ```json
 {
-  "Platform": "string",
-  "tradeName": "string",
+  "platform": "string",
+  "tradeDescription": "string",
   "payeeName": "string",
   "amount": 100,
   "requestId": "string"
@@ -224,6 +227,7 @@ code 是表示交易对象的标识，应该是在收到对方的交易请求后
 {
   "status": "success",
   "message": "交易成功",
+  "callbackUrl": "string",
   "requestId": "string"
 }
 ```
@@ -237,6 +241,12 @@ code 是表示交易对象的标识，应该是在收到对方的交易请求后
   "requestId": "string"
 }
 ```
+
+### Post /ack?code=xxx
+
+为确保平台成功收到交易的响应，需要确认交易
+确认交易
+无请求体，响应200即可
 
 ## 群组钱包管理
 

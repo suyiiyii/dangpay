@@ -8,6 +8,7 @@ import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.UniversalUtils;
 
 import java.time.Duration;
+import java.util.NoSuchElementException;
 
 /**
  * 平台向第三方平台发起交易请求，会返回一个code，下次发送请求时需要携带这个code
@@ -35,29 +36,40 @@ public class TransactionDao {
         String key = configManger.get("PLATFORM_NAME") + "_Sent_" + code;
         String value = UniversalUtils.obj2Json(response);
         Duration duration = Duration.ofMinutes(response.getExpiredAt() - UniversalUtils.getNow());
-        RBucket<String> bucket = redisson.getBucket(key);
-        bucket.set(value, duration);
+        insert(key, value, duration);
     }
 
     public void insertReceivedCode(String code, TransactionService.RequestTransactionResponse response) {
         String key = configManger.get("PLATFORM_NAME") + "_Received_" + code;
         String value = UniversalUtils.obj2Json(response);
         Duration duration = Duration.ofMinutes(response.getExpiredAt() - UniversalUtils.getNow());
-        RBucket<String> bucket = redisson.getBucket(key);
-        bucket.set(value, duration);
+        insert(key, value, duration);
     }
 
     public TransactionService.CodeInCache getSentCode(String code) {
-        String key = configManger.get("PLATFORM_NAME") + "_Sent+" + code;
-        RBucket<String> bucket = redisson.getBucket(key);
-        return UniversalUtils.json2Obj(bucket.get(), TransactionService.CodeInCache.class);
+        String key = configManger.get("PLATFORM_NAME") + "_Sent_" + code;
+        return UniversalUtils.json2Obj(get(key), TransactionService.CodeInCache.class);
     }
 
     public TransactionService.RequestTransactionResponse getReceivedCode(String code) {
         String key = configManger.get("PLATFORM_NAME") + "_Received_" + code;
-        RBucket<String> bucket = redisson.getBucket(key);
-        return UniversalUtils.json2Obj(bucket.get(), TransactionService.RequestTransactionResponse.class);
+        return UniversalUtils.json2Obj(get(key), TransactionService.RequestTransactionResponse.class);
     }
 
+
+    public void insert(String key, Object value, Duration duration) {
+        RBucket<String> bucket = redisson.getBucket(key);
+        bucket.set(UniversalUtils.obj2Json(value), duration);
+    }
+
+    public String get(String key) {
+        RBucket<String> bucket = redisson.getBucket(key);
+        String value = bucket.get();
+        if (value == null) {
+            throw new NoSuchElementException("key not found");
+        }
+        value = UniversalUtils.json2Obj(value, String.class);
+        return value;
+    }
 
 }

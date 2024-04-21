@@ -3,11 +3,14 @@ package top.suyiiyii.service;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import top.suyiiyii.dao.TransactionDao;
+import top.suyiiyii.models.Transaction;
 import top.suyiiyii.models.TransactionIdentity;
+import top.suyiiyii.models.Wallet;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.IOC.SubRegion;
@@ -15,6 +18,7 @@ import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.orm.core.Session;
 
+import java.time.Duration;
 import java.util.UUID;
 
 @Slf4j
@@ -25,11 +29,7 @@ public class TransactionService {
     UserService userService;
     TransactionDao transactionDao;
 
-    public TransactionService(Session db,
-                              @Proxy(isNeedAuthorization = false) RBACService rbacService,
-                              @Proxy(isNeedAuthorization = false) UserService userService,
-                              ConfigManger configManger,
-                              TransactionDao transactionDao) {
+    public TransactionService(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService, @Proxy(isNeedAuthorization = false) UserService userService, ConfigManger configManger, TransactionDao transactionDao) {
         this.db = db;
         this.userService = userService;
         this.rbacService = rbacService;
@@ -52,7 +52,7 @@ public class TransactionService {
         transactionIdentity.setStatus("active");
         transactionIdentity.setCreatedAt(UniversalUtils.getNow());
         transactionIdentity.setUpdatedAt(UniversalUtils.getNow());
-        db.insert(transactionIdentity, true);
+        db.insert(transactionIdentity);
         return transactionIdentity.getIdentity();
     }
 
@@ -117,11 +117,7 @@ public class TransactionService {
 
         // 请求第三方平台
         // 创建请求
-        Request request = new Request.Builder()
-                .url(callbackUrl)
-                .post(RequestBody.create(requestTransactionRequestJson.getBytes()))
-                .addHeader("X-Signature", sign)
-                .build();
+        Request request = new Request.Builder().url(callbackUrl).post(RequestBody.create(requestTransactionRequestJson.getBytes())).addHeader("X-Signature", sign).build();
         RequestTransactionResponse requestTransactionResponse;
         try {
             // 发送请求
@@ -170,8 +166,7 @@ public class TransactionService {
         return scanQRCodeResponse;
     }
 
-    public RequestTransactionResponse requestTransaction(String identity,
-                                                         RequestTransactionRequest request) {
+    public RequestTransactionResponse requestTransaction(String identity, RequestTransactionRequest request) {
         // 查询交易信息
         TransactionIdentity transactionIdentity = db.query(TransactionIdentity.class).eq("identity", identity).first();
         // 生成交易码
@@ -189,6 +184,176 @@ public class TransactionService {
         response.requestId = request.getRequestId();
         log.info("收到交易请求，identity：" + identity + "，生成code：" + code + "返回回调接口： " + response.callback);
         return response;
+    }
+
+
+    /**
+     * 确认交易
+     * 用户获得扫码结构之后，请求确认交易接口，服务器解密code，查询到对应的identity，然后创建transaction，设置为frozen状态，向第三方平台发起支付请求
+     */
+    @Proxy(isTransaction = true)
+    public UserPayResponse userPay(int wid, int uid, UserPayRequest userPayRequest) {
+        // 验证用户身份
+        if (!userService.checkPassword(userPayRequest.getPassword(), uid)) {
+            log.error("用户支付失败，密码错误");
+            throw new Http_400_BadRequestException("密码错误");
+        }
+        // 解密code
+        String code = UniversalUtils.decrypt(userPayRequest.getCode(), configManger.get("AES_KEY"));
+        // 查询交易信息
+        RequestTransactionResponse requestTransactionResponse = transactionDao.getReceivedCode(code);
+
+        // 创建transaction
+        Transaction transaction = new Transaction();
+        transaction.setWalletId(wid);
+        transaction.setAmount(requestTransactionResponse.isAmountSpecified ? requestTransactionResponse.getSpecifiedAmount() : 0);
+        transaction.setType("online_pay");
+        transaction.setStatus("frozen");
+        transaction.setCreateTime(UniversalUtils.getNow());
+        transaction.setLastUpdate(UniversalUtils.getNow());
+        transaction.setPlatform(requestTransactionResponse.getPlatform());
+        transaction.setDescription("向 " + requestTransactionResponse.getPlatform() + " 平台的 " + wid + " 转账 " + transaction.getAmount() + " 元");
+        db.insert(transaction);
+        log.info("用户身份成功，创建transaction：" + transaction);
+        // 冻结用户资金
+        Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
+        wallet.setAmount(wallet.getAmount() - transaction.getAmount());
+        wallet.setAmountInFrozen(wallet.getAmountInFrozen() + transaction.getAmount());
+        wallet.setLastUpdate(UniversalUtils.getNow());
+        db.update(wallet);
+
+
+        // 向第三方平台发起支付请求
+        // 构建发往第三方平台的交易信息
+        StartTransactionRequest startTransactionRequest = new StartTransactionRequest();
+        startTransactionRequest.setPlatform(requestTransactionResponse.getPlatform());
+        startTransactionRequest.setTradeDescription(requestTransactionResponse.getMessage());
+        startTransactionRequest.setPayeeName(configManger.get("PLATFORM_NAME"));
+        startTransactionRequest.setAmount(requestTransactionResponse.isAmountSpecified ? requestTransactionResponse.getSpecifiedAmount() : 0);
+        startTransactionRequest.setRequestId(requestTransactionResponse.getRequestId());
+
+        // 构建请求体
+        String startTransactionRequestJson = UniversalUtils.obj2Json(startTransactionRequest);
+        // 给请求体签名
+        String sign = UniversalUtils.sign(startTransactionRequestJson, configManger);
+        // 请求第三方平台
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url(requestTransactionResponse.getCallback()).post(RequestBody.create(startTransactionRequestJson.getBytes())).addHeader("X-Signature", sign).build();
+        try {
+            // 发送请求
+            okhttp3.Response response = client.newCall(request).execute();
+            if (response.isSuccessful()) {
+                // 获取响应体
+                String responseBody = response.body().string();
+                // 解析响应体
+                StartTransactionResponse startTransactionResponse = UniversalUtils.json2Obj(responseBody, StartTransactionResponse.class);
+                log.debug("请求第三方接口成功，返回信息：" + startTransactionResponse);
+                // 验证签名
+                String signature = response.header("X-Signature");
+                if (signature == null) {
+                    log.error("请求第三方接口失败，签名为空");
+                    throw new Http_400_BadRequestException("请求第三方接口失败，签名为空");
+                }
+                if (!UniversalUtils.verify(responseBody, signature, requestTransactionResponse.getPlatform(), configManger)) {
+                    log.error("请求第三方接口失败，签名错误，Platform：" + requestTransactionResponse.getPlatform() + "，X-Signature：" + response.header("X-Signature") + "，ResponseBody：" + responseBody);
+                    throw new Http_400_BadRequestException("请求第三方接口失败，签名错误");
+                }
+                // 响应ack
+                String ackUrl = startTransactionResponse.getCallback();
+                // 构建请求
+                Request ackRequest = new Request.Builder().url(ackUrl).post(RequestBody.create("", MediaType.parse("text/plain"))).build();
+                // 发送请求
+                okhttp3.Response ackResponse = client.newCall(ackRequest).execute();
+
+                // 更新transaction状态
+                transaction.setStatus("success");
+                transaction.setLastUpdate(UniversalUtils.getNow());
+                db.update(transaction);
+                // 更新wallet
+                wallet.setAmountInFrozen(wallet.getAmountInFrozen() - transaction.getAmount());
+                wallet.setLastUpdate(UniversalUtils.getNow());
+            } else {
+                log.error("请求第三方接口失败，网络错误");
+                throw new Http_400_BadRequestException("请求第三方接口失败，网络错误");
+            }
+        } catch (Exception e) {
+            log.error("请求第三方接口失败", e);
+            throw new Http_400_BadRequestException("请求第三方接口失败");
+        }
+
+        // 构建返回信息
+        UserPayResponse userPayResponse = new UserPayResponse();
+        userPayResponse.setStatus("success");
+        userPayResponse.setMessage("支付成功");
+        userPayResponse.setRequestId(userPayRequest.getRequestId());
+        return userPayResponse;
+    }
+
+    /**
+     * 其他平台向本平台发起交易请求
+     *
+     * @param code    交易code
+     * @param request 请求体
+     * @return 响应体
+     */
+    public StartTransactionResponse startTransaction(String code, StartTransactionRequest request) {
+        // 查询缓存的code和identityId的对应关系
+        CodeInCache codeInCache = transactionDao.getSentCode(code);
+
+        // 查询交易信息
+        TransactionIdentity transactionIdentity = db.query(TransactionIdentity.class).eq("id", codeInCache.getIdentityId()).first();
+        // 创建transaction
+        Transaction transaction = new Transaction();
+        transaction.setWalletId(transactionIdentity.getWalletId());
+        transaction.setAmount(transactionIdentity.getIsAmountSpecified() == 1 ? transactionIdentity.getSpecifiedAmount() : 0);
+        transaction.setType("online_pay_receive");
+        transaction.setStatus("pending");
+        transaction.setCreateTime(UniversalUtils.getNow());
+        transaction.setLastUpdate(UniversalUtils.getNow());
+        transaction.setPlatform(request.getPlatform());
+        transaction.setDescription(request.getTradeDescription());
+        int transactionId = db.insert(transaction, true);
+        log.info("创建transaction：" + transaction);
+
+        // 构建一个ack地址，关连transaction信息
+        String ackCode = "ack" + UUID.randomUUID().toString().replace("-", "");
+        transactionDao.insert("ack_" + ackCode, String.valueOf(transactionId), Duration.ofMinutes(1));
+        // 构建返回信息
+        StartTransactionResponse response = new StartTransactionResponse();
+        response.setStatus("success");
+        response.setMessage("向 " + request.getPlatform() + " 平台的 " + transactionIdentity.getWalletId() + " 转账 " + transaction.getAmount() + " 元");
+        response.setCallback(configManger.get("BASE_URL") + "/api/ack?ackCode=" + ackCode);
+        response.setRequestId(request.getRequestId());
+        return response;
+    }
+
+    public boolean ack(String ackCode) {
+        int transactionId = Integer.parseInt(transactionDao.get("ack_" + ackCode));
+        // 更新transaction状态
+        Transaction transaction = db.query(Transaction.class).eq("id", transactionId).first();
+        transaction.setStatus("success");
+        transaction.setLastUpdate(UniversalUtils.getNow());
+        // 更新wallet
+        Wallet wallet = db.query(Wallet.class).eq("id", transaction.getWalletId()).first();
+        wallet.setAmount(wallet.getAmount() + transaction.getAmount());
+        wallet.setLastUpdate(UniversalUtils.getNow());
+
+        db.commit();
+        return true;
+    }
+
+    @Data
+    public static class UserPayRequest {
+        public String code;
+        public String password;
+        public String requestId;
+    }
+
+    @Data
+    public static class UserPayResponse {
+        public String status;
+        public String message;
+        public String requestId;
     }
 
     @Data
@@ -213,6 +378,7 @@ public class TransactionService {
         public String message;
         public String platform;
         public String callback;
+        @JsonProperty("isAmountSpecified")
         public boolean isAmountSpecified;
         public int specifiedAmount;
         public int expiredAt;
@@ -228,11 +394,28 @@ public class TransactionService {
         public String code;
         public String message;
         public String platform;
+        @JsonProperty("isAmountSpecified")
         public boolean isAmountSpecified;
         public int specifiedAmount;
         public int expiredAt;
         public String requestId;
     }
 
+    @Data
+    public static class StartTransactionRequest {
+        public String platform;
+        public String tradeDescription;
+        public String payeeName;
+        public int amount;
+        public String requestId;
+    }
+
+    @Data
+    public static class StartTransactionResponse {
+        public String status;
+        public String message;
+        public String callback;
+        public String requestId;
+    }
 
 }

@@ -54,6 +54,12 @@ public class UserServiceImpl implements UserService {
         return user.getPassword().equals(getHashed(password));
     }
 
+    @Override
+    public boolean checkPassword(String password, int uid) {
+        User user = db.query(User.class).eq("id", uid).first();
+        return user.getPassword().equals(getHashed(password));
+    }
+
     /**
      * 登录，返回
      *

@@ -169,6 +169,7 @@ header应该包含一个签名，签名内容为body的json字符串，签名算
   "status": "success",
   "callback": "/startTransaction?code=xxx",
   "isAmountSpecified": false,
+  "payeeName": "string",
   "requestId": "string"
 }
 ```
@@ -185,6 +186,7 @@ header应该包含一个签名，签名内容为body的json字符串，签名算
   "callback": "/startTransaction?code=xxx",
   "isAmountSpecified": true,
   "specifiedAmount": 100,
+  "payeeName": "string",
   "requestId": "string"
 }
 ```

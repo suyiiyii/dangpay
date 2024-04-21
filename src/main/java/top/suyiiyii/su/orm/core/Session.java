@@ -206,6 +206,14 @@ public class Session {
             // 获取刚刚插入的数据的ID
             ResultSet rs = preparedStatement.getGeneratedKeys();
             if (rs.next()) return rs.getInt(1);
+//            // 备用方案：执行SELECT LAST_INSERT_ID()查询
+//            String selectLastIdSql = "SELECT LAST_INSERT_ID()";
+//            try (PreparedStatement lastIdStmt = sqlExecutor.getPreparedStatement(selectLastIdSql);
+//                 ResultSet rs = lastIdStmt.executeQuery()) {
+//                if (rs.next()) {
+//                    return rs.getInt(1);
+//                }
+//            }
             return -1;
         } catch (NoSuchFieldException | IllegalAccessException | SQLException e) {
             throw new RuntimeException(e);

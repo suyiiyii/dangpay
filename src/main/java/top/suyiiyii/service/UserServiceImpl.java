@@ -126,22 +126,19 @@ public class UserServiceImpl implements UserService {
     @Override
     @Proxy(isTransaction = true)
     public User register(String username, String password, String phone) {
+        // 判断用户名是否存在
+        if (db.query(User.class).eq("username", username).exists()) {
+            throw new Http_400_BadRequestException("用户名已存在");
+        }
         User user = new User();
         user.setUsername(username);
         user.setPassword(getHashed(password));
         user.setPhone(phone);
         user.setIconUrl("");
         user.setStatus("normal");
-        boolean isExist = true;
-        try {
-            db.query(User.class).eq("username", username).first();
-        } catch (NoSuchElementException e) {
-            isExist = false;
-        }
-        if (isExist) {
-            throw new Http_400_BadRequestException("用户名已存在");
-        }
         int id = db.insert(user, true);
+        List<User> users = db.query(User.class).all();
+        log.debug("用户列表：{}", users);
         rbacService.addUserRole(id, "user");
         return user;
     }

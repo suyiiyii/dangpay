@@ -3,6 +3,7 @@ package top.suyiiyii.service;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.RBACRole;
 import top.suyiiyii.models.RBACUser;
+import top.suyiiyii.models.User;
 import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.orm.core.Session;
 
@@ -146,7 +147,7 @@ public class RBACServiceImpl implements RBACService {
     @Override
     public void addUserRole(int uid, String role) {
         // 判断用户是否存在
-        if (!db.query(RBACUser.class).eq("uid", uid).exists()) {
+        if (!db.query(User.class).eq("id", uid).exists()) {
             throw new IllegalArgumentException("用户不存在");
         }
         // 检查待添加的用户角色是否存在

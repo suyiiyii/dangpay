@@ -39,6 +39,17 @@ public class TransactionDao {
         insert(key, value, duration);
     }
 
+    public TransactionService.CodeInCache getSentCode(String code) {
+        String key = configManger.get("PLATFORM_NAME") + "_Sent_" + code;
+        return UniversalUtils.json2Obj(get(key), TransactionService.CodeInCache.class);
+    }
+
+    public void deleteSentCode(String code) {
+        String key = configManger.get("PLATFORM_NAME") + "_Sent_" + code;
+        delete(key);
+    }
+
+
     public void insertReceivedCode(String code, TransactionService.RequestTransactionResponse response) {
         String key = configManger.get("PLATFORM_NAME") + "_Received_" + code;
         String value = UniversalUtils.obj2Json(response);
@@ -46,14 +57,15 @@ public class TransactionDao {
         insert(key, value, duration);
     }
 
-    public TransactionService.CodeInCache getSentCode(String code) {
-        String key = configManger.get("PLATFORM_NAME") + "_Sent_" + code;
-        return UniversalUtils.json2Obj(get(key), TransactionService.CodeInCache.class);
-    }
 
     public TransactionService.RequestTransactionResponse getReceivedCode(String code) {
         String key = configManger.get("PLATFORM_NAME") + "_Received_" + code;
         return UniversalUtils.json2Obj(get(key), TransactionService.RequestTransactionResponse.class);
+    }
+
+    public void deleteReceivedCode(String code) {
+        String key = configManger.get("PLATFORM_NAME") + "_Received_" + code;
+        delete(key);
     }
 
 
@@ -70,6 +82,11 @@ public class TransactionDao {
         }
         value = UniversalUtils.json2Obj(value, String.class);
         return value;
+    }
+
+    public void delete(String key) {
+        RBucket<String> bucket = redisson.getBucket(key);
+        bucket.delete();
     }
 
 }

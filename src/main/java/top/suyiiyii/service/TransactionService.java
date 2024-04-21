@@ -19,6 +19,7 @@ import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.orm.core.Session;
 
 import java.time.Duration;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Slf4j
@@ -122,9 +123,9 @@ public class TransactionService {
         try {
             // 发送请求
             okhttp3.Response response = client.newCall(request).execute();
+            // 获取响应体
+            String responseBody = response.body().string();
             if (response.isSuccessful()) {
-                // 获取响应体
-                String responseBody = response.body().string();
                 // 解析响应体
                 requestTransactionResponse = UniversalUtils.json2Obj(responseBody, RequestTransactionResponse.class);
                 log.debug("请求第三方接口成功，返回信息：" + requestTransactionResponse);
@@ -143,9 +144,11 @@ public class TransactionService {
 
                 transactionDao.insertReceivedCode(requestTransactionResponse.exractCode(), requestTransactionResponse);
             } else {
-                log.error("请求第三方接口失败，网络错误");
-                throw new Http_400_BadRequestException("请求第三方接口失败，网络错误");
+                log.error("请求第三方接口发生异常：" + response.code() + " " + responseBody);
+                throw new Http_400_BadRequestException("请求第三方接口发生异常：" + response.code() + " " + responseBody);
             }
+        } catch (Http_400_BadRequestException e) {
+            throw e;
         } catch (Exception e) {
             log.error("请求第三方接口失败", e);
             throw new Http_400_BadRequestException("请求第三方接口失败");
@@ -201,7 +204,12 @@ public class TransactionService {
         // 解密code
         String code = UniversalUtils.decrypt(userPayRequest.getCode(), configManger.get("AES_KEY"));
         // 查询交易信息
-        RequestTransactionResponse requestTransactionResponse = transactionDao.getReceivedCode(code);
+        RequestTransactionResponse requestTransactionResponse;
+        try {
+            requestTransactionResponse = transactionDao.getReceivedCode(code);
+        } catch (NoSuchElementException e) {
+            throw new Http_400_BadRequestException("code不存在或已过期");
+        }
 
         // 创建transaction
         Transaction transaction = new Transaction();
@@ -242,9 +250,9 @@ public class TransactionService {
         try {
             // 发送请求
             okhttp3.Response response = client.newCall(request).execute();
+            // 获取响应体
+            String responseBody = response.body().string();
             if (response.isSuccessful()) {
-                // 获取响应体
-                String responseBody = response.body().string();
                 // 解析响应体
                 StartTransactionResponse startTransactionResponse = UniversalUtils.json2Obj(responseBody, StartTransactionResponse.class);
                 log.debug("请求第三方接口成功，返回信息：" + startTransactionResponse);
@@ -273,9 +281,11 @@ public class TransactionService {
                 wallet.setAmountInFrozen(wallet.getAmountInFrozen() - transaction.getAmount());
                 wallet.setLastUpdate(UniversalUtils.getNow());
             } else {
-                log.error("请求第三方接口失败，网络错误");
-                throw new Http_400_BadRequestException("请求第三方接口失败，网络错误");
+                log.error("请求第三方接口发生异常：" + response.code() + " " + responseBody);
+                throw new Http_400_BadRequestException("请求第三方接口发生异常：" + response.code() + " " + responseBody);
             }
+        } catch (Http_400_BadRequestException e) {
+            throw e;
         } catch (Exception e) {
             log.error("请求第三方接口失败", e);
             throw new Http_400_BadRequestException("请求第三方接口失败");
@@ -298,7 +308,13 @@ public class TransactionService {
      */
     public StartTransactionResponse startTransaction(String code, StartTransactionRequest request) {
         // 查询缓存的code和identityId的对应关系
-        CodeInCache codeInCache = transactionDao.getSentCode(code);
+        CodeInCache codeInCache;
+        try {
+            codeInCache = transactionDao.getSentCode(code);
+            transactionDao.deleteSentCode(code);
+        } catch (NoSuchElementException e) {
+            throw new Http_400_BadRequestException("code不存在或已过期");
+        }
 
         // 查询交易信息
         TransactionIdentity transactionIdentity = db.query(TransactionIdentity.class).eq("id", codeInCache.getIdentityId()).first();
@@ -329,6 +345,8 @@ public class TransactionService {
 
     public boolean ack(String ackCode) {
         int transactionId = Integer.parseInt(transactionDao.get("ack_" + ackCode));
+        transactionDao.delete("ack_" + ackCode);
+
         // 更新transaction状态
         Transaction transaction = db.query(Transaction.class).eq("id", transactionId).first();
         transaction.setStatus("success");

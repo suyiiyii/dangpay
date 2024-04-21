@@ -25,7 +25,7 @@ public class TransactionIdentity {
     String status;
     @ColumnSetting(isNotNull = true)
     int walletId;
-    int isSpecifiedAmount;
+    int isAmountSpecified;
     int specifiedAmount;
     int createdAt;
     int updatedAt;

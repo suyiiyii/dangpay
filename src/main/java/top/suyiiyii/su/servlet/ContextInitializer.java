@@ -58,6 +58,8 @@ public class ContextInitializer implements ServletContextListener {
         log.error("REDIS_PASSWORD: {}", configManger.get("REDIS_PASSWORD"));
         RedissonClient redisson = Redisson.create(config);
         IOCmanager.registerGlobalBean(redisson);
+        // 由于RedissonClient是接口，所以需要注册实现类
+        IOCmanager.registerInterface2Impl(RedissonClient.class, Redisson.class);
 
         log.info("依赖注入完成");
     }

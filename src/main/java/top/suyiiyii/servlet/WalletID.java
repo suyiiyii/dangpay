@@ -52,7 +52,7 @@ public class WalletID {
 
     public String doPostCreateReceiveIdentity(HttpServletRequest req, HttpServletResponse resp) {
         createIdentityDto dto = WebUtils.readRequestBody2Obj(req, createIdentityDto.class);
-        String identity = transactionService.createMoneyReceiveIdentity(subMethod.getId(), dto.isSpecifiedAmount, dto.amount, dto.description);
+        String identity = transactionService.createMoneyReceiveIdentity(subMethod.getId(), dto.isAmountSpecified, dto.amount, dto.description);
         String callbackUrl = configManger.get("BASE_URL") + "/api/requestTransaction?identity=" + identity;
         log.debug("创建收款标识，钱包ID：" + subMethod.getId() + "，回调地址：" + callbackUrl);
         return callbackUrl;
@@ -73,8 +73,8 @@ public class WalletID {
     @Data
     public static class createIdentityDto {
         //这个错误是由于在尝试将JSON数据映射到createIdentityDto类时，Jackson找不到名为isSpecifiedAmount的属性。在Java中，布尔类型的getter方法通常以is开头，而setter方法则没有is。因此，Jackson期望找到的属性名是specifiedAmount，而不是isSpecifiedAmount。
-        @JsonProperty("isSpecifiedAmount")
-        boolean isSpecifiedAmount;
+        @JsonProperty("isAmountSpecified")
+        boolean isAmountSpecified;
         int amount;
         String description;
     }

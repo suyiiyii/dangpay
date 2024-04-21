@@ -19,9 +19,10 @@ public class RequestTransaction {
         this.configManger = configManger;
     }
 
-    public TransactionService.requestTransactionResponse doPost(HttpServletRequest req, HttpServletResponse resp) {
+    public TransactionService.RequestTransactionResponse doPost(HttpServletRequest req, HttpServletResponse resp) {
+        // 读取请求体
         String requestBody = WebUtils.readRequestBody(req);
-        TransactionService.requestTransactionRequest request = UniversalUtils.json2Obj(requestBody, TransactionService.requestTransactionRequest.class);
+        TransactionService.RequestTransactionRequest request = UniversalUtils.json2Obj(requestBody, TransactionService.RequestTransactionRequest.class);
         String sign = req.getHeader("X-Signature");
         // 验证签名
         if (!UniversalUtils.verify(requestBody, sign, request.getPlatform(), configManger)) {
@@ -29,20 +30,8 @@ public class RequestTransaction {
             throw new RuntimeException("签名验证失败");
         }
 
-        // 生成交易码
         String identity = req.getParameter("identity");
-        String code = transactionService.createCode(identity);
-        // 构建返回信息
-        TransactionService.requestTransactionResponse response = new TransactionService.requestTransactionResponse();
-        response.status = "success";
-        response.message = "交易码已生成";
-        response.platform = configManger.get("PLATFORM_NAME");
-        response.callback = configManger.get("BASE_URL") + "/api/startTransaction?code=" + code;
-        response.isSpecifiedAmount = false;
-        response.expiredAt = 0;
-        response.requestId = request.getRequestId();
-        log.info("收到交易请求，identity：" + identity + "，生成code：" + code + "返回回调接口： " + response.callback);
-        //TODO 过期时间需要设置
+        TransactionService.RequestTransactionResponse response = transactionService.requestTransaction(identity, request);
 
         // 添加签名
         String responseBody = UniversalUtils.obj2Json(response);

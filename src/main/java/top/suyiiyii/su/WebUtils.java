@@ -31,14 +31,18 @@ public class WebUtils {
      * @return String
      * @throws IOException IOException
      */
-    public static String readRequestBody(HttpServletRequest req) throws IOException {
-        BufferedReader reader = req.getReader();
-        StringBuilder stringBuilder = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            stringBuilder.append(line);
+    public static String readRequestBody(HttpServletRequest req) {
+        try {
+            BufferedReader reader = req.getReader();
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+            return stringBuilder.toString();
+        } catch (IOException e) {
+            throw new Http_400_BadRequestException("请求体格式错误");
         }
-        return stringBuilder.toString();
     }
 
     /**

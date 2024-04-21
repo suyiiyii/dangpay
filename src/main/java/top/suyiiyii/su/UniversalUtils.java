@@ -317,7 +317,7 @@ public class UniversalUtils {
         } catch (CryptoException e) {
             throw new RuntimeException(e);
         }
-        log.info("签名长度: {}", signature.length);
+//        log.info("签名长度: {}", signature.length);
 
         // 返回Base64编码的签名数据
         return Base64.getEncoder().encodeToString(signature);
@@ -331,7 +331,6 @@ public class UniversalUtils {
 
         publicKey = publicKey.split(" ")[1];
 
-        log.info("publicKey: {}", publicKey);
         // base64解码
         byte[] keyData = Base64.getDecoder().decode(publicKey);
 
@@ -347,7 +346,7 @@ public class UniversalUtils {
         byte[] data = content.getBytes(StandardCharsets.UTF_8);
         signer.update(data, 0, data.length);
         byte[] signature = Base64.getDecoder().decode(signed);
-        log.info("签名长度: {}", signature.length);
+//        log.info("签名长度: {}", signature.length);
 
         // 验证签名
         return signer.verifySignature(signature);
@@ -378,7 +377,7 @@ public class UniversalUtils {
 
     public static boolean verify(String content, String signed, String platform, ConfigManger configManger) {
         String key = "ID_RSA_PUB_" + platform.toUpperCase();
-        String publicKey = configManger.get("key");
+        String publicKey = configManger.get(key);
         return rsaVerify(content, signed, publicKey);
     }
 }

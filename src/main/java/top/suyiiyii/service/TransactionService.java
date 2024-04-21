@@ -133,7 +133,12 @@ public class TransactionService {
                 requestTransactionResponse = UniversalUtils.json2Obj(responseBody, TransactionService.requestTransactionResponse.class);
                 log.debug("请求第三方接口成功，返回信息：" + requestTransactionResponse);
                 // 验证签名
-                if (!UniversalUtils.verify(responseBody, response.header("X-Signature"), requestTransactionResponse.getPlatform(), configManger)) {
+                String signature = response.header("X-Signature");
+                if (signature == null) {
+                    log.error("请求第三方接口失败，签名为空");
+                    throw new Http_400_BadRequestException("请求第三方接口失败，签名为空");
+                }
+                if (!UniversalUtils.verify(responseBody, signature, requestTransactionResponse.getPlatform(), configManger)) {
                     log.error("请求第三方接口失败，签名错误，Platform：" + requestTransactionResponse.getPlatform() + "，X-Signature：" + response.header("X-Signature") + "，ResponseBody：" + responseBody);
                     throw new Http_400_BadRequestException("请求第三方接口失败，签名错误");
                 }

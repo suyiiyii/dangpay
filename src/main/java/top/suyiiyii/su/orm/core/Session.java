@@ -408,6 +408,18 @@ public class Session {
         }
     }
 
+    /**
+     * 判断当前是否在事务中
+     */
+    public boolean isTransaction() {
+        return !sqlExecutor.isAutoCommit();
+    }
+
+
+    /**
+     * 销毁
+     */
+
     public void destroy() {
         try {
             this.close();

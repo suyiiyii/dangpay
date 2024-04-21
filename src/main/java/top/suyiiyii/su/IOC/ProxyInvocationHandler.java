@@ -75,13 +75,17 @@ public class ProxyInvocationHandler implements InvocationHandler {
 
         try {
             // 如果需要事务，则开启事务
-            if (isTransaction) {
+            if (isTransaction && !db.isTransaction()) {
                 try {
                     db.beginTransaction();
+                    log.debug("使用session" + db + "开启事务");
                     Object result = method.invoke(target, args);
+                    log.debug("使用session" + db + "提交事务");
                     db.commitTransaction();
+                    log.debug("使用session" + db + "事务提交成功");
                     return result;
                 } catch (Exception e) {
+                    log.error("事务中发生异常，执行方法 " + method.getName() + " 参数 " + args, e);
                     db.rollbackTransaction();
                     throw e;
                 }

@@ -166,6 +166,16 @@ public class TransactionService {
         scanQRCodeResponse.specifiedAmount = requestTransactionResponse.getSpecifiedAmount();
         scanQRCodeResponse.setExpiredAt(requestTransactionResponse.getExpiredAt());
         scanQRCodeResponse.setRequestId(requestTransactionResponse.getRequestId());
+
+
+        // 检查用户余额
+        Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
+        if (wallet.getAmount() < requestTransactionResponse.getSpecifiedAmount()) {
+            log.error("用户余额不足 余额：" + wallet.getAmount() + "，交易金额：" + requestTransactionResponse.getSpecifiedAmount());
+            scanQRCodeResponse.setMessage("用户余额不足");
+            scanQRCodeResponse.setCode("");
+        }
+
         return scanQRCodeResponse;
     }
 

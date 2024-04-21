@@ -1,6 +1,8 @@
 package top.suyiiyii.su;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
@@ -30,8 +32,12 @@ public class UniversalUtils {
      * @return String
      * @throws IOException IOException
      */
-    public static String obj2Json(Object object) throws IOException {
-        return WebUtils.MAPPER.writeValueAsString(object);
+    public static String obj2Json(Object object) {
+        try {
+            return WebUtils.MAPPER.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -44,8 +50,12 @@ public class UniversalUtils {
      * @throws IOException IOException
      */
 
-    public static <T> T json2Obj(String json, Class<T> valueType) throws IOException {
-        return WebUtils.MAPPER.readValue(json, valueType);
+    public static <T> T json2Obj(String json, Class<T> valueType) {
+        try {
+            return WebUtils.MAPPER.readValue(json, valueType);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -279,7 +289,7 @@ public class UniversalUtils {
      * 传入要签名的字符串和私钥（PEM格式）
      * 返回签名后的base64字符串
      */
-    public static String rsaSign(String content, String opensshPrivateKey) throws Exception {
+    public static String rsaSign(String content, String opensshPrivateKey) {
 
         opensshPrivateKey = opensshPrivateKey
                 .replace("-----BEGIN OPENSSH PRIVATE KEY-----", "")
@@ -301,7 +311,12 @@ public class UniversalUtils {
         // 生成签名
         byte[] data = content.getBytes(StandardCharsets.UTF_8);
         signer.update(data, 0, data.length);
-        byte[] signature = signer.generateSignature();
+        byte[] signature = null;
+        try {
+            signature = signer.generateSignature();
+        } catch (CryptoException e) {
+            throw new RuntimeException(e);
+        }
         log.info("签名长度: {}", signature.length);
 
         // 返回Base64编码的签名数据
@@ -312,7 +327,7 @@ public class UniversalUtils {
      * rsa 签名校验
      * 传入原始字符串、签名后的base64字符串和公钥（ssh-rsa格式）
      */
-    public static boolean rsaVerify(String content, String signed, String publicKey) throws IOException {
+    public static boolean rsaVerify(String content, String signed, String publicKey) {
 
         publicKey = publicKey.split(" ")[1];
 

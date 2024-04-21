@@ -109,10 +109,18 @@ public class TransactionService {
         // 请求第三方接口，获取交易信息
         // 创建transaction，设置为pending状态，并返回给用户
         OkHttpClient client = new OkHttpClient();
+        // 构建请求体
+        requestTransactionRequest requestTransactionRequest = new requestTransactionRequest();
+        requestTransactionRequest.setPlatform(configManger.get("PLATFORM_NAME"));
+        requestTransactionRequest.setRequestId(UUID.randomUUID().toString());
+        String requestTransactionRequestJson = UniversalUtils.obj2Json(requestTransactionRequest);
+        // 给请求体签名
+        String sign = UniversalUtils.rsaSign(requestTransactionRequestJson, configManger.get("ID_RSA"));
         // 创建请求
         Request request = new Request.Builder()
                 .url(callbackUrl)
-                .post(RequestBody.create(new byte[0]))
+                .post(RequestBody.create(requestTransactionRequestJson.getBytes()))
+                .addHeader("X-Signature", sign)
                 .build();
         // 发送请求
         requestTransactionResponse requestTransactionResponse;
@@ -146,6 +154,12 @@ public class TransactionService {
     }
 
     @Data
+    public static class requestTransactionRequest {
+        public String platform;
+        public String requestId;
+    }
+
+    @Data
     public static class requestTransactionResponse {
         public String status;
         public String message;
@@ -153,7 +167,8 @@ public class TransactionService {
         public String callback;
         public boolean isSpecifiedAmount;
         public int specifiedAmount;
-        public int ExpiredAt;
+        public int expiredAt;
+        public String requestId;
 
         public String exractCode() {
             return callback.split("code=")[1];
@@ -167,7 +182,8 @@ public class TransactionService {
         public String platform;
         public boolean isSpecifiedAmount;
         public int specifiedAmount;
-        public int ExpiredAt;
+        public int expiredAt;
+        public String requestId;
     }
 
 

@@ -21,6 +21,7 @@
 - [x] **多钱包管理** (2024年04月19日)
 - [x] **扫码功能** (2024年04月19日)
 - [x] **和第三方平台交互** (2024年04月19日)
+- [x] **rsa签名和验签** (2024年04月20日)
 - [ ] **交易api**
 - [ ] **网上支付**
 - [ ] **收款码**
@@ -135,8 +136,27 @@ sequenceDiagram
 
 请求交易，返回当前接口的状态和回调地址
 
-key 是二维码的标识，应该是唯一且随机的
-//TODO 需要使用签名算法验证平台
+identity 是二维码的标识，应该是唯一且随机的
+
+#### Request
+
+##### header
+
+```header
+X-Signature: string
+```
+
+##### body
+
+```json
+{
+  "platform": "string",
+  "requestId": "string"
+}
+```
+
+header应该包含一个签名，签名内容为body的json字符串，签名算法为rsa，私钥由铛铛支付平台持有，公钥由第三方支付平台持有
+
 #### Response
 
 ##### success(未指定金额)
@@ -145,7 +165,8 @@ key 是二维码的标识，应该是唯一且随机的
 {
   "status": "success",
   "callback": "/startTransaction?code=xxx",
-  "isSpecifiedAmount": false
+  "isSpecifiedAmount": false,
+  "requestId": "string"
 }
 ```
 
@@ -160,18 +181,22 @@ key 是二维码的标识，应该是唯一且随机的
   "platform": "string",
   "callback": "/startTransaction?code=xxx",
   "isSpecifiedAmount": true,
-  "specifiedAmount": 100
+  "specifiedAmount": 100,
+  "requestId": "string"
 }
 ```
 
 code 是表示交易对象的标识，应该是在收到对方的交易请求后生成的，应该是系统临时生成且具有有效期的
+
+介绍到请求之后应返回相同的requestId，标记请求和响应，便于后续的交易记录查询
 
 ##### error
 
 ```json
 {
   "status": "error",
-  "message": "error message"
+  "message": "error message",
+  "requestId": "string"
 }
 ```
 
@@ -186,7 +211,8 @@ code 是表示交易对象的标识，应该是在收到对方的交易请求后
   "Platform": "string",
   "tradeName": "string",
   "payeeName": "string",
-  "amount": 100
+  "amount": 100,
+  "requestId": "string"
 }
 ```
 
@@ -197,7 +223,8 @@ code 是表示交易对象的标识，应该是在收到对方的交易请求后
 ```json
 {
   "status": "success",
-  "message": "交易成功"
+  "message": "交易成功",
+  "requestId": "string"
 }
 ```
 
@@ -206,7 +233,8 @@ code 是表示交易对象的标识，应该是在收到对方的交易请求后
 ```json
 {
   "status": "error",
-  "message": "code不存在或已过期"
+  "message": "code不存在或已过期",
+  "requestId": "string"
 }
 ```
 

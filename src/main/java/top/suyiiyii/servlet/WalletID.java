@@ -36,6 +36,13 @@ public class WalletID {
         this.configManger = configManger;
     }
 
+    /**
+     * deprecated
+     * 使用groupID 内的 allocate 方法代替
+     * @param req
+     * @param resp
+     * @return
+     */
     public boolean doPostAllocate(HttpServletRequest req, HttpServletResponse resp) {
         allocateDto idDto = WebUtils.readRequestBody2Obj(req, allocateDto.class);
         walletService.allocate(subMethod.getId(), idDto.id, idDto.amount);

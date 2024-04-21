@@ -148,7 +148,7 @@ public class GroupID {
     public static class AllocateDto {
         @Regex("[0-9]+")
         private int id;
-        @Regex("[0-9]+")
+        @Regex("-?[0-9]+")
         private int amount;
     }
 

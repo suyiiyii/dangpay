@@ -5,7 +5,7 @@ import lombok.Data;
 import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.IOC.SubRegion;
 
-@Proxy
+@Proxy(isNeedAuthorization = false)
 public interface TransactionService {
     String createIdentity(int WalletId, boolean isAmountSpecified, int amount, String type, String description);
 

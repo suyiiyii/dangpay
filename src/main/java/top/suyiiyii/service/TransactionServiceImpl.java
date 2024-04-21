@@ -189,6 +189,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Proxy(isTransaction = true, isNeedAuthorization = false)
     public RequestTransactionResponse requestTransaction(String identity, RequestTransactionRequest request) {
         // 查询交易信息
         TransactionIdentity transactionIdentity = db.query(TransactionIdentity.class).eq("identity", identity).first();
@@ -328,7 +329,7 @@ public class TransactionServiceImpl implements TransactionService {
      * @return 响应体
      */
     @Override
-    @Proxy(isTransaction = true)
+    @Proxy(isTransaction = true, isNeedAuthorization = false)
     public StartTransactionResponse startTransaction(String code, StartTransactionRequest request) {
         // 查询缓存的code和identityId的对应关系
         CodeInCache codeInCache;

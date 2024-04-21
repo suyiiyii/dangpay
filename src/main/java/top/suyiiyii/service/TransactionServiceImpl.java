@@ -61,6 +61,10 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public String createMoneyReceiveIdentity(int WalletId, boolean isAmountSpecified, int amount, String description) {
+        if (amount <= 0) {
+            log.error("收款码的金额必须大于0，用户输入的金额：" + amount);
+            throw new Http_400_BadRequestException("收款码的金额必须大于0");
+        }
         return createIdentity(WalletId, isAmountSpecified, amount, "money_receive", description);
     }
 

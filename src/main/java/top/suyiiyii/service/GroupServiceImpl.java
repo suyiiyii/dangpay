@@ -95,6 +95,7 @@ public class GroupServiceImpl implements GroupService {
         List<GroupDto> groupDtos = groupModels.stream().map(groupModel -> {
             GroupDto groupDto = new GroupDto();
             UniversalUtils.updateObj(groupDto, groupModel);
+            groupDto.setPepoleCount(String.valueOf(db.query(RBACUser.class).eq("role", "GroupMember/g" + userRoles.getUid()).count()));
             groupDto.setAmIAdmin(rbacService.checkUserRole(userRoles.getUid(), "GroupAdmin/g" + groupModel.getId()));
             RBACUser creator = db.query(RBACUser.class).eq("role", "GroupCreator/g" + groupModel.getId()).first();
             groupDto.setGroupCreatorId(creator.getUid());
@@ -127,6 +128,7 @@ public class GroupServiceImpl implements GroupService {
             GroupDto groupDto = new GroupDto();
             UniversalUtils.updateObj(groupDto, groupModel);
 //            groupDto.setPepoleCount(String.valueOf(rbacUsers.stream().filter(rbacUser -> rbacUser.getRole().equals("GroupMember/" + groupModel.getId())).count()));
+            groupDto.setPepoleCount(String.valueOf(db.query(RBACUser.class).eq("role", "GroupMember/g" +  groupModel.getId()).count()));
             groupDto.setAmIAdmin(rbacUsers.stream().anyMatch(rbacUser -> rbacUser.getRole().equals("GroupAdmin/g" + groupModel.getId())));
             RBACUser creator = db.query(RBACUser.class).eq("role", "GroupCreator/g" + groupModel.getId()).first();
             groupDto.setGroupCreatorId(creator.getUid());
@@ -154,6 +156,7 @@ public class GroupServiceImpl implements GroupService {
 
         GroupDto groupDto = new GroupDto();
         UniversalUtils.updateObj(groupDto, groupModel);
+        groupDto.setPepoleCount(String.valueOf(db.query(RBACUser.class).eq("role", "GroupMember/g" + gid).count()));
         groupDto.setAmIAdmin(rbacService.checkUserRole(userRoles.getUid(), "GroupAdmin/g" + gid));
         RBACUser creator = db.query(RBACUser.class).eq("role", "GroupCreator/g" + groupModel.getId()).first();
         groupDto.setGroupCreatorId(creator.getUid());
@@ -426,6 +429,4 @@ public class GroupServiceImpl implements GroupService {
         db.delete(RBACUser.class).eq("role", "GroupAdmin/g" + gid).execute();
         db.delete(RBACUser.class).eq("role", "GroupMember/g" + gid).execute();
     }
-
-
 }

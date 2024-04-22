@@ -257,6 +257,10 @@ public class GroupServiceImpl implements GroupService {
     public void leaveGroup(@SubRegion(areaPrefix = "g") int gid, int uid) {
         try {
             db.beginTransaction();
+            // 检查是不是最后一个
+            if (db.query(RBACUser.class).eq("uid",uid).eq("role", "GroupAdmin/g" + gid).count() == 1) {
+                throw new Http_400_BadRequestException("最后一个管理员不能退出");
+            }
             rbacService.deleteUserRole(uid, "GroupMember/g" + gid);
             rbacService.deleteUserRole(uid, "GroupAdmin/g" + gid);
             db.commitTransaction();

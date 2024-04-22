@@ -20,10 +20,14 @@ import java.util.stream.Collectors;
 public class GroupServiceImpl implements GroupService {
     Session db;
     RBACService rbacService;
+    UserRoles userRoles;
 
-    public GroupServiceImpl(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService) {
+    public GroupServiceImpl(Session db,
+                            @Proxy(isNeedAuthorization = false) RBACService rbacService,
+                            UserRoles userRoles) {
         this.db = db;
         this.rbacService = rbacService;
+        this.userRoles = userRoles;
     }
 
     /**
@@ -221,6 +225,12 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void joinGroup(@SubRegion(areaPrefix = "g") int gid, int uid) {
+        if (!rbacService.isAdmin(userRoles)) {
+            // 判断群组是否存在，是否被封禁，是否隐藏
+            if (!db.query(GroupModel.class).eq("id", gid).eq("status", "normal").eq("hide", "false").exists()) {
+                throw new Http_400_BadRequestException("群组不存在或不可加入");
+            }
+        }
         rbacService.addUserRole(uid, "GroupMember/g" + gid);
     }
 

@@ -24,14 +24,15 @@ public class Register {
         User user = userService.register(registerRequest.username, registerRequest.password, registerRequest.phone);
         respWrite(response, user);
     }
+
+    static class RegisterRequest {
+        @Regex("^[a-zA-Z0-9_-]{3,16}$")
+        public String username;
+        @Regex("^[a-zA-Z0-9_-]{6,18}$")
+        public String password;
+        @Regex("^1[3-9]\\d{9}$")
+        public String phone;
+    }
 }
 
 
-class RegisterRequest {
-    @Regex("^[a-zA-Z0-9_-]{3,16}$")
-    public String username;
-    @Regex("^[a-zA-Z0-9_-]{6,18}$")
-    public String password;
-    @Regex("^1[3-9]\\d{9}$")
-    public String phone;
-}

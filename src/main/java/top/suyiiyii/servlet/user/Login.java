@@ -17,7 +17,6 @@ public class Login {
     UserService userService;
 
     public Login(UserService userService) {
-        super();
         this.userService = userService;
     }
 
@@ -40,14 +39,14 @@ public class Login {
         token.access_token = userService.login(request.username, request.password);
         WebUtils.respWrite(resp, token);
     }
-}
 
-class LoginRequest {
-    @Regex("password")
-    public String grant_type;
-    @Regex("^[a-zA-Z0-9_-]{3,16}$")
-    public String username;
-    @Regex("^[a-zA-Z0-9_-]{6,18}$")
-    public String password;
+    static class LoginRequest {
+        @Regex("password")
+        public String grant_type;
+        @Regex("^[a-zA-Z0-9_-]{3,16}$")
+        public String username;
+        @Regex("^[a-zA-Z0-9_-]{6,18}$")
+        public String password;
+    }
 }
 

@@ -3,6 +3,7 @@ package top.suyiiyii.service;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.RBACRole;
 import top.suyiiyii.models.RBACUser;
+import top.suyiiyii.models.User;
 import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.orm.core.Session;
 
@@ -66,10 +67,14 @@ public class RBACServiceImpl implements RBACService {
         }
         // 如果权限是带分区的，需要带有同样分区的角色才能通过
         if (permission.contains("/")) {
-            String subRegion = permission.split("/")[1];
-            String[] splits = role.split("/");
-            if (splits.length < 2 || !splits[1].equals(subRegion)) {
-                return false;
+            // admin不用考虑分区
+            if (!"admin".equals(role)) {
+                // 如果角色不带分区，直接返回false
+                String subRegion = permission.split("/")[1];
+                String[] splits = role.split("/");
+                if (splits.length < 2 || !splits[1].equals(subRegion)) {
+                    return false;
+                }
             }
             // RBACRole 存的是不带分区的权限，所以需要去掉分区
             permission = permission.split("/")[0];
@@ -103,6 +108,18 @@ public class RBACServiceImpl implements RBACService {
     }
 
     @Override
+    public boolean checkUserRole(UserRoles userRoles, String role) {
+        List<String> roles = userRoles.getRoles();
+        return roles.contains(role);
+    }
+
+    @Override
+    public boolean checkUserRole(int uid, String role) {
+        List<String> roles = getRoles(uid);
+        return roles.contains(role);
+    }
+
+    @Override
     public void addRolePermission(String role, String permission) {
         // 检查待添加的角色权限是否存在
         if (db.query(RBACRole.class).eq("role", role).eq("permission", permission).exists()) {
@@ -119,11 +136,23 @@ public class RBACServiceImpl implements RBACService {
         db.delete(RBACRole.class).eq("role", role).eq("permission", permission).execute();
     }
 
+    /**
+     * 给用户添加角色
+     * 会判断用户是否存在，角色是否存在
+     * 若无法执行操作将抛异常
+     *
+     * @param uid  用户id
+     * @param role 角色
+     */
     @Override
     public void addUserRole(int uid, String role) {
+        // 判断用户是否存在
+        if (!db.query(User.class).eq("id", uid).exists()) {
+            throw new IllegalArgumentException("用户不存在");
+        }
         // 检查待添加的用户角色是否存在
         if (db.query(RBACUser.class).eq("uid", uid).eq("role", role).exists()) {
-            return;
+            throw new IllegalArgumentException("用户已有该角色");
         }
         RBACUser rbacUser = new RBACUser();
         rbacUser.setUid(uid);

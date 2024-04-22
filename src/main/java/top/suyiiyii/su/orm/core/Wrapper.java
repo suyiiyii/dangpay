@@ -259,4 +259,12 @@ public class Wrapper {
             return false;
         }
     }
+
+    public int count() {
+        try {
+            return all().size();
+        } catch (NoSuchElementException e) {
+            return 0;
+        }
+    }
 }

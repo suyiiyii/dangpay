@@ -3,6 +3,7 @@ package top.suyiiyii.su;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.validator.Validator;
 
 import java.io.BufferedReader;
@@ -30,14 +31,18 @@ public class WebUtils {
      * @return String
      * @throws IOException IOException
      */
-    public static String readRequestBody(HttpServletRequest req) throws IOException {
-        BufferedReader reader = req.getReader();
-        StringBuilder stringBuilder = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            stringBuilder.append(line);
+    public static String readRequestBody(HttpServletRequest req) {
+        try {
+            BufferedReader reader = req.getReader();
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+            return stringBuilder.toString();
+        } catch (IOException e) {
+            throw new Http_400_BadRequestException("请求体格式错误");
         }
-        return stringBuilder.toString();
     }
 
     /**
@@ -66,7 +71,7 @@ public class WebUtils {
             Validator.check(t);
             return t;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new Http_400_BadRequestException("请求体格式错误");
         }
     }
 

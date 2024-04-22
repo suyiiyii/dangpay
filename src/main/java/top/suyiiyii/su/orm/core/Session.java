@@ -177,9 +177,9 @@ public class Session {
      *
      * @param obj 待插入的对象
      * @param <T> 待插入的对象的类型
+     * @return 返回插入的数据的ID
      */
-    public <T> void insert(T obj) {
-
+    public <T> int insert(T obj, boolean isNeedId) {
         Table table = modelManger.getClass2Table().get(obj.getClass());
         String sql = RowSqlGenerater.getInsertSql(table);
         PreparedStatement preparedStatement;
@@ -200,10 +200,30 @@ public class Session {
                 preparedStatement.setObject(cnt++, field.get(obj));
             }
             sqlExecutor.execute(preparedStatement);
+            if (!isNeedId) {
+                return -1;
+            }
+            // 获取刚刚插入的数据的ID
+            ResultSet rs = preparedStatement.getGeneratedKeys();
+            if (rs.next()) return rs.getInt(1);
+//            // 备用方案：执行SELECT LAST_INSERT_ID()查询
+//            String selectLastIdSql = "SELECT LAST_INSERT_ID()";
+//            try (PreparedStatement lastIdStmt = sqlExecutor.getPreparedStatement(selectLastIdSql);
+//                 ResultSet rs = lastIdStmt.executeQuery()) {
+//                if (rs.next()) {
+//                    return rs.getInt(1);
+//                }
+//            }
+            return -1;
         } catch (NoSuchFieldException | IllegalAccessException | SQLException e) {
             throw new RuntimeException(e);
         }
     }
+
+    public <T> int insert(T obj) {
+        return insert(obj, false);
+    }
+
 
     /**
      * 更新单个对象
@@ -212,7 +232,7 @@ public class Session {
      * @param obj 待更新的对象
      * @param <T> 待更新的对象的类型
      */
-    public <T> void update(T obj) throws SQLException {
+    public <T> void update(T obj) {
         Table table = modelManger.getClass2Table().get(obj.getClass());
         String sql = RowSqlGenerater.getUpdateSql(table);
         PreparedStatement preparedStatement;
@@ -245,7 +265,7 @@ public class Session {
                 }
             }
             sqlExecutor.execute(preparedStatement);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
+        } catch (NoSuchFieldException | IllegalAccessException | SQLException e) {
             throw new RuntimeException(e);
         }
     }
@@ -387,6 +407,18 @@ public class Session {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     * 判断当前是否在事务中
+     */
+    public boolean isTransaction() {
+        return !sqlExecutor.isAutoCommit();
+    }
+
+
+    /**
+     * 销毁
+     */
 
     public void destroy() {
         try {

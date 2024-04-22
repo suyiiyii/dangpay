@@ -1,5 +1,7 @@
 package top.suyiiyii.su.validator;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.lang.reflect.Field;
 import java.util.regex.Pattern;
 
@@ -8,6 +10,7 @@ import java.util.regex.Pattern;
  * 通过@Regex 注解标注应该匹配的正则表达式
  * check方法会根据注解进行验证
  */
+@Slf4j
 public class Validator {
     public static void check(Object obj) {
         if (obj == null) {
@@ -36,6 +39,7 @@ public class Validator {
                         throw new IllegalArgumentException();
                     }
                 } catch (NullPointerException | IllegalAccessException | IllegalArgumentException e) {
+                    log.error("参数 " + field.getName() + " 不合法，需要匹配 " + regex);
                     throw new IllegalArgumentException("参数 " + field.getName() + " 不合法，需要匹配 " + regex);
                 }
             }

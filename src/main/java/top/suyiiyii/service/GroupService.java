@@ -3,28 +3,28 @@ package top.suyiiyii.service;
 import lombok.Data;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.GroupModel;
-import top.suyiiyii.su.IOC.RBACAuthorization;
+import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.IOC.SubRegion;
 
 import java.util.List;
 
-@RBACAuthorization
+@Proxy
 public interface GroupService {
     GroupModel createGroup(UserRoles userRoles, GroupModel groupModel);
 
 
     void updateGroup(@SubRegion(areaPrefix = "g") int gid, UserRoles userRoles, GroupModel groupModel);
 
-    List<GroupModel> getAllGroup(boolean isSeeBan);
+    List<GroupDto> getAllGroup(boolean isSeeBan);
 
-    List<GroupModel> getAllGroup();
+    List<GroupDto> getAllGroup();
 
 
     List<GroupDto> getMyGroup(int uid);
 
-    GroupModel getGroup(int gid, boolean isSeeBan);
+    GroupDto getGroup(int gid, boolean isSeeBan);
 
-    GroupModel getGroup(int gid);
+    GroupDto getGroup(int gid);
 
 
     void banGroup(@SubRegion(areaPrefix = "g") int gid);
@@ -53,6 +53,11 @@ public interface GroupService {
 
     void addAdmin(@SubRegion(areaPrefix = "g") int gid, int uid);
 
+    void transferGroupCreator(@SubRegion(areaPrefix = "g") int gid, int uid);
+
+    @Proxy(isTransaction = true)
+    void destroyGroup(@SubRegion(areaPrefix = "g") int gid);
+
     @Data
     public static class GroupDto {
         int id;
@@ -65,6 +70,7 @@ public interface GroupService {
         String status;
         String hide;
         boolean amIAdmin;
+        int groupCreatorId;
     }
 
     @Data

@@ -1,11 +1,11 @@
 package top.suyiiyii.service;
 
 import top.suyiiyii.dto.UserRoles;
-import top.suyiiyii.su.IOC.RBACAuthorization;
+import top.suyiiyii.su.IOC.Proxy;
 
 import java.util.List;
 
-@RBACAuthorization
+@Proxy
 public interface RBACService {
     List<String> getRoles(int uid);
 
@@ -16,6 +16,10 @@ public interface RBACService {
     boolean checkUserPermission(int uid, String permission);
 
     boolean checkUserPermission(UserRoles userRoles, String permission);
+
+    boolean checkUserRole(UserRoles userRoles, String role);
+
+    boolean checkUserRole(int uid, String role);
 
     void addRolePermission(String role, String permission);
 
@@ -30,5 +34,6 @@ public interface RBACService {
     boolean isAdmin(List<String> roles);
 
     List<Integer> getUserByRole(String role);
+
 }
 

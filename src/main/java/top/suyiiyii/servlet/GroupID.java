@@ -5,10 +5,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.GroupModel;
-import top.suyiiyii.service.GroupService;
-import top.suyiiyii.service.GroupServiceImpl;
-import top.suyiiyii.service.RBACService;
-import top.suyiiyii.su.IOC.RBACAuthorization;
+import top.suyiiyii.models.Message;
+import top.suyiiyii.models.Wallet;
+import top.suyiiyii.service.*;
+import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.WebUtils;
 import top.suyiiyii.su.servlet.IngressServlet;
@@ -21,18 +21,24 @@ public class GroupID {
     private IngressServlet.SubMethod subMethod;
     private RBACService rbacService;
     private UserRoles userRoles;
+    private WalletService walletService;
+    private MessageService messageService;
 
     public GroupID(GroupService groupService,
                    IngressServlet.SubMethod subMethod,
-                   @RBACAuthorization(isNeedAuthorization = false) RBACService rbacService,
+                   @Proxy(isNeedAuthorization = false) RBACService rbacService,
+                   WalletService walletService,
+                   MessageService messageService,
                    UserRoles userRoles) {
         this.groupService = groupService;
         this.subMethod = subMethod;
         this.rbacService = rbacService;
+        this.walletService = walletService;
+        this.messageService = messageService;
         this.userRoles = userRoles;
     }
 
-    GroupModel doGet() {
+    GroupService.GroupDto doGet() {
         return groupService.getGroup(subMethod.getId(), rbacService.isAdmin(userRoles));
     }
 
@@ -107,10 +113,66 @@ public class GroupID {
         return true;
     }
 
+    // 钱包部分
+    public boolean doPostWallet(HttpServletRequest req, HttpServletResponse resp) {
+        walletService.createGroupWallet(subMethod.getId());
+        return true;
+    }
+
+    public List<Wallet> doGetWallet(HttpServletRequest req, HttpServletResponse resp) {
+        return walletService.getGroupWallets(subMethod.getId());
+    }
+
+    public List<Wallet> doGetSubWallet(HttpServletRequest req, HttpServletResponse resp) {
+        return walletService.getGroupSubWallets(subMethod.getId());
+    }
+
+    public boolean doPostSubWallet(HttpServletRequest req, HttpServletResponse resp) {
+        UserRequest userRequest = WebUtils.readRequestBody2Obj(req, UserRequest.class);
+        walletService.createGroupSubWallet(subMethod.getId(), userRequest.uid);
+        return true;
+    }
+
+    public boolean doPostAllocate(HttpServletRequest req, HttpServletResponse resp) {
+        AllocateDto allocateDto = WebUtils.readRequestBody2Obj(req, AllocateDto.class);
+        walletService.allocateGroupWallet(subMethod.getId(), allocateDto.id, allocateDto.amount);
+        return true;
+    }
+
+    public boolean doPostTransferCreator(HttpServletRequest req, HttpServletResponse resp) {
+        UserRequest userRequest = WebUtils.readRequestBody2Obj(req, UserRequest.class);
+        groupService.transferGroupCreator(subMethod.getId(), userRequest.uid);
+        return true;
+    }
+
+    public boolean doDelete(HttpServletRequest req, HttpServletResponse resp) {
+        groupService.destroyGroup(subMethod.getId());
+        return true;
+    }
+
+    public List<Message> doGetMessage(HttpServletRequest req, HttpServletResponse resp) {
+        return messageService.getGroupMessage(subMethod.getId());
+    }
+
+    public boolean doPostMessage(HttpServletRequest req, HttpServletResponse resp) {
+        MessageService.MessageSendRequest request = WebUtils.readRequestBody2Obj(req, MessageService.MessageSendRequest.class);
+        messageService.sendGroupMessage(subMethod.getId(), userRoles.getUid(), request.message);
+        return true;
+    }
+
     @Data
     public static class UserRequest {
         @Regex("[0-9]+")
         private int uid;
     }
+
+    @Data
+    public static class AllocateDto {
+        @Regex("[0-9]+")
+        private int id;
+        @Regex("-?[0-9]+")
+        private int amount;
+    }
+
 
 }

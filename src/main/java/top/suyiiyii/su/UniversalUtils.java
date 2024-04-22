@@ -1,17 +1,31 @@
 package top.suyiiyii.su;
 
-import top.suyiiyii.models.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.signers.RSADigestSigner;
+import org.bouncycastle.crypto.util.OpenSSHPrivateKeyUtil;
+import org.bouncycastle.crypto.util.OpenSSHPublicKeyUtil;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.stream.Collector;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.Base64;
 
 /**
  * 通用工具类
  *
  * @author suyiiyii
  */
+@Slf4j
 public class UniversalUtils {
     /**
      * 把对象转换成json字符串
@@ -20,8 +34,12 @@ public class UniversalUtils {
      * @return String
      * @throws IOException IOException
      */
-    public static String obj2Json(Object object) throws IOException {
-        return WebUtils.MAPPER.writeValueAsString(object);
+    public static String obj2Json(Object object) {
+        try {
+            return WebUtils.MAPPER.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -34,8 +52,12 @@ public class UniversalUtils {
      * @throws IOException IOException
      */
 
-    public static <T> T json2Obj(String json, Class<T> valueType) throws IOException {
-        return WebUtils.MAPPER.readValue(json, valueType);
+    public static <T> T json2Obj(String json, Class<T> valueType) {
+        try {
+            return WebUtils.MAPPER.readValue(json, valueType);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -208,4 +230,167 @@ public class UniversalUtils {
         return capitalizedFirstChar + str.substring(1);
     }
 
+    /**
+     * AES加密
+     * 把字符串加密成base64编码的字符串
+     */
+    public static String encrypt(String content, String secretKey) {
+        try {
+
+            // 使用SHA-1算法计算哈希值
+            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+            byte[] hash = sha1.digest(secretKey.getBytes(StandardCharsets.UTF_8));
+
+            // 把哈希转换成16字节的字节数组
+            byte[] secretKeyBytes = Arrays.copyOf(hash, 16);
+
+            // 创建一个AESKeySpec对象
+            SecretKeySpec keySpec = new SecretKeySpec(secretKeyBytes, "AES");
+
+            // 创建一个全0的初始化向量
+            IvParameterSpec ivSpec = new IvParameterSpec(new byte[16]);
+
+            // 创建一个Cipher对象并初始化它，设置为加密模式
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+
+            // 加密数据
+            byte[] encrypted = cipher.doFinal(content.getBytes(StandardCharsets.UTF_8));
+
+            // 返回Base64编码的加密数据
+            return Base64.getEncoder().encodeToString(encrypted);
+        } catch (Exception e) {
+            throw new RuntimeException("Encryption error", e);
+        }
+    }
+
+    /**
+     * AES解密
+     * 把base64编码的字符串解密成原始字符串
+     */
+    public static String decrypt(String base64Content, String secretKey) {
+        try {
+            // 使用SHA-1算法计算哈希值
+            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+            byte[] hash = sha1.digest(secretKey.getBytes(StandardCharsets.UTF_8));
+
+            // 把哈希值转换成16字节的字节数组
+            byte[] secretKeyBytes = Arrays.copyOf(hash, 16);
+
+            // 创建一个AESKeySpec对象
+            SecretKeySpec keySpec = new SecretKeySpec(secretKeyBytes, "AES");
+
+            // 创建一个全0的初始化向量
+            IvParameterSpec ivSpec = new IvParameterSpec(new byte[16]);
+
+            // 创建一个Cipher对象并初始化它，设置为解密模式
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
+
+            // 解密数据
+            byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(base64Content));
+
+            // 返回解密后的数据
+            return new String(decrypted, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException("Decryption error", e);
+        }
+    }
+
+    /**
+     * rsa 签名
+     * 传入要签名的字符串和私钥（PEM格式）
+     * 返回签名后的base64字符串
+     */
+    public static String rsaSign(String content, String opensshPrivateKey) {
+
+        opensshPrivateKey = opensshPrivateKey
+                .replace("-----BEGIN OPENSSH PRIVATE KEY-----", "")
+                .replace("-----END OPENSSH PRIVATE KEY-----", "")
+                .replace(" ", "")
+                .replace("\n", "");
+
+        // base64解码
+        byte[] keyData = Base64.getDecoder().decode(opensshPrivateKey);
+
+        // 读取openssh格式的私钥
+        AsymmetricKeyParameter asymmetricKeyParameter = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(keyData);
+
+        // 构造签名器
+        RSAKeyParameters rsaKeyParam = (RSAKeyParameters) asymmetricKeyParameter;
+        RSADigestSigner signer = new RSADigestSigner(new SHA512Digest());
+        signer.init(true, rsaKeyParam);
+
+        // 生成签名
+        byte[] data = content.getBytes(StandardCharsets.UTF_8);
+        signer.update(data, 0, data.length);
+        byte[] signature = null;
+        try {
+            signature = signer.generateSignature();
+        } catch (CryptoException e) {
+            throw new RuntimeException(e);
+        }
+//        log.info("签名长度: {}", signature.length);
+
+        // 返回Base64编码的签名数据
+        return Base64.getEncoder().encodeToString(signature);
+    }
+
+    /**
+     * rsa 签名校验
+     * 传入原始字符串、签名后的base64字符串和公钥（ssh-rsa格式）
+     */
+    public static boolean rsaVerify(String content, String signed, String publicKey) {
+
+        publicKey = publicKey.split(" ")[1];
+
+        // base64解码
+        byte[] keyData = Base64.getDecoder().decode(publicKey);
+
+        // 读取openssh格式的公钥
+        AsymmetricKeyParameter asymmetricKeyParameter = OpenSSHPublicKeyUtil.parsePublicKey(keyData);
+
+        // 构造签名器
+        RSAKeyParameters rsaKeyParam = (RSAKeyParameters) asymmetricKeyParameter;
+        RSADigestSigner signer = new RSADigestSigner(new SHA512Digest());
+        signer.init(false, rsaKeyParam);
+
+        // 生成签名
+        byte[] data = content.getBytes(StandardCharsets.UTF_8);
+        signer.update(data, 0, data.length);
+        byte[] signature = Base64.getDecoder().decode(signed);
+//        log.info("签名长度: {}", signature.length);
+
+        // 验证签名
+        return signer.verifySignature(signature);
+
+        /*
+        daily(2024.4.21):
+        花了4个多小时，前期到处找资料，发现好像没有什么库可以直接用，并且这方面的资料也少得可怜；ai一直叫我用pem的方式去解析，试了错了问ai要怎么改，还是叫我换一个库然后继续用解析pem的方式去解析；csdn上面垃圾一大堆。然后在stackoverflow上找，有个20年的说现在ssh会默认使用自己的格式，还没有java库能够支持，后面到了一个答案，说有库能搞，就去搜索答案相关的那个库。然后找那个要找的有关OPENSSH的库的类，结果搜的时候发现bouncycastle原来有一个OpenSSHPrivateKeyUtil，看了一源码，发现有几个magic，拿手上的openssh的公钥钥试base64解码试了一下，就出现了代码中的magic，所以就判断这个库是对的，然后就开始尝试去调用这几个方法，主要是具体细节看不懂，文档也看不懂，说要传key，但是不知道是传一个完整的key，还是解码之后的key，还是什么，idea也调试不了库里面的方法，所以调试了好久，最终是弄好了
+
+        大概就是实现了一个用openssh格式的私钥签名，用ssh-rsa格式的公钥验签的方法，自己当时“觉得”因为ssh很常用，所以用ssh-kenygen生成key更方便一些，不过更多是不管怎么样是想搞出来吧，虽然花了很多时间，但是也学到了很多东西，也还行
+        下次再也不用openssh的格式了，老老实实换成pem格式
+
+         */
+    }
+
+    /**
+     * sign 签名方法
+     * 上层方法，直接调用
+     */
+    public static String sign(String content, ConfigManger configManger) {
+        String privateKey = configManger.get("ID_RSA");
+        return rsaSign(content, privateKey);
+    }
+
+    /**
+     * verify 验证方法
+     * 上层方法，直接调用
+     */
+
+    public static boolean verify(String content, String signed, String platform, ConfigManger configManger) {
+        String key = "ID_RSA_PUB_" + platform.toUpperCase();
+        String publicKey = configManger.get(key);
+        return rsaVerify(content, signed, publicKey);
+    }
 }

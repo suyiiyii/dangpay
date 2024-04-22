@@ -5,7 +5,7 @@ import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.User;
 import top.suyiiyii.su.ConfigManger;
-import top.suyiiyii.su.IOC.RBACAuthorization;
+import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.JwtUtils;
 import top.suyiiyii.su.UniversalUtils;
@@ -27,7 +27,7 @@ public class UserServiceImpl implements UserService {
 
     public UserServiceImpl(Session db,
                            ConfigManger configManger,
-                           @RBACAuthorization(isNeedAuthorization = false) RBACService rbacService) {
+                           @Proxy(isNeedAuthorization = false) RBACService rbacService) {
         this.db = db;
         this.configManger = configManger;
         this.rbacService = rbacService;
@@ -51,6 +51,12 @@ public class UserServiceImpl implements UserService {
     }
 
     static boolean checkPassword(String password, User user) {
+        return user.getPassword().equals(getHashed(password));
+    }
+
+    @Override
+    public boolean checkPassword(String password, int uid) {
+        User user = db.query(User.class).eq("id", uid).first();
         return user.getPassword().equals(getHashed(password));
     }
 
@@ -100,7 +106,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUser(int uid, UserRoles userRoles) {
         // 管理员可以查看任何用户信息,普通用户只能查看自己的信息
-        if (!rbacService.isAdmin(userRoles) && userRoles.uid != uid) {
+        if (userRoles != null && !rbacService.isAdmin(userRoles) && userRoles.uid != uid) {
             throw new Http_403_ForbiddenException("普通用户只能查看自己的信息");
         }
         try {
@@ -116,33 +122,24 @@ public class UserServiceImpl implements UserService {
         return db.query(User.class).all();
     }
 
+
     @Override
+    @Proxy(isTransaction = true)
     public User register(String username, String password, String phone) {
+        // 判断用户名是否存在
+        if (db.query(User.class).eq("username", username).exists()) {
+            throw new Http_400_BadRequestException("用户名已存在");
+        }
         User user = new User();
         user.setUsername(username);
         user.setPassword(getHashed(password));
         user.setPhone(phone);
         user.setIconUrl("");
         user.setStatus("normal");
-        boolean isExist = true;
-        try {
-            db.query(User.class).eq("username", username).first();
-        } catch (NoSuchElementException e) {
-            isExist = false;
-        }
-        if (isExist) {
-            throw new Http_400_BadRequestException("用户名已存在");
-        }
-        try {
-            db.beginTransaction();
-            db.insert(user);
-            user = db.query(User.class).eq("username", username).eq("phone", phone).first();
-            rbacService.addUserRole(user.getId(), "user");
-            db.commitTransaction();
-        } catch (Exception e) {
-            db.rollbackTransaction();
-            throw new Http_400_BadRequestException("注册失败");
-        }
+        int id = db.insert(user, true);
+        List<User> users = db.query(User.class).all();
+        log.debug("用户列表：{}", users);
+        rbacService.addUserRole(id, "user");
         return user;
     }
 

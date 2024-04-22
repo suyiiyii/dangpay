@@ -7,22 +7,19 @@ import top.suyiiyii.dto.Token;
 import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.service.UserService;
 import top.suyiiyii.su.WebUtils;
-import top.suyiiyii.su.servlet.BaseHttpServlet;
 import top.suyiiyii.su.validator.Regex;
 import top.suyiiyii.su.validator.Validator;
 
 import java.io.IOException;
 
 @Slf4j
-public class Login extends BaseHttpServlet {
+public class Login {
     UserService userService;
 
     public Login(UserService userService) {
-        super();
         this.userService = userService;
     }
 
-    @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         LoginRequest request = new LoginRequest();
@@ -42,14 +39,14 @@ public class Login extends BaseHttpServlet {
         token.access_token = userService.login(request.username, request.password);
         WebUtils.respWrite(resp, token);
     }
-}
 
-class LoginRequest {
-    @Regex("password")
-    public String grant_type;
-    @Regex("^[a-zA-Z0-9_-]{3,16}$")
-    public String username;
-    @Regex("^[a-zA-Z0-9_-]{6,18}$")
-    public String password;
+    static class LoginRequest {
+        @Regex("password")
+        public String grant_type;
+        @Regex("^[a-zA-Z0-9_-]{3,16}$")
+        public String username;
+        @Regex("^[a-zA-Z0-9_-]{6,18}$")
+        public String password;
+    }
 }
 

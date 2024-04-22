@@ -72,9 +72,9 @@ public class IngressServlet extends HttpServlet {
         ioCmanager.registerLocalBean(tokenData);
         ioCmanager.registerLocalBean(IOCmanager.getGlobalBean(ModelManger.class).getSession());
         ioCmanager.registerLocalBean(subMethod);
-        ioCmanager.registerLocalBean(ioCmanager.getObj(UserRoles.class, false));
+        ioCmanager.registerLocalBean(ioCmanager.getObj(UserRoles.class));
 
-        log.info("tokenData：" + tokenData + "，userRoles：" + ioCmanager.getObj(UserRoles.class, false));
+        log.info("tokenData：" + tokenData + "，userRoles：" + ioCmanager.getObj(UserRoles.class));
 
         // 通过反射创建对象
         Object servlet;

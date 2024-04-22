@@ -2,12 +2,14 @@ package top.suyiiyii.service;
 
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.User;
-import top.suyiiyii.su.IOC.RBACAuthorization;
+import top.suyiiyii.su.IOC.Proxy;
 
 import java.util.List;
 
-@RBACAuthorization
+@Proxy
 public interface UserService {
+
+    boolean checkPassword(String password, int uid);
 
     String login(String username, String password);
 

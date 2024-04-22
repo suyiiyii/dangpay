@@ -40,15 +40,15 @@ public class Group {
 
     @Data
     static class GroupDto {
-        @Regex(".{3,100}")
+        @Regex(".{3,20}")
         String name;
-        @Regex(".{0,100}")
+        @Regex(".{0,20}")
         String pepoleCount;
-        @Regex(".{3,100}")
+        @Regex(".{3,20}")
         String enterpriseScale;
-        @Regex(".{3,100}")
+        @Regex(".{3,20}")
         String industry;
-        @Regex(".{3,100}")
+        @Regex(".{3,20}")
         String address;
         @Regex("^1[3-9]\\d{9}$")
         String contact;

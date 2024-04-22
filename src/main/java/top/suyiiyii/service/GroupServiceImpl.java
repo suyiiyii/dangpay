@@ -22,9 +22,7 @@ public class GroupServiceImpl implements GroupService {
     RBACService rbacService;
     UserRoles userRoles;
 
-    public GroupServiceImpl(Session db,
-                            @Proxy(isNeedAuthorization = false) RBACService rbacService,
-                            UserRoles userRoles) {
+    public GroupServiceImpl(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService, UserRoles userRoles) {
         this.db = db;
         this.rbacService = rbacService;
         this.userRoles = userRoles;
@@ -293,6 +291,13 @@ public class GroupServiceImpl implements GroupService {
             if (uid == userRoles.getUid()) {
                 throw new Http_400_BadRequestException("不能踢自己");
             }
+            // 群主能踢管理员和普通成员，管理员只能踢普通成员
+            if (rbacService.checkUserRole(uid, "GroupCreator/g" + gid)) {
+                throw new Http_400_BadRequestException("不能踢群主");
+            }
+            if (rbacService.checkUserRole(userRoles, "GroupAdmin/g" + gid) && rbacService.checkUserRole(uid, "GroupAdmin/g" + gid)) {
+                throw new Http_400_BadRequestException("只有群主能踢管理员");
+            }
             rbacService.deleteUserRole(uid, "GroupMember/g" + gid);
             rbacService.deleteUserRole(uid, "GroupAdmin/g" + gid);
             db.commitTransaction();
@@ -314,6 +319,8 @@ public class GroupServiceImpl implements GroupService {
         List<RBACUser> rbacUsers = db.query(RBACUser.class).eq("role", "GroupMember/g" + gid).all();
         // 获取管理员的id
         List<RBACUser> rbacAdmins = db.query(RBACUser.class).eq("role", "GroupAdmin/g" + gid).all();
+        // 获取群主的id
+        RBACUser creator = db.query(RBACUser.class).eq("role", "GroupCreator/g" + gid).first();
         // 再获取成员的名字
         List<User> users = db.query(User.class).in("id", List.of(rbacUsers.stream().map(RBACUser::getUid).toArray())).all();
         Map<Integer, String> userMap = users.stream().collect(Collectors.toMap(User::getId, User::getUsername));
@@ -322,7 +329,13 @@ public class GroupServiceImpl implements GroupService {
             MemberDto memberDto = new MemberDto();
             memberDto.setId(rbacUser.getUid());
             memberDto.setName(userMap.get(rbacUser.getUid()));
-            memberDto.setRole(rbacAdmins.stream().anyMatch(rbacUser1 -> rbacUser1.getUid() == rbacUser.getUid()) ? "admin" : "member");
+            if (creator.getUid() == rbacUser.getUid()) {
+                memberDto.setRole("creator");
+            } else if (rbacAdmins.stream().anyMatch(rbacUser1 -> rbacUser1.getUid() == rbacUser.getUid())) {
+                memberDto.setRole("admin");
+            } else {
+                memberDto.setRole("member");
+            }
             return memberDto;
         }).toList();
         return memberDtos;

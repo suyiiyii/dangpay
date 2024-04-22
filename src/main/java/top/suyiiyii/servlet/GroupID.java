@@ -5,11 +5,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.GroupModel;
+import top.suyiiyii.models.Message;
 import top.suyiiyii.models.Wallet;
-import top.suyiiyii.service.GroupService;
-import top.suyiiyii.service.GroupServiceImpl;
-import top.suyiiyii.service.RBACService;
-import top.suyiiyii.service.WalletService;
+import top.suyiiyii.service.*;
 import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.WebUtils;
@@ -24,16 +22,19 @@ public class GroupID {
     private RBACService rbacService;
     private UserRoles userRoles;
     private WalletService walletService;
+    private MessageService messageService;
 
     public GroupID(GroupService groupService,
                    IngressServlet.SubMethod subMethod,
                    @Proxy(isNeedAuthorization = false) RBACService rbacService,
                    WalletService walletService,
+                   MessageService messageService,
                    UserRoles userRoles) {
         this.groupService = groupService;
         this.subMethod = subMethod;
         this.rbacService = rbacService;
         this.walletService = walletService;
+        this.messageService = messageService;
         this.userRoles = userRoles;
     }
 
@@ -146,6 +147,16 @@ public class GroupID {
 
     public boolean doDelete(HttpServletRequest req, HttpServletResponse resp) {
         groupService.destroyGroup(subMethod.getId());
+        return true;
+    }
+
+    public List<Message> doGetMessage(HttpServletRequest req, HttpServletResponse resp) {
+        return messageService.getGroupMessage(subMethod.getId());
+    }
+
+    public boolean doPostMessage(HttpServletRequest req, HttpServletResponse resp) {
+        MessageService.MessageSendRequest request = WebUtils.readRequestBody2Obj(req, MessageService.MessageSendRequest.class);
+        messageService.sendGroupMessage(subMethod.getId(), userRoles.getUid(), request.message);
         return true;
     }
 

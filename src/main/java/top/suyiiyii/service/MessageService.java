@@ -60,7 +60,7 @@ public class MessageService {
         public int receiverId;
         @Regex("[0-9]+")
         public int groupId;
-        @Regex(".{1,100}")
+        @Regex(".{1,888}")
         public String message;
     }
 }

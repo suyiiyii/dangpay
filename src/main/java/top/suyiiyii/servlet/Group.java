@@ -42,7 +42,7 @@ public class Group {
     static class GroupDto {
         @Regex(".{3,100}")
         String name;
-        @Regex(".{3,100}")
+        @Regex(".{0,100}")
         String pepoleCount;
         @Regex(".{3,100}")
         String enterpriseScale;
@@ -50,7 +50,7 @@ public class Group {
         String industry;
         @Regex(".{3,100}")
         String address;
-        @Regex(".{3,100}")
+        @Regex("^1[3-9]\\d{9}$")
         String contact;
     }
 }

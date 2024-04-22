@@ -61,12 +61,18 @@ public class FriendService {
         List<Friend> friends = db.query(Friend.class).eq("uid1", uid).all();
         List<User> users = db.query(User.class).in("id", friends.stream().map(Friend::getUid2).collect(Collectors.toList())).all();
         Map<Integer, String> userMap = users.stream().collect(Collectors.toMap(User::getId, User::getUsername));
-        return friends.stream().map(friend -> {
+        List<FriendDto> friendDtos = friends.stream().map(friend -> {
             FriendDto friendDto = new FriendDto();
             friendDto.uid = friend.getUid2();
             friendDto.username = userMap.get(friend.getUid2());
             return friendDto;
         }).collect(Collectors.toList());
+        // 添加系统消息对话
+        FriendDto system = new FriendDto();
+        system.uid = -1;
+        system.username = "系统消息";
+        friendDtos.add(0,system);
+        return friendDtos;
     }
 
 

@@ -26,7 +26,7 @@ public class FriendService {
 
     public void addFriend(int uid1, int uid2) {
         // 检查是否存在用户
-        if (!db.query(User.class).eq("uid", uid2).exists()) {
+        if (!db.query(User.class).eq("id", uid2).exists()) {
             throw new Http_400_BadRequestException("用户不存在");
         }
         // 检查是否添加自己

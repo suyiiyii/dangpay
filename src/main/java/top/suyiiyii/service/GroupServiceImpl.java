@@ -152,6 +152,11 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void banGroup(@SubRegion(areaPrefix = "g") int gid) {
+        // 判断群组是否已经被封禁
+        if (db.query(GroupModel.class).eq("id", gid).eq("status", "ban").exists()) {
+            throw new Http_400_BadRequestException("群组已被封禁");
+        }
+        // 封禁群组
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         groupModel.setStatus("ban");
         db.commit();
@@ -164,6 +169,10 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void unbanGroup(@SubRegion(areaPrefix = "g") int gid) {
+        // 判断群组是否已经被封禁
+        if (db.query(GroupModel.class).eq("id", gid).eq("status", "normal").exists()) {
+            throw new Http_400_BadRequestException("群组状态正常");
+        }
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         groupModel.setStatus("normal");
         db.commit();
@@ -177,6 +186,10 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public void hideGroup(@SubRegion(areaPrefix = "g") int gid) {
+        // 判断是否已经隐藏
+        if (db.query(GroupModel.class).eq("id", gid).eq("hide", "true").exists()) {
+            throw new Http_400_BadRequestException("群组已隐藏");
+        }
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         groupModel.setHide("true");
         db.commit();
@@ -190,6 +203,10 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public void unhideGroup(@SubRegion(areaPrefix = "g") int gid) {
+        // 判断是否已经隐藏
+        if (db.query(GroupModel.class).eq("id", gid).eq("hide", "false").exists()) {
+            throw new Http_400_BadRequestException("群组未隐藏");
+        }
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         groupModel.setHide("false");
         db.commit();

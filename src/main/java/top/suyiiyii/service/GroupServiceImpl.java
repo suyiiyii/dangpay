@@ -4,6 +4,7 @@ import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.GroupModel;
 import top.suyiiyii.models.RBACUser;
 import top.suyiiyii.models.User;
+import top.suyiiyii.models.Wallet;
 import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.IOC.SubRegion;
@@ -365,6 +366,65 @@ public class GroupServiceImpl implements GroupService {
             throw new Http_400_BadRequestException("用户不是群组成员");
         }
         rbacService.addUserRole(uid, "GroupAdmin/g" + gid);
+    }
+
+    /**
+     * 转让群主
+     * 只有群主能转让群主
+     */
+    @Override
+    public void transferGroupCreator(@SubRegion(areaPrefix = "g") int gid, int uid) {
+        try {
+            db.beginTransaction();
+            if (!rbacService.checkUserRole(userRoles, "GroupCreator/g" + gid)) {
+                throw new Http_400_BadRequestException("没有权限");
+            }
+            if (!rbacService.checkUserRole(uid, "GroupAdmin/g" + gid)) {
+                throw new Http_400_BadRequestException("用户不是群组管理员");
+            }
+            rbacService.deleteUserRole(userRoles.getUid(), "GroupCreator/g" + gid);
+            rbacService.addUserRole(uid, "GroupCreator/g" + gid);
+            db.commitTransaction();
+        } catch (Exception e) {
+            db.rollbackTransaction();
+            throw e;
+        }
+    }
+
+    /**
+     * 销毁群组
+     * 只有群主能销毁群组
+     * 销毁之前需要检查是否有其他群组成员
+     * 并且检查是否有子钱包非空
+     */
+
+    @Override
+    @Proxy(isTransaction = true)
+    public void destroyGroup(@SubRegion(areaPrefix = "g") int gid) {
+        // 检查群内是否有其他成员
+        if (db.query(RBACUser.class).eq("role", "GroupMember/g" + gid).count() > 1) {
+            throw new Http_400_BadRequestException("群组内还有其他成员，请先清理其他成员后再试");
+        }
+        // 检查主钱包是否为空
+        Wallet mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+        if (mainWallet.getAmount() != 0 || mainWallet.getAmountInFrozen() != 0) {
+            throw new Http_400_BadRequestException("群组主钱包还有余额或未完成的订单，请先转移后再试");
+        }
+        // 检查是否有子钱包非空
+        List<Wallet> subWallets = db.query(Wallet.class).eq("father_wallet_id", mainWallet.getId()).all();
+        if (subWallets.stream().anyMatch(wallet -> wallet.getAmount() != 0 || wallet.getAmountInFrozen() != 0)) {
+            throw new Http_400_BadRequestException("群组内还有子钱包有余额或未完成的订单，请先转移后再试");
+        }
+        // 删除群组
+        db.delete(GroupModel.class).eq("id", gid).execute();
+        // 删除群组的子钱包
+        db.delete(Wallet.class).eq("father_wallet_id", mainWallet.getId()).execute();
+        // 删除群组的主钱包
+        db.delete(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").execute();
+        // 删除群组的权限
+        db.delete(RBACUser.class).eq("role", "GroupCreator/g" + gid).execute();
+        db.delete(RBACUser.class).eq("role", "GroupAdmin/g" + gid).execute();
+        db.delete(RBACUser.class).eq("role", "GroupMember/g" + gid).execute();
     }
 
 

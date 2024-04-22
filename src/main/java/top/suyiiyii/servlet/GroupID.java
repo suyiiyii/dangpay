@@ -138,6 +138,17 @@ public class GroupID {
         return true;
     }
 
+    public boolean doPostTransferCreator(HttpServletRequest req, HttpServletResponse resp) {
+        UserRequest userRequest = WebUtils.readRequestBody2Obj(req, UserRequest.class);
+        groupService.transferGroupCreator(subMethod.getId(), userRequest.uid);
+        return true;
+    }
+
+    public boolean doDelete(HttpServletRequest req, HttpServletResponse resp) {
+        groupService.destroyGroup(subMethod.getId());
+        return true;
+    }
+
     @Data
     public static class UserRequest {
         @Regex("[0-9]+")

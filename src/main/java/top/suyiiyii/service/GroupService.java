@@ -53,6 +53,11 @@ public interface GroupService {
 
     void addAdmin(@SubRegion(areaPrefix = "g") int gid, int uid);
 
+    void transferGroupCreator(@SubRegion(areaPrefix = "g") int gid, int uid);
+
+    @Proxy(isTransaction = true)
+    void destroyGroup(@SubRegion(areaPrefix = "g") int gid);
+
     @Data
     public static class GroupDto {
         int id;

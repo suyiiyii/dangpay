@@ -51,6 +51,7 @@ public class GroupServiceImpl implements GroupService {
             groupModel.setHide("false");
             int id = db.insert(groupModel, true);
             // 添加群组管理员
+            rbacService.addUserRole(userRoles.getUid(), "GroupCreator/g" + id);
             rbacService.addUserRole(userRoles.getUid(), "GroupAdmin/g" + id);
             rbacService.addUserRole(userRoles.getUid(), "GroupMember/g" + id);
             db.commitTransaction();
@@ -96,6 +97,8 @@ public class GroupServiceImpl implements GroupService {
             GroupDto groupDto = new GroupDto();
             UniversalUtils.updateObj(groupDto, groupModel);
             groupDto.setAmIAdmin(rbacService.checkUserRole(userRoles.getUid(), "GroupAdmin/g" + groupModel.getId()));
+            RBACUser creator = db.query(RBACUser.class).eq("role", "GroupCreator/g" + groupModel.getId()).first();
+            groupDto.setGroupCreatorId(creator.getUid());
             return groupDto;
         }).toList();
         return groupDtos;
@@ -126,6 +129,8 @@ public class GroupServiceImpl implements GroupService {
             UniversalUtils.updateObj(groupDto, groupModel);
 //            groupDto.setPepoleCount(String.valueOf(rbacUsers.stream().filter(rbacUser -> rbacUser.getRole().equals("GroupMember/" + groupModel.getId())).count()));
             groupDto.setAmIAdmin(rbacUsers.stream().anyMatch(rbacUser -> rbacUser.getRole().equals("GroupAdmin/g" + groupModel.getId())));
+            RBACUser creator = db.query(RBACUser.class).eq("role", "GroupCreator/g" + groupModel.getId()).first();
+            groupDto.setGroupCreatorId(creator.getUid());
             return groupDto;
         }).toList();
 
@@ -151,6 +156,8 @@ public class GroupServiceImpl implements GroupService {
         GroupDto groupDto = new GroupDto();
         UniversalUtils.updateObj(groupDto, groupModel);
         groupDto.setAmIAdmin(rbacService.checkUserRole(userRoles.getUid(), "GroupAdmin/g" + gid));
+        RBACUser creator = db.query(RBACUser.class).eq("role", "GroupCreator/g" + groupModel.getId()).first();
+        groupDto.setGroupCreatorId(creator.getUid());
         if (rbacService.isAdmin(userRoles)) {
             groupDto.setAmIAdmin(true);
         }
@@ -258,7 +265,7 @@ public class GroupServiceImpl implements GroupService {
         try {
             db.beginTransaction();
             // 检查是不是最后一个
-            if (db.query(RBACUser.class).eq("uid",uid).eq("role", "GroupAdmin/g" + gid).count() == 1) {
+            if (db.query(RBACUser.class).eq("uid", uid).eq("role", "GroupAdmin/g" + gid).count() == 1) {
                 throw new Http_400_BadRequestException("最后一个管理员不能退出");
             }
             rbacService.deleteUserRole(uid, "GroupMember/g" + gid);

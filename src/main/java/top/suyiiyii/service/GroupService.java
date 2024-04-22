@@ -65,6 +65,7 @@ public interface GroupService {
         String status;
         String hide;
         boolean amIAdmin;
+        int groupCreatorId;
     }
 
     @Data

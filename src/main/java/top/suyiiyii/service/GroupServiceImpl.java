@@ -276,6 +276,12 @@ public class GroupServiceImpl implements GroupService {
     public void kickGroupMember(@SubRegion(areaPrefix = "g") int gid, int uid) {
         try {
             db.beginTransaction();
+            if (!rbacService.checkUserRole(uid, "GroupMember/g" + gid)) {
+                throw new Http_400_BadRequestException("用户不是群组成员");
+            }
+            if (uid == userRoles.getUid()) {
+                throw new Http_400_BadRequestException("不能踢自己");
+            }
             rbacService.deleteUserRole(uid, "GroupMember/g" + gid);
             rbacService.deleteUserRole(uid, "GroupAdmin/g" + gid);
             db.commitTransaction();

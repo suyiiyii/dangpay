@@ -15,16 +15,16 @@ public interface GroupService {
 
     void updateGroup(@SubRegion(areaPrefix = "g") int gid, UserRoles userRoles, GroupModel groupModel);
 
-    List<GroupModel> getAllGroup(boolean isSeeBan);
+    List<GroupDto> getAllGroup(boolean isSeeBan);
 
-    List<GroupModel> getAllGroup();
+    List<GroupDto> getAllGroup();
 
 
     List<GroupDto> getMyGroup(int uid);
 
-    GroupModel getGroup(int gid, boolean isSeeBan);
+    GroupDto getGroup(int gid, boolean isSeeBan);
 
-    GroupModel getGroup(int gid);
+    GroupDto getGroup(int gid);
 
 
     void banGroup(@SubRegion(areaPrefix = "g") int gid);

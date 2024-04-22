@@ -86,17 +86,23 @@ public class GroupServiceImpl implements GroupService {
      * @return 群组列表
      */
     @Override
-    public List<GroupModel> getAllGroup(boolean isSeeBan) {
+    public List<GroupDto> getAllGroup(boolean isSeeBan) {
         List<GroupModel> groupModels = db.query(GroupModel.class).all();
         if (!isSeeBan) {
             groupModels.removeIf(groupModel -> groupModel.getStatus().equals("ban"));
             groupModels.removeIf(groupModel -> groupModel.getHide().equals("true"));
         }
-        return groupModels;
+        List<GroupDto> groupDtos = groupModels.stream().map(groupModel -> {
+            GroupDto groupDto = new GroupDto();
+            UniversalUtils.updateObj(groupDto, groupModel);
+            groupDto.setAmIAdmin(rbacService.checkUserRole(userRoles.getUid(), "GroupAdmin/g" + groupModel.getId()));
+            return groupDto;
+        }).toList();
+        return groupDtos;
     }
 
     @Override
-    public List<GroupModel> getAllGroup() {
+    public List<GroupDto> getAllGroup() {
         return getAllGroup(false);
     }
 
@@ -136,16 +142,23 @@ public class GroupServiceImpl implements GroupService {
      */
 
     @Override
-    public GroupModel getGroup(@SubRegion(areaPrefix = "g") int gid, boolean isSeeBan) {
+    public GroupDto getGroup(@SubRegion(areaPrefix = "g") int gid, boolean isSeeBan) {
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         if (groupModel.getStatus().equals("ban") && !isSeeBan) {
             throw new NoSuchElementException("群组不存在");
         }
-        return groupModel;
+
+        GroupDto groupDto = new GroupDto();
+        UniversalUtils.updateObj(groupDto, groupModel);
+        groupDto.setAmIAdmin(rbacService.checkUserRole(userRoles.getUid(), "GroupAdmin/g" + gid));
+        if (rbacService.isAdmin(userRoles)) {
+            groupDto.setAmIAdmin(true);
+        }
+        return groupDto;
     }
 
     @Override
-    public GroupModel getGroup(@SubRegion(areaPrefix = "g") int gid) {
+    public GroupDto getGroup(@SubRegion(areaPrefix = "g") int gid) {
         return getGroup(gid, false);
     }
 

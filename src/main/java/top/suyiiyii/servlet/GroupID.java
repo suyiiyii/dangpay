@@ -37,7 +37,7 @@ public class GroupID {
         this.userRoles = userRoles;
     }
 
-    GroupModel doGet() {
+    GroupService.GroupDto doGet() {
         return groupService.getGroup(subMethod.getId(), rbacService.isAdmin(userRoles));
     }
 

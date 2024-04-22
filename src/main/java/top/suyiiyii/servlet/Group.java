@@ -34,7 +34,7 @@ public class Group {
         return groupService.createGroup(userRoles, groupModel);
     }
 
-    public List<GroupModel> doGet(HttpServletRequest req, HttpServletResponse resp) {
+    public List<GroupService.GroupDto> doGet(HttpServletRequest req, HttpServletResponse resp) {
         return groupService.getAllGroup(rbacService.isAdmin(userRoles));
     }
 

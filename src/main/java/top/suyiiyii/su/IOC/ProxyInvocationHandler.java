@@ -73,6 +73,10 @@ public class ProxyInvocationHandler implements InvocationHandler {
             checkAuthorization(method, args);
         }
 
+        // 判断是否需要进行审批
+        String methodStr = method.getDeclaringClass().getName() + "/" + method.getName();
+        log.error("methodStr: " + methodStr);
+
         try {
             // 如果需要事务，则开启事务
             if (isTransaction && !db.isTransaction()) {

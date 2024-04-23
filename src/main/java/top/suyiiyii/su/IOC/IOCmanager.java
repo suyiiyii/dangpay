@@ -1,5 +1,6 @@
 package top.suyiiyii.su.IOC;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.service.RBACService;
@@ -209,6 +210,7 @@ public class IOCmanager {
      * 销毁一个对象
      * 递归调用字段的destroy方法，除了单例对象
      */
+    @SneakyThrows
     public void destroyObj(Object obj, boolean force) {
         // 跳过null
         if (obj == null) {
@@ -259,8 +261,10 @@ public class IOCmanager {
                 // 没有destroy方法，跳过
             }
 //            log.info("销毁对象完成: {}", obj.getClass().getSimpleName());
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw e.getTargetException();
         } finally {
             // 减少这个类的实例数量
             if (!force) {
@@ -296,6 +300,10 @@ public class IOCmanager {
      */
     public void destroy() {
         for (Map.Entry entry : localBeans.entrySet()) {
+            //跳过自己，避免循环引用
+            if (entry.getValue() == this) {
+                continue;
+            }
             destroyObj(entry.getValue(), true);
         }
     }

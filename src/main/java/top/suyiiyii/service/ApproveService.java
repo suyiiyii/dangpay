@@ -1,6 +1,5 @@
 package top.suyiiyii.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -11,8 +10,13 @@ import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.orm.core.Session;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Base64;
 import java.util.List;
 
 @Slf4j
@@ -79,7 +83,7 @@ public class ApproveService {
                 throw new Http_400_BadRequestException("群组不存在");
             }
             // 检查是否已经加入
-            if (rbacService.checkUserRole(userRoles, "GroupMember/g" + gid)) {
+            if (rbacService.checkUserRole(inviteUid, "GroupMember/g" + gid)) {
                 throw new Http_400_BadRequestException("已经加入");
             }
             // 邀请申请
@@ -138,17 +142,21 @@ public class ApproveService {
      */
     @SneakyThrows
     public String submitApplicant(int uid, String reason, Method method, List<Object> args) {
-        ObjectMapper objectMapper = new ObjectMapper();
         // 序列化方法名和参数，以字符串的形式存入数据库，以便日后反序列化继续执行操作
         String methodStr = method.getDeclaringClass().getName() + "/" + method.getName();
-        String argsStr = objectMapper.writeValueAsString(args);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(args);
+
+        byte[] bytes = baos.toByteArray();
+        String argsStr = Base64.getEncoder().encodeToString(bytes);
 
         // 检查是否存在用户
         if (!db.query(User.class).eq("id", uid).exists()) {
             throw new Http_400_BadRequestException("用户不存在");
         }
         // 检查是否已经提交过
-        if (db.query(PendingMethod.class).eq("applicant_id", uid).eq("method", methodStr).eq("args", argsStr).eq("status","pending").exists()) {
+        if (db.query(PendingMethod.class).eq("applicant_id", uid).eq("method", methodStr).eq("args", argsStr).eq("status", "pending").exists()) {
             throw new Http_400_BadRequestException("已经提交过");
         }
         // 提交申请
@@ -174,12 +182,14 @@ public class ApproveService {
             throw new Http_400_BadRequestException("申请已处理");
         }
         // 反序列化方法名和参数，继续执行操作
-        ObjectMapper objectMapper = new ObjectMapper();
         String methodStr = pendingMethod.getMethod();
         String argsStr = pendingMethod.getArgs();
         String className = methodStr.split("/")[0];
         String methodName = methodStr.split("/")[1];
-        List<Object> args = objectMapper.readValue(argsStr, List.class);
+        byte[] bytes = Base64.getDecoder().decode(argsStr);
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        ObjectInputStream ois = new ObjectInputStream(bais);
+        List<Object> args = (List<Object>) ois.readObject();
         // 反射执行方法
         Class<?> clazz = Class.forName(className);
         Method method = clazz.getDeclaredMethod(methodName, args.stream().map(Object::getClass).map(aClass -> {

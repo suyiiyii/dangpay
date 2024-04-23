@@ -16,18 +16,50 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 public class ApproveService {
-    Session db;
-    RBACService rbacService;
-    UserRoles userRoles;
-    IOManager iocManager;
+    private final Session db;
+    private final RBACService rbacService;
+    private final UserRoles userRoles;
+    private final IOManager iocManager;
+    private final MessageService messageService;
 
-    public ApproveService(Session db, @Proxy(isNeedAuthorization = false, isNotProxy = true) RBACService rbacService, UserRoles userRoles,
-                          IOManager iocManager) {
+    public ApproveService(Session db,
+                          @Proxy(isNeedAuthorization = false, isNotProxy = true) RBACService rbacService,
+                          UserRoles userRoles,
+                          IOManager iocManager,
+                          @Proxy(isNeedAuthorization = false, isNotProxy = true) MessageService messageService) {
         this.db = db;
         this.rbacService = rbacService;
         this.userRoles = userRoles;
         this.iocManager = iocManager;
+        this.messageService = messageService;
     }
+
+
+    /**
+     * 检查是否需要审批
+     * 入口方法，由ingressServlet调用
+     */
+    public boolean checkApprove(int uid, String reason, Method method, List<Object> args) {
+        String methodStr = method.getDeclaringClass().getName() + "/" + method.getName();
+
+        if (methodStr.equals("top.suyiiyii.service.GroupService/joinGroup")) {
+            // 加群申请
+            String uuid = submitApplicant(uid, reason, method, args);
+            // 给管理员发送消息
+            int gid = (int) args.get(0);
+            List<Integer> admins = rbacService.getUserByRole("GroupAdmin/g" + gid);
+            String message = "用户" + uid + "申请加群，理由：" + reason;
+
+            for (Integer admin : admins) {
+                messageService.sendSystemMessage(admin, message, uuid);
+            }
+
+            return true;
+        }
+        return false;
+
+    }
+
 
     /**
      * 提交申请，由ingressServlet调用
@@ -79,18 +111,19 @@ public class ApproveService {
             List<Object> args = objectMapper.readValue(argsStr, List.class);
             // 反射执行方法
             Class<?> clazz = Class.forName(className);
-            Method method = clazz.getDeclaredMethod(methodName, args.stream().map(Object::getClass).map(
-                    aClass -> {
-                        if (aClass == Integer.class) {
-                            return int.class;
-                        }
-                        return aClass;
-                    }
-            ).toArray(Class[]::new));
+            Method method = clazz.getDeclaredMethod(methodName, args.stream().map(Object::getClass).map(aClass -> {
+                if (aClass == Integer.class) {
+                    return int.class;
+                }
+                return aClass;
+            }).toArray(Class[]::new));
             try {
                 method.invoke(iocManager.getObj(clazz, true, false), args.toArray());
             } catch (InvocationTargetException e) {
                 throw e.getTargetException();
+            } finally {
+                pendingMethod.setStatus("approved");
+                db.commit();
             }
         }
     }

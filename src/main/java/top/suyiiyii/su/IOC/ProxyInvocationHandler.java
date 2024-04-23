@@ -77,18 +77,13 @@ public class ProxyInvocationHandler implements InvocationHandler {
             checkAuthorization(method, args);
         }
 
+
         // 判断是否需要进行审批
-        String methodStr = method.getDeclaringClass().getName() + "/" + method.getName();
-        if (methodStr.equals("top.suyiiyii.service.GroupService/joinGroup")) {
-            log.info("方法" + methodStr + "需要审批");
-            // 提交审批
-            String uuid = approveService.submitApplicant(userRoles.getUid(), "加入群组", method, List.of(args));
+        if (approveService.checkApprove(userRoles.getUid(), "加入群组", method, List.of(args))) {
+            log.info("方法" + method + "需要审批");
             ApproveService.NeedApproveResponse response = new ApproveService.NeedApproveResponse();
             response.setNeedApprove(true);
             response.setMsg("加入群组需要审批");
-
-            approveService.approve(uuid, true, "审批通过test");
-
             return response;
         }
 

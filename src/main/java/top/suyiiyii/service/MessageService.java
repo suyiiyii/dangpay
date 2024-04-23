@@ -5,6 +5,7 @@ import lombok.Data;
 import top.suyiiyii.dao.MessageDao;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.Message;
+import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.IOC.SubRegion;
 import top.suyiiyii.su.orm.core.Session;
@@ -19,12 +20,18 @@ public class MessageService {
     RBACService rbacService;
     UserRoles userRoles;
     MessageDao messageDao;
+    ConfigManger configManger;
 
-    public MessageService(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService, UserRoles userRoles, MessageDao messageDao) {
+    public MessageService(Session db,
+                          @Proxy(isNeedAuthorization = false,isNotProxy = true) RBACService rbacService,
+                          UserRoles userRoles,
+                          MessageDao messageDao,
+                          ConfigManger configManger) {
         this.db = db;
         this.rbacService = rbacService;
         this.userRoles = userRoles;
         this.messageDao = messageDao;
+        this.configManger = configManger;
     }
 
     /**
@@ -39,6 +46,10 @@ public class MessageService {
      */
     public void sendUserMessage(int uid, int receiverId, String message) {
         messageDao.sendTextMessage(uid, receiverId, 0, message);
+    }
+
+    public void sendSystemMessage(int receiverId, String message, String uuid) {
+        messageDao.sendSystemMessage(receiverId, message, configManger.get("BASE_URL") + "/approve?uuid=" + uuid);
     }
 
     public List<Message> getUserMessage(int uid, int senderId) {

@@ -3,6 +3,7 @@ package top.suyiiyii.su.IOC;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
+import top.suyiiyii.service.ApproveService;
 import top.suyiiyii.service.RBACService;
 import top.suyiiyii.su.orm.core.Session;
 
@@ -28,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author suyiiyii
  */
 @Slf4j
-public class IOCmanager {
+public class IOManager {
     private static final Map<Class<?>, Class<?>> Interface2Impl = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Object> globalBeans = new ConcurrentHashMap<>();
     private final Map<Class<?>, Object> localBeans = new ConcurrentHashMap<>();
@@ -141,7 +142,7 @@ public class IOCmanager {
      * @return 需要的实例
      */
     public <T> T getObj(Class<T> clazz, boolean isNotProxy, boolean isNeedAuthorization) {
-//        log.info("开始注入对象: {}", clazz.getSimpleName());
+        log.info("开始注入对象: {}", clazz.getSimpleName());
         try {
             Class<?> clazzInterface = null;
             // 如果是接口，获取实现类
@@ -189,12 +190,13 @@ public class IOCmanager {
                 return obj;
             } else {
                 // 否则创建代理对象
-//                log.info("创建代理对象: {}", clazz.getSimpleName());
+                log.info("创建代理对象: {}", clazz.getSimpleName());
                 ProxyInvocationHandler handler = new ProxyInvocationHandler(obj,
                         getObj(UserRoles.class, true, false),
                         getObj(RBACService.class, true, false),
                         getObj(Session.class, true, false),
-                        isNeedAuthorization);
+                        isNeedAuthorization,
+                        getObj(ApproveService.class, true, false));
                 return (T) java.lang.reflect.Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), handler);
             }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {

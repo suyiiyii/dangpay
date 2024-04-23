@@ -10,7 +10,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.dto.UserRoles;
-import top.suyiiyii.su.IOC.IOCmanager;
+import top.suyiiyii.su.IOC.IOManager;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.WebUtils;
 import top.suyiiyii.su.exception.Http_404_NotFoundException;
@@ -39,7 +39,7 @@ public class IngressServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         // 创建IOC管理器
-        IOCmanager ioCmanager = new IOCmanager();
+        IOManager ioManager = new IOManager();
         // 创建对象，通过依赖注入管理器获取对应的servlet
         // 获取调用的路径
         String path = req.getRequestURI();
@@ -69,18 +69,18 @@ public class IngressServlet extends HttpServlet {
 
         // 添加本地依赖，tokenData
         TokenData tokenData = (TokenData) req.getAttribute("tokenData");
-        ioCmanager.registerLocalBean(tokenData);
-        ioCmanager.registerLocalBean(IOCmanager.getGlobalBean(ModelManger.class).getSession());
-        ioCmanager.registerLocalBean(subMethod);
-        ioCmanager.registerLocalBean(ioCmanager.getObj(UserRoles.class));
-        ioCmanager.registerLocalBean(ioCmanager);
+        ioManager.registerLocalBean(tokenData);
+        ioManager.registerLocalBean(IOManager.getGlobalBean(ModelManger.class).getSession());
+        ioManager.registerLocalBean(subMethod);
+        ioManager.registerLocalBean(ioManager.getObj(UserRoles.class));
+        ioManager.registerLocalBean(ioManager);
 
-        log.info("tokenData：" + tokenData + "，userRoles：" + ioCmanager.getObj(UserRoles.class));
+        log.info("tokenData：" + tokenData + "，userRoles：" + ioManager.getObj(UserRoles.class));
 
         // 通过反射创建对象
         Object servlet;
         try {
-            servlet = ioCmanager.createObj(fullClassName);
+            servlet = ioManager.createObj(fullClassName);
         } catch (ClassNotFoundException e) {
             throw new Http_404_NotFoundException("404 Not Found");
         }
@@ -89,8 +89,8 @@ public class IngressServlet extends HttpServlet {
             methodGateway(req, resp, subMethod, servlet);
         } finally {
             // 销毁对象，递归调用字段的destroy方法
-            ioCmanager.destroyObj(servlet);
-            ioCmanager.destroy();
+            ioManager.destroyObj(servlet);
+            ioManager.destroy();
         }
     }
 

@@ -9,7 +9,7 @@ import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 import top.suyiiyii.su.ConfigManger;
-import top.suyiiyii.su.IOC.IOCmanager;
+import top.suyiiyii.su.IOC.IOManager;
 import top.suyiiyii.su.orm.core.ModelManger;
 import top.suyiiyii.su.orm.utils.ConnectionBuilder;
 
@@ -41,9 +41,9 @@ public class ContextInitializer implements ServletContextListener {
         ServletContext servletContext = sce.getServletContext();
         servletContext.setAttribute("ModelManger", modelManger);
         servletContext.setAttribute("ConfigManger", configManger);
-        IOCmanager.registerGlobalBean(modelManger);
-        IOCmanager.registerGlobalBean(configManger);
-        IOCmanager.implScan("top.suyiiyii.service");
+        IOManager.registerGlobalBean(modelManger);
+        IOManager.registerGlobalBean(configManger);
+        IOManager.implScan("top.suyiiyii.service");
         // redis
         Config config = new Config();
         if (configManger.get("REDIS_PASSWORD").isEmpty()) {
@@ -57,9 +57,9 @@ public class ContextInitializer implements ServletContextListener {
         log.error("REDIS_URL: {}", configManger.get("REDIS_URL"));
         log.error("REDIS_PASSWORD: {}", configManger.get("REDIS_PASSWORD"));
         RedissonClient redisson = Redisson.create(config);
-        IOCmanager.registerGlobalBean(redisson);
+        IOManager.registerGlobalBean(redisson);
         // 由于RedissonClient是接口，所以需要注册实现类
-        IOCmanager.registerInterface2Impl(RedissonClient.class, Redisson.class);
+        IOManager.registerInterface2Impl(RedissonClient.class, Redisson.class);
 
         log.info("依赖注入完成");
     }

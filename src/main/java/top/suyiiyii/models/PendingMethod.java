@@ -23,4 +23,6 @@ public class PendingMethod {
     String status;
     @ColumnSetting(isNotNull = true)
     int createTime;
+    @ColumnSetting(isNotNull = true, stringLength = 100)
+    String uuid;
 }

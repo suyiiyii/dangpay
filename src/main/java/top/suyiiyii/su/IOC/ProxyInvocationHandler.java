@@ -2,6 +2,7 @@ package top.suyiiyii.su.IOC;
 
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
+import top.suyiiyii.service.ApproveService;
 import top.suyiiyii.service.RBACService;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_403_ForbiddenException;
@@ -11,6 +12,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.List;
 
 @Slf4j
 @Proxy(isNeedAuthorization = false)
@@ -19,17 +21,19 @@ public class ProxyInvocationHandler implements InvocationHandler {
     private final UserRoles userRoles;
     private final RBACService rbacService;
     private final Session db;
+    private final ApproveService approveService;
     /**
      * 在代理对象被创建时，设置整个代理对象是否需要权限校验
      */
     private final boolean isNeedAuthorization;
 
-    public ProxyInvocationHandler(Object target, UserRoles userRoles, RBACService rbacService, Session db, boolean isNeedAuthorization) {
+    public ProxyInvocationHandler(Object target, UserRoles userRoles, RBACService rbacService, Session db, boolean isNeedAuthorization, ApproveService approveService) {
         this.target = target;
         this.userRoles = userRoles;
         this.rbacService = rbacService;
         this.db = db;
         this.isNeedAuthorization = isNeedAuthorization;
+        this.approveService = approveService;
     }
 
     @Override
@@ -75,7 +79,18 @@ public class ProxyInvocationHandler implements InvocationHandler {
 
         // 判断是否需要进行审批
         String methodStr = method.getDeclaringClass().getName() + "/" + method.getName();
-        log.error("methodStr: " + methodStr);
+        if (methodStr.equals("top.suyiiyii.service.GroupService/joinGroup")) {
+            log.info("方法" + methodStr + "需要审批");
+            // 提交审批
+            String uuid = approveService.submitApplicant(userRoles.getUid(), "加入群组", method, List.of(args));
+            ApproveService.NeedApproveResponse response = new ApproveService.NeedApproveResponse();
+            response.setNeedApprove(true);
+            response.setMsg("加入群组需要审批");
+
+            approveService.approve(uuid, true, "审批通过test");
+
+            return response;
+        }
 
         try {
             // 如果需要事务，则开启事务

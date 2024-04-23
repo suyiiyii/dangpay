@@ -31,7 +31,7 @@ public class ExceptionHandlerFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
-        log.info("开始处理请求： " + req.getRequestURI());
+        log.info("开始处理请求： " + req.getMethod() + " " + req.getRequestURI());
         try {
             filterChain.doFilter(servletRequest, servletResponse);
         } catch (Exception e) {

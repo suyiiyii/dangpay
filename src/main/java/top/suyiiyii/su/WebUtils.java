@@ -94,7 +94,7 @@ public class WebUtils {
         // 预检请求缓存时间（单位：秒）
         resp.setHeader("Access-Control-Max-Age", "3600");
         // 允许自定义请求头
-        resp.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        resp.setHeader("Access-Control-Allow-Headers", "*");
 
         resp.setContentType("application/json");
         PrintWriter pw = resp.getWriter();

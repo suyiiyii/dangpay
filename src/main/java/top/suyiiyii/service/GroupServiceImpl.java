@@ -410,14 +410,22 @@ public class GroupServiceImpl implements GroupService {
             throw new Http_400_BadRequestException("群组内还有其他成员，请先清理其他成员后再试");
         }
         // 检查主钱包是否为空
-        Wallet mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
-        if (mainWallet.getAmount() != 0 || mainWallet.getAmountInFrozen() != 0) {
-            throw new Http_400_BadRequestException("群组主钱包还有余额或未完成的订单，请先转移后再试");
+        Wallet mainWallet = new Wallet();
+        mainWallet.setId(-1);
+        try {
+            mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+            if (mainWallet.getAmount() != 0 || mainWallet.getAmountInFrozen() != 0) {
+                throw new Http_400_BadRequestException("群组主钱包还有余额或未完成的订单，请先转移后再试");
+            }
+        } catch (NoSuchElementException e) {
         }
         // 检查是否有子钱包非空
-        List<Wallet> subWallets = db.query(Wallet.class).eq("father_wallet_id", mainWallet.getId()).all();
-        if (subWallets.stream().anyMatch(wallet -> wallet.getAmount() != 0 || wallet.getAmountInFrozen() != 0)) {
-            throw new Http_400_BadRequestException("群组内还有子钱包有余额或未完成的订单，请先转移后再试");
+        try {
+            List<Wallet> subWallets = db.query(Wallet.class).eq("father_wallet_id", mainWallet.getId()).all();
+            if (subWallets.stream().anyMatch(wallet -> wallet.getAmount() != 0 || wallet.getAmountInFrozen() != 0)) {
+                throw new Http_400_BadRequestException("群组内还有子钱包有余额或未完成的订单，请先转移后再试");
+            }
+        } catch (NoSuchElementException e) {
         }
         // 删除群组
         db.delete(GroupModel.class).eq("id", gid).execute();

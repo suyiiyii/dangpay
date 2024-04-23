@@ -5,6 +5,7 @@ import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.service.ApproveService;
 import top.suyiiyii.service.RBACService;
 import top.suyiiyii.su.UniversalUtils;
+import top.suyiiyii.su.exception.Http_200_OK;
 import top.suyiiyii.su.exception.Http_403_ForbiddenException;
 import top.suyiiyii.su.orm.core.Session;
 
@@ -87,7 +88,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
             ApproveService.NeedApproveResponse response = new ApproveService.NeedApproveResponse();
             response.setNeedApprove(true);
             response.setMsg("已提交审批");
-            return response;
+            throw new Http_200_OK("已提交审批");
         }
 
         try {

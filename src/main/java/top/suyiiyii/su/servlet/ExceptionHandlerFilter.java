@@ -43,6 +43,9 @@ public class ExceptionHandlerFilter implements Filter {
 
             int flag = -1;
             switch (e.getClass().getSimpleName()) {
+                case "Http_200_OK":
+                    resp.setStatus(200);
+                    break;
                 case "Http_400_BadRequestException", "IllegalArgumentException":
                     resp.setStatus(400);
                     break;

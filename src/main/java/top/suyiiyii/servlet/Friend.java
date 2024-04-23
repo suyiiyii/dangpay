@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import top.suyiiyii.dto.UserRoles;
-import top.suyiiyii.models.Message;
 import top.suyiiyii.service.*;
 import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.WebUtils;
@@ -44,7 +43,7 @@ public class Friend {
         return true;
     }
 
-    public List<FriendService.FriendDto> doGet(HttpServletRequest req, HttpServletResponse resp) {
+    public List<FriendServiceImpl.FriendDto> doGet(HttpServletRequest req, HttpServletResponse resp) {
         return friendService.getMyFriends(userRoles.getUid());
     }
 

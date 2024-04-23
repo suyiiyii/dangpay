@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.SneakyThrows;
 import top.suyiiyii.dto.UserRoles;
+import top.suyiiyii.models.Friend;
 import top.suyiiyii.models.GroupModel;
 import top.suyiiyii.models.PendingMethod;
 import top.suyiiyii.models.User;
@@ -46,6 +47,7 @@ public class ApproveService {
     public boolean checkApprove(int uid, String reason, Method method, List<Object> args) {
         String methodStr = method.getDeclaringClass().getName() + "/" + method.getName();
 
+        // 申请加入群组
         if (methodStr.equals("top.suyiiyii.service.GroupService/joinGroup")) {
             int gid = (int) args.get(0);
             // 参数校验
@@ -61,18 +63,76 @@ public class ApproveService {
             String uuid = submitApplicant(uid, reason, method, args);
             // 给管理员发送消息
             List<Integer> admins = rbacService.getUserByRole("GroupAdmin/g" + gid);
-            String message = "用户" + uid + "申请加群，理由：" + reason;
+            String message = "用户" + uid + "申请加入群组" + gid + "，理由：" + reason;
 
             for (Integer admin : admins) {
                 messageService.sendSystemMessage(admin, message, uuid);
             }
-
             return true;
         }
+        // 邀请用户加入群组
+        if (methodStr.equals("top.suyiiyii.service.GroupService/inviteUser")) {
+            int gid = (int) args.get(0);
+            int inviteUid = (int) args.get(1);
+            // 参数校验
+            // 检查是否存在群组
+            if (!db.query(GroupModel.class).eq("id", gid).exists()) {
+                throw new Http_400_BadRequestException("群组不存在");
+            }
+            // 检查是否已经加入
+            if (rbacService.checkUserRole(userRoles, "GroupMember/g" + gid)) {
+                throw new Http_400_BadRequestException("已经加入");
+            }
+            // 邀请申请
+            String uuid = submitApplicant(inviteUid, reason, method, args);
+            // 给被邀请者发送消息
+            messageService.sendSystemMessage(inviteUid, "您被邀请加入群组" + gid + "，理由：" + reason, uuid);
+            return true;
+        }
+        // 申请创建群组
+        if (methodStr.equals("top.suyiiyii.service.GroupService/createGroup")) {
+            // 参数校验
+            //检查是否有同名群组
+            String groupName = ((GroupModel) args.get(1)).getName();
+            if (db.query(GroupModel.class).eq("name", groupName).exists()) {
+                throw new Http_400_BadRequestException("已有同名群组");
+            }
+            // 创建群组申请
+            String uuid = submitApplicant(uid, reason, method, args);
+            // 给管理员发送消息
+            List<Integer> admins = rbacService.getUserByRole("admin");
+            String message = "用户" + uid + "申请创建群组，理由：" + reason;
+            for (Integer admin : admins) {
+                messageService.sendSystemMessage(admin, message, uuid);
+            }
+            return true;
+        }
+        // 好友申请
+        if (methodStr.equals("top.suyiiyii.service.FriendService/addFriend")) {
+            int uid1 = (int) args.get(0);
+            int uid2 = (int) args.get(1);
+            // 参数校验
+            // 检查是否存在用户
+            if (!db.query(User.class).eq("id", uid2).exists()) {
+                throw new Http_400_BadRequestException("用户不存在");
+            }
+            // 检查是否添加自己
+            if (uid1 == uid2) {
+                throw new Http_400_BadRequestException("不能添加自己为好友");
+            }
+            // 检查是否已经是好友
+            if (db.query(Friend.class).eq("uid1", uid1).eq("uid2", uid2).exists()) {
+                throw new Http_400_BadRequestException("已经是好友");
+            }
+            // 好友申请
+            String uuid = submitApplicant(uid, reason, method, args);
+            // 给被邀请者发送消息
+            messageService.sendSystemMessage(uid2, "用户" + uid + "申请添加您为好友，理由：" + reason, uuid);
+            return true;
+        }
+
         return false;
-
     }
-
 
     /**
      * 提交申请，由ingressServlet调用

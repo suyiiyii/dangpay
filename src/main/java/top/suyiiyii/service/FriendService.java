@@ -18,7 +18,7 @@ public class FriendService {
     RBACService rbacService;
     UserRoles userRoles;
 
-    public FriendService(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService, UserRoles userRoles) {
+    public FriendService(Session db, @Proxy(isNeedAuthorization = false, isNotProxy = true) RBACService rbacService, UserRoles userRoles) {
         this.db = db;
         this.rbacService = rbacService;
         this.userRoles = userRoles;
@@ -71,7 +71,7 @@ public class FriendService {
         FriendDto system = new FriendDto();
         system.uid = -1;
         system.username = "系统消息";
-        friendDtos.add(0,system);
+        friendDtos.add(0, system);
         return friendDtos;
     }
 

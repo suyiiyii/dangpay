@@ -22,18 +22,21 @@ public class ProxyInvocationHandler implements InvocationHandler {
     private final RBACService rbacService;
     private final Session db;
     private final ApproveService approveService;
+    private final ApproveService.ApplicantReason applicantReason;
     /**
      * 在代理对象被创建时，设置整个代理对象是否需要权限校验
      */
     private final boolean isNeedAuthorization;
 
-    public ProxyInvocationHandler(Object target, UserRoles userRoles, RBACService rbacService, Session db, boolean isNeedAuthorization, ApproveService approveService) {
+    public ProxyInvocationHandler(Object target, UserRoles userRoles, RBACService rbacService, Session db, boolean isNeedAuthorization, ApproveService approveService,
+                                  ApproveService.ApplicantReason applicantReason) {
         this.target = target;
         this.userRoles = userRoles;
         this.rbacService = rbacService;
         this.db = db;
         this.isNeedAuthorization = isNeedAuthorization;
         this.approveService = approveService;
+        this.applicantReason = applicantReason;
     }
 
     @Override
@@ -79,11 +82,11 @@ public class ProxyInvocationHandler implements InvocationHandler {
 
 
         // 判断是否需要进行审批
-        if (approveService.checkApprove(userRoles.getUid(), "加入群组", method, List.of(args))) {
+        if (approveService.checkApprove(userRoles.getUid(), applicantReason.getReason(), method, List.of(args))) {
             log.info("方法" + method + "需要审批");
             ApproveService.NeedApproveResponse response = new ApproveService.NeedApproveResponse();
             response.setNeedApprove(true);
-            response.setMsg("加入群组需要审批");
+            response.setMsg("已提交审批");
             return response;
         }
 

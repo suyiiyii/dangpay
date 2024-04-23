@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author suyiiyii
  */
 @Slf4j
-public class IOManager {
+public class IOCManager {
     private static final Map<Class<?>, Class<?>> Interface2Impl = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Object> globalBeans = new ConcurrentHashMap<>();
     private final Map<Class<?>, Object> localBeans = new ConcurrentHashMap<>();
@@ -196,7 +196,8 @@ public class IOManager {
                         getObj(RBACService.class, true, false),
                         getObj(Session.class, true, false),
                         isNeedAuthorization,
-                        getObj(ApproveService.class, true, false));
+                        getObj(ApproveService.class, true, false),
+                        getObj(ApproveService.ApplicantReason.class, true, false));
                 return (T) java.lang.reflect.Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), handler);
             }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {

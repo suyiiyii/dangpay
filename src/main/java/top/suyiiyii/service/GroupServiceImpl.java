@@ -23,7 +23,9 @@ public class GroupServiceImpl implements GroupService {
     RBACService rbacService;
     UserRoles userRoles;
 
-    public GroupServiceImpl(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService, UserRoles userRoles) {
+    public GroupServiceImpl(Session db,
+                            @Proxy(isNeedAuthorization = false, isNotProxy = true) RBACService rbacService,
+                            UserRoles userRoles) {
         this.db = db;
         this.rbacService = rbacService;
         this.userRoles = userRoles;

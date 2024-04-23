@@ -3,6 +3,7 @@ package top.suyiiyii.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.*;
 import top.suyiiyii.su.IOC.IOCManager;
@@ -14,6 +15,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 
+@Slf4j
 public class ApproveService {
     private final Session db;
     private final RBACService rbacService;
@@ -43,7 +45,7 @@ public class ApproveService {
      */
     public boolean checkApprove(int uid, String reason, Method method, List<Object> args) {
         String methodStr = method.getDeclaringClass().getName() + "/" + method.getName();
-
+        log.info("methodStr: {}", methodStr);
         // 申请加入群组
         if (methodStr.equals("top.suyiiyii.service.GroupService/joinGroup")) {
             int gid = (int) args.get(0);
@@ -146,7 +148,7 @@ public class ApproveService {
             throw new Http_400_BadRequestException("用户不存在");
         }
         // 检查是否已经提交过
-        if (db.query(PendingMethod.class).eq("applicant_id", uid).eq("method", methodStr).eq("args", argsStr).exists()) {
+        if (db.query(PendingMethod.class).eq("applicant_id", uid).eq("method", methodStr).eq("args", argsStr).eq("status","pending").exists()) {
             throw new Http_400_BadRequestException("已经提交过");
         }
         // 提交申请
@@ -192,7 +194,7 @@ public class ApproveService {
             throw e.getTargetException();
         } finally {
             pendingMethod.setStatus("approved");
-            db.update(Message.class).eq("uuid", uuid).set("status", "approved").execute();
+            db.update(Message.class).set("status", "approved").fuzzLike("callback", uuid).execute();
             db.commit();
         }
         // 给用户发送消息
@@ -209,7 +211,7 @@ public class ApproveService {
             throw new Http_400_BadRequestException("申请已处理");
         }
         pendingMethod.setStatus("rejected");
-        db.update(Message.class).eq("uuid", uuid).set("status", "approved").execute();
+        db.update(Message.class).set("status", "approved").fuzzLike("callback", uuid).execute();
         db.commit();
         // 给用户发送消息
         messageService.sendSystemMessage(pendingMethod.getApplicantId(), "申请被拒绝，理由：" + reason, null);

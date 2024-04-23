@@ -32,12 +32,12 @@ public class GroupServiceImpl implements GroupService {
     /**
      * 创建群组
      *
-     * @param userRoles  用户角色
+     * @param uid        用户id
      * @param groupModel 群组信息
      * @return 群组信息
      */
     @Override
-    public GroupModel createGroup(UserRoles userRoles, GroupModel groupModel) {
+    public GroupModel createGroup(int uid, GroupModel groupModel) {
         try {
             db.query(GroupModel.class).eq("name", groupModel.getName()).first();
             throw new Http_400_BadRequestException("群组名已存在");
@@ -50,9 +50,9 @@ public class GroupServiceImpl implements GroupService {
             groupModel.setHide("false");
             int id = db.insert(groupModel, true);
             // 添加群组管理员
-            rbacService.addUserRole(userRoles.getUid(), "GroupCreator/g" + id);
-            rbacService.addUserRole(userRoles.getUid(), "GroupAdmin/g" + id);
-            rbacService.addUserRole(userRoles.getUid(), "GroupMember/g" + id);
+            rbacService.addUserRole(uid, "GroupCreator/g" + id);
+            rbacService.addUserRole(uid, "GroupAdmin/g" + id);
+            rbacService.addUserRole(uid, "GroupMember/g" + id);
             db.commitTransaction();
             return groupModel;
         } catch (Exception e) {
@@ -127,7 +127,7 @@ public class GroupServiceImpl implements GroupService {
         List<GroupDto> groupDtos = groupModels.stream().map(groupModel -> {
             GroupDto groupDto = new GroupDto();
             UniversalUtils.updateObj(groupDto, groupModel);
-            groupDto.setPepoleCount(String.valueOf(db.query(RBACUser.class).eq("role", "GroupMember/g" +  groupModel.getId()).count()));
+            groupDto.setPepoleCount(String.valueOf(db.query(RBACUser.class).eq("role", "GroupMember/g" + groupModel.getId()).count()));
             groupDto.setAmIAdmin(rbacUsers.stream().anyMatch(rbacUser -> rbacUser.getRole().equals("GroupAdmin/g" + groupModel.getId())));
             RBACUser creator = db.query(RBACUser.class).eq("role", "GroupCreator/g" + groupModel.getId()).first();
             groupDto.setGroupCreatorId(creator.getUid());

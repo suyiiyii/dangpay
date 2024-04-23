@@ -10,8 +10,7 @@ import java.util.List;
 
 @Proxy
 public interface GroupService {
-    GroupModel createGroup(UserRoles userRoles, GroupModel groupModel);
-
+    GroupModel createGroup(int uid, GroupModel groupModel);
 
     void updateGroup(@SubRegion(areaPrefix = "g") int gid, UserRoles userRoles, GroupModel groupModel);
 

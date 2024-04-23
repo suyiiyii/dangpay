@@ -73,6 +73,7 @@ public class IngressServlet extends HttpServlet {
         ioCmanager.registerLocalBean(IOCmanager.getGlobalBean(ModelManger.class).getSession());
         ioCmanager.registerLocalBean(subMethod);
         ioCmanager.registerLocalBean(ioCmanager.getObj(UserRoles.class));
+        ioCmanager.registerLocalBean(ioCmanager);
 
         log.info("tokenData：" + tokenData + "，userRoles：" + ioCmanager.getObj(UserRoles.class));
 

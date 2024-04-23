@@ -23,7 +23,7 @@ public class MessageService {
     ConfigManger configManger;
 
     public MessageService(Session db,
-                          @Proxy(isNeedAuthorization = false,isNotProxy = true) RBACService rbacService,
+                          @Proxy(isNeedAuthorization = false, isNotProxy = true) RBACService rbacService,
                           UserRoles userRoles,
                           MessageDao messageDao,
                           ConfigManger configManger) {
@@ -49,7 +49,12 @@ public class MessageService {
     }
 
     public void sendSystemMessage(int receiverId, String message, String uuid) {
-        messageDao.sendSystemMessage(receiverId, message, configManger.get("BASE_URL") + "/approve?uuid=" + uuid);
+        if (uuid == null) uuid = "";
+        if (uuid.isEmpty()) {
+            messageDao.sendSystemMessage(receiverId, message, uuid);
+        } else {
+            messageDao.sendSystemMessage(receiverId, message, configManger.get("BASE_URL") + "/approve?uuid=" + uuid);
+        }
     }
 
     public List<Message> getUserMessage(int uid, int senderId) {

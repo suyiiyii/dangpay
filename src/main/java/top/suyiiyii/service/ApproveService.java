@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.SneakyThrows;
 import top.suyiiyii.dto.UserRoles;
-import top.suyiiyii.models.Friend;
-import top.suyiiyii.models.GroupModel;
-import top.suyiiyii.models.PendingMethod;
-import top.suyiiyii.models.User;
+import top.suyiiyii.models.*;
 import top.suyiiyii.su.IOC.IOCManager;
 import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
@@ -195,6 +192,7 @@ public class ApproveService {
             throw e.getTargetException();
         } finally {
             pendingMethod.setStatus("approved");
+            db.update(Message.class).eq("uuid", uuid).set("status", "approved").execute();
             db.commit();
         }
         // 给用户发送消息
@@ -211,6 +209,7 @@ public class ApproveService {
             throw new Http_400_BadRequestException("申请已处理");
         }
         pendingMethod.setStatus("rejected");
+        db.update(Message.class).eq("uuid", uuid).set("status", "approved").execute();
         db.commit();
         // 给用户发送消息
         messageService.sendSystemMessage(pendingMethod.getApplicantId(), "申请被拒绝，理由：" + reason, null);

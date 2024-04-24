@@ -10,6 +10,7 @@ import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.IOC.IOCManager;
+import top.suyiiyii.su.S3Client;
 import top.suyiiyii.su.orm.core.ModelManger;
 import top.suyiiyii.su.orm.utils.ConnectionBuilder;
 
@@ -60,6 +61,14 @@ public class ContextInitializer implements ServletContextListener {
         IOCManager.registerGlobalBean(redisson);
         // 由于RedissonClient是接口，所以需要注册实现类
         IOCManager.registerInterface2Impl(RedissonClient.class, Redisson.class);
+
+
+        String endpoint = configManger.get("S3_ENDPOINT");
+        String accessKey = configManger.get("S3_ACCESS_KEY");
+        String secretKey = configManger.get("S3_SECRET_KEY");
+        String bucket = configManger.get("S3_BUKET_NAME");
+        S3Client s3Client = new S3Client(endpoint, accessKey, secretKey, bucket);
+        IOCManager.registerGlobalBean(s3Client);
 
         log.info("依赖注入完成");
     }

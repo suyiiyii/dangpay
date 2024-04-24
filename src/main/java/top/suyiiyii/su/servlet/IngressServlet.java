@@ -1,6 +1,7 @@
 package top.suyiiyii.su.servlet;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +25,11 @@ import java.util.Arrays;
 
 @Slf4j
 @WebServlet("/")
+@MultipartConfig(
+        maxFileSize = 1024*1024*1024,
+        maxRequestSize = 1024*1024*1024,
+        fileSizeThreshold = 10240
+)
 public class IngressServlet extends HttpServlet {
 
     private static final String SERVLET_PACKAGENAME = "top.suyiiyii.servlet";

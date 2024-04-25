@@ -30,17 +30,20 @@ public class TransactionServiceImpl implements TransactionService {
     ConfigManger configManger;
     UserService userService;
     TransactionDao transactionDao;
+    WalletService walletService;
 
     public TransactionServiceImpl(Session db,
                                   @Proxy(isNeedAuthorization = false) RBACService rbacService,
                                   @Proxy(isNeedAuthorization = false) UserService userService,
                                   ConfigManger configManger,
-                                  TransactionDao transactionDao) {
+                                  TransactionDao transactionDao,
+                                  @Proxy(isNeedAuthorization = false, isNotProxy = true) WalletService walletService) {
         this.db = db;
         this.userService = userService;
         this.rbacService = rbacService;
         this.configManger = configManger;
         this.transactionDao = transactionDao;
+        this.walletService = walletService;
     }
 
     @Override
@@ -118,6 +121,8 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public ScanQRCodeResponse scanQRCode(@SubRegion(areaPrefix = "w") int wid, String callbackUrl) {
+        // 检查钱包状态
+        walletService.checkWalletStatus(wid);
         // 请求第三方接口，获取交易信息
         // 创建transaction，设置为pending状态，并返回给用户
         OkHttpClient client = new OkHttpClient();
@@ -197,6 +202,8 @@ public class TransactionServiceImpl implements TransactionService {
     public RequestTransactionResponse requestTransaction(String identity, RequestTransactionRequest request) {
         // 查询交易信息
         TransactionIdentity transactionIdentity = db.query(TransactionIdentity.class).eq("identity", identity).first();
+        // 判断钱包状态
+        walletService.checkWalletStatus(transactionIdentity.getWalletId());
         // 生成交易码
         String code = createCode(transactionIdentity.getId());
 
@@ -227,6 +234,8 @@ public class TransactionServiceImpl implements TransactionService {
             log.error("用户支付失败，密码错误");
             throw new Http_400_BadRequestException("密码错误");
         }
+        // 检查钱包状态
+        walletService.checkWalletStatus(wid);
         // 解密code
         String code = UniversalUtils.decrypt(userPayRequest.getCode(), configManger.get("AES_KEY"));
         // 查询交易信息
@@ -235,6 +244,13 @@ public class TransactionServiceImpl implements TransactionService {
             requestTransactionResponse = transactionDao.getReceivedCode(code);
         } catch (NoSuchElementException e) {
             throw new Http_400_BadRequestException("code不存在或已过期");
+        }
+
+        // 检查用户余额
+        Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
+        if (wallet.getAmount() < requestTransactionResponse.getSpecifiedAmount()) {
+            log.error("用户余额不足 余额：" + wallet.getAmount() + "，交易金额：" + requestTransactionResponse.getSpecifiedAmount());
+            throw new Http_400_BadRequestException("用户余额不足");
         }
 
         // 创建transaction
@@ -251,7 +267,6 @@ public class TransactionServiceImpl implements TransactionService {
         db.insert(transaction);
         log.info("用户身份成功，创建transaction：" + transaction);
         // 冻结用户资金
-        Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
         wallet.setAmount(wallet.getAmount() - transaction.getAmount());
         wallet.setAmountInFrozen(wallet.getAmountInFrozen() + transaction.getAmount());
         wallet.setLastUpdate(UniversalUtils.getNow());
@@ -350,7 +365,7 @@ public class TransactionServiceImpl implements TransactionService {
         // 创建transaction
         Transaction transaction = new Transaction();
         transaction.setWalletId(transactionIdentity.getWalletId());
-        transaction.setAmount(transactionIdentity.getIsAmountSpecified() == 1 ? transactionIdentity.getSpecifiedAmount() : 0);
+        transaction.setAmount(transactionIdentity.getIsAmountSpecified() == 1 ? -transactionIdentity.getSpecifiedAmount() : 0);
         transaction.setType("online_pay_receive");
         transaction.setStatus("pending");
         transaction.setCreateTime(UniversalUtils.getNow());
@@ -360,6 +375,13 @@ public class TransactionServiceImpl implements TransactionService {
         // 设置关联用户
         Wallet wallet = db.query(Wallet.class).eq("id", transactionIdentity.getWalletId()).first();
         transaction.setRelateUserId(wallet.getOwnerId());
+        // 检查钱包状态
+        walletService.checkWalletStatus(transaction.getWalletId());
+        // 检查用户余额
+        if (wallet.getAmount() < transaction.getAmount()) {
+            log.error("用户余额不足 余额：" + wallet.getAmount() + "，交易金额：" + transaction.getAmount());
+            throw new Http_400_BadRequestException("用户余额不足");
+        }
         int transactionId = db.insert(transaction, true);
         log.info("创建transaction：" + transaction);
 

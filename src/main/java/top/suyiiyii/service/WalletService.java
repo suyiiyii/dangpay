@@ -33,4 +33,6 @@ public interface WalletService {
     void allocateGroupWallet(@SubRegion(areaPrefix = "g") int gid, int subWalletId, int amount);
 
     List<Transaction> getWalletTransactions(@SubRegion(areaPrefix = "w") int wid);
+
+    void checkWalletStatus(int wid);
 }

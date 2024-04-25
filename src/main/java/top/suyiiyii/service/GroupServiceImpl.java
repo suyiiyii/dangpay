@@ -68,6 +68,7 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void updateGroup(@SubRegion(areaPrefix = "g") int gid, UserRoles userRoles, GroupModel groupModel) {
+        checkGroupStatus(gid);
         GroupModel groupModel1 = db.query(GroupModel.class).eq("id", gid).first();
         if (!groupModel1.getName().equals(groupModel.getName())) {
             try {
@@ -213,6 +214,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public void hideGroup(@SubRegion(areaPrefix = "g") int gid) {
+        checkGroupStatus(gid);
         // 判断是否已经隐藏
         if (db.query(GroupModel.class).eq("id", gid).eq("hide", "true").exists()) {
             throw new Http_400_BadRequestException("群组已隐藏");
@@ -230,6 +232,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public void unhideGroup(@SubRegion(areaPrefix = "g") int gid) {
+        checkGroupStatus(gid);
         // 判断是否已经隐藏
         if (db.query(GroupModel.class).eq("id", gid).eq("hide", "false").exists()) {
             throw new Http_400_BadRequestException("群组未隐藏");
@@ -248,6 +251,7 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void joinGroup(@SubRegion(areaPrefix = "g") int gid, int uid) {
+        checkGroupStatus(gid);
         if (!rbacService.isAdmin(userRoles)) {
             // 判断群组是否存在，是否被封禁，是否隐藏
             if (!db.query(GroupModel.class).eq("id", gid).eq("status", "normal").eq("hide", "false").exists()) {
@@ -287,6 +291,7 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void kickGroupMember(@SubRegion(areaPrefix = "g") int gid, int uid) {
+        checkGroupStatus(gid);
         try {
             db.beginTransaction();
             if (!rbacService.checkUserRole(uid, "GroupMember/g" + gid)) {
@@ -353,6 +358,7 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void inviteUser(@SubRegion(areaPrefix = "g") int gid, int uid) {
+        checkGroupStatus(gid);
         rbacService.addUserRole(uid, "GroupMember/g" + gid);
     }
 
@@ -378,6 +384,7 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void transferGroupCreator(@SubRegion(areaPrefix = "g") int gid, int uid) {
+        checkGroupStatus(gid);
         try {
             db.beginTransaction();
             if (!rbacService.checkUserRole(userRoles, "GroupCreator/g" + gid)) {
@@ -440,5 +447,13 @@ public class GroupServiceImpl implements GroupService {
         db.delete(RBACUser.class).eq("role", "GroupCreator/g" + gid).execute();
         db.delete(RBACUser.class).eq("role", "GroupAdmin/g" + gid).execute();
         db.delete(RBACUser.class).eq("role", "GroupMember/g" + gid).execute();
+    }
+
+    @Override
+    public void checkGroupStatus(int gid) {
+        GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
+        if (groupModel.getStatus().equals("ban")) {
+            throw new Http_400_BadRequestException("群组已被封禁");
+        }
     }
 }

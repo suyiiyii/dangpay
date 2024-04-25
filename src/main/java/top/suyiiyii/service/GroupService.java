@@ -57,6 +57,8 @@ public interface GroupService {
     @Proxy(isTransaction = true)
     void destroyGroup(@SubRegion(areaPrefix = "g") int gid);
 
+    void checkGroupStatus(int gid);
+
     @Data
     class GroupDto {
         int id;

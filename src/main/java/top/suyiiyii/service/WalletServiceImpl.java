@@ -1,5 +1,6 @@
 package top.suyiiyii.service;
 
+import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.Transaction;
 import top.suyiiyii.models.Wallet;
 import top.suyiiyii.su.ConfigManger;
@@ -43,7 +44,7 @@ public class WalletServiceImpl implements WalletService {
         }
         // 创建个人钱包
         Wallet wallet = new Wallet();
-        wallet.setName(userService.getUser(uid, null).getUsername() + " 的个人钱包");
+        wallet.setName(userService.getUser(uid, new UserRoles(-1)).getUsername() + " 的个人钱包");
         wallet.setAmount(0);
         wallet.setAmountInFrozen(0);
         wallet.setOwnerType("user");
@@ -104,7 +105,7 @@ public class WalletServiceImpl implements WalletService {
         Wallet wallet = new Wallet();
         // 获取父账户的群组的名称
 
-        wallet.setName(fatherWallet.getName() + " 分配给 " + userService.getUser(uid, null).getUsername() + " 的子账户");
+        wallet.setName(fatherWallet.getName() + " 分配给 " + userService.getUser(uid, new UserRoles(-1)).getUsername() + " 的子账户");
         wallet.setAmount(0);
         wallet.setAmountInFrozen(0);
         wallet.setOwnerType("user");
@@ -135,7 +136,7 @@ public class WalletServiceImpl implements WalletService {
         }
         Wallet wallet = new Wallet();
         // 获取父账户的群组的名称
-        wallet.setName(groupWallet.getName() + " 分配给 " + userService.getUser(uid, null).getUsername() + " 的子账户");
+        wallet.setName(groupWallet.getName() + " 分配给 " + userService.getUser(uid, new UserRoles(-1)).getUsername() + " 的子账户");
         wallet.setAmount(0);
         wallet.setAmountInFrozen(0);
         wallet.setOwnerType("user");

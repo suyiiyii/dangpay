@@ -26,5 +26,7 @@ public class UserRoles {
     public UserRoles() {
     }
 
-
+    public UserRoles(int uid) {
+        this.uid = uid;
+    }
 }

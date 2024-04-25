@@ -187,6 +187,11 @@ public class GroupServiceImpl implements GroupService {
         // 封禁群组
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         groupModel.setStatus("ban");
+        // 封禁群组的钱包
+        db.update(Wallet.class).set("status", "ban").eq("owner_id", gid).eq("owner_type", "group").execute();
+        // 封禁群组的子钱包
+        Wallet mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+        db.update(Wallet.class).set("status", "ban").eq("father_wallet_id", mainWallet.getId()).execute();
         db.commit();
     }
 
@@ -203,6 +208,10 @@ public class GroupServiceImpl implements GroupService {
         }
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         groupModel.setStatus("normal");
+        // 解封群组的钱包
+        db.update(Wallet.class).set("status", "normal").eq("owner_id", gid).eq("owner_type", "group").execute();
+        // 解封群组的子钱包
+        db.update(Wallet.class).set("status", "normal").eq("father_wallet_id", gid).execute();
         db.commit();
     }
 

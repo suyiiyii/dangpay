@@ -27,7 +27,7 @@ public class WalletServiceImpl implements WalletService {
                              @Proxy(isNeedAuthorization = false) RBACService rbacService,
                              @Proxy(isNeedAuthorization = false) UserService userService,
                              ConfigManger configManger,
-                             @Proxy(isNeedAuthorization = false) GroupService groupService){
+                             @Proxy(isNeedAuthorization = false) GroupService groupService) {
         this.db = db;
         this.userService = userService;
         this.rbacService = rbacService;
@@ -209,7 +209,9 @@ public class WalletServiceImpl implements WalletService {
         checkWalletStatus(subWalletId);
         // 转账，冻结父账户资金，增加子账户资金
         fatherWallet.setAmount(fatherWallet.getAmount() - amount);
-        fatherWallet.setAmountInFrozen(fatherWallet.getAmountInFrozen() + amount);
+        if (amount > 0) {
+            fatherWallet.setAmountInFrozen(fatherWallet.getAmountInFrozen() + amount);
+        }
         subWallet.setAmount(subWallet.getAmount() + amount);
         // 记录交易（父钱包付款）
         String platform = configManger.get("PLATFORM_NAME");
@@ -228,6 +230,7 @@ public class WalletServiceImpl implements WalletService {
         transaction.setWalletId(subWalletId);
         transaction.setAmount(-amount);
         db.insert(transaction);
+        db.commit();
     }
 
     /**

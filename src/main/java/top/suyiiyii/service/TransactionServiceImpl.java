@@ -48,6 +48,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public String createIdentity(int WalletId, boolean isAmountSpecified, int amount, String type, String description) {
+        walletService.checkWalletStatus(WalletId);
         TransactionIdentity transactionIdentity = new TransactionIdentity();
         transactionIdentity.setIdentity("i" + UUID.randomUUID().toString().replace("-", ""));
         transactionIdentity.setWalletId(WalletId);

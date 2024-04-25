@@ -16,18 +16,18 @@ public class CaptchaService {
     public boolean VerifyCaptcha(String captcha) {
         String url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
         String secret = configManger.get("CF_SECRET_KEY");
-        FormBody formBody = new FormBody.Builder()
-                .add("secret", secret)
-                .add("response", captcha)
-                .build();
-        Request request = new Request.Builder()
-                .url(url)
-                .post(formBody)
-                .build();
-
-        OkHttpClient client = new OkHttpClient();
-
         try {
+            FormBody formBody = new FormBody.Builder()
+                    .add("secret", secret)
+                    .add("response", captcha)
+                    .build();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(formBody)
+                    .build();
+
+            OkHttpClient client = new OkHttpClient();
+
             okhttp3.Response response = client.newCall(request).execute();
             if (response.isSuccessful()) {
                 String body = response.body().string();
@@ -36,7 +36,5 @@ public class CaptchaService {
         } catch (Exception ignored) {
         }
         throw new Http_400_BadRequestException("验证码验证失败");
-
     }
-
 }

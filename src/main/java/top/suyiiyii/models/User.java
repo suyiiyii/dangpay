@@ -16,6 +16,8 @@ public class User {
     @ColumnSetting(stringLength = 100, isNotNull = true)
     String phone;
     @ColumnSetting(stringLength = 100, isNotNull = true)
+    String email;
+    @ColumnSetting(stringLength = 100, isNotNull = true)
     String iconUrl;
     @ColumnSetting(stringLength = 20, isNotNull = true)
     String status;

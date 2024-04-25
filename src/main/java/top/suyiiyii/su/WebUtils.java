@@ -3,6 +3,7 @@ package top.suyiiyii.su;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.validator.Validator;
 
@@ -19,6 +20,7 @@ import java.io.PrintWriter;
  * @version 1.5
  * @date 2023.3.25
  */
+@Slf4j
 public class WebUtils {
 
     public static final ObjectMapper MAPPER = new ObjectMapper();
@@ -52,7 +54,6 @@ public class WebUtils {
      * @param valueType Class<T>
      * @param <T>       T
      * @return T
-     * @throws IOException IOException
      */
     public static <T> T readRequestBody2Obj(HttpServletRequest req, Class<T> valueType) {
         BufferedReader reader = null;
@@ -71,6 +72,7 @@ public class WebUtils {
             Validator.check(t);
             return t;
         } catch (IOException e) {
+            log.error("请求体格式错误", e);
             throw new Http_400_BadRequestException("请求体格式错误");
         }
     }

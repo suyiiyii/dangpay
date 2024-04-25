@@ -89,4 +89,9 @@ public class TransactionDao {
         bucket.delete();
     }
 
+    public long getKeyExpiry(String key) {
+        RBucket<String> bucket = redisson.getBucket(key);
+        return bucket.remainTimeToLive();
+    }
+
 }

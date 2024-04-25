@@ -131,7 +131,9 @@ public class ProxyInvocationHandler implements InvocationHandler {
             }
         } catch (InvocationTargetException e) {
             // invoke方法抛出的是一个包装过的异常，需要通过getTargetException获取原始异常
-            db.update(Event.class).set("status", "errInExec").eq("id", eventId).execute();
+            Session db1= IOCManager.getBean(Session.class);
+            assert db1 != null;
+            db1.update(Event.class).set("status", "errInExec").eq("id", eventId).execute();
             throw e.getTargetException();
         }
     }

@@ -141,6 +141,31 @@ public class ApproveServiceImpl implements ApproveService {
             messageService.sendSystemMessage(uid2, "用户" + uid + "申请添加您为好友，理由：" + reason, uuid);
             return true;
         }
+        // 解封群组
+        if (methodStr.equals("top.suyiiyii.service.GroupService/unbanGroup")) {
+            if (rbacService.isAdmin(userRoles)) {
+                return false;
+            }
+            int gid = (int) args.get(0);
+            // 参数校验
+            // 检查是否存在群组
+            if (!db.query(GroupModel.class).eq("id", gid).exists()) {
+                throw new Http_400_BadRequestException("群组不存在");
+            }
+            // 检查是否已经解封
+            if (!db.query(GroupModel.class).eq("id", gid).eq("status", "ban").exists()) {
+                throw new Http_400_BadRequestException("已经解封");
+            }
+            // 解封群组申请
+            String uuid = submitApplicant(uid, reason, method, args);
+            // 给管理员发送消息
+            List<Integer> admins = rbacService.getUserByRole("admin");
+            String message = "用户" + uid + "申请解封群组" + gid + "，理由：" + reason;
+            for (Integer admin : admins) {
+                messageService.sendSystemMessage(admin, message, uuid);
+            }
+            return true;
+        }
 
         return false;
     }

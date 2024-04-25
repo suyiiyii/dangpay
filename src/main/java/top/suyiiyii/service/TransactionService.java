@@ -28,21 +28,21 @@ public interface TransactionService {
     boolean ack(String ackCode);
 
     @Data
-    public static class UserPayRequest {
+    class UserPayRequest {
         public String code;
         public String password;
         public String requestId;
     }
 
     @Data
-    public static class UserPayResponse {
+    class UserPayResponse {
         public String status;
         public String message;
         public String requestId;
     }
 
     @Data
-    public static class RequestTransactionRequest {
+    class RequestTransactionRequest {
         public String platform;
         public String requestId;
     }
@@ -51,14 +51,14 @@ public interface TransactionService {
      * 用于保存在redis中的code和identity的对应关系
      */
     @Data
-    public static class CodeInCache {
+    class CodeInCache {
         public int identityId;
         public String code;
         public int expiredAt;
     }
 
     @Data
-    public static class RequestTransactionResponse {
+    class RequestTransactionResponse {
         public String status;
         public String message;
         public String platform;
@@ -75,7 +75,7 @@ public interface TransactionService {
     }
 
     @Data
-    public static class ScanQRCodeResponse {
+    class ScanQRCodeResponse {
         public String code;
         public String message;
         public String platform;
@@ -87,7 +87,7 @@ public interface TransactionService {
     }
 
     @Data
-    public static class StartTransactionRequest {
+    class StartTransactionRequest {
         public String platform;
         public String tradeDescription;
         public String payeeName;
@@ -96,7 +96,7 @@ public interface TransactionService {
     }
 
     @Data
-    public static class StartTransactionResponse {
+    class StartTransactionResponse {
         public String status;
         public String message;
         public String callback;

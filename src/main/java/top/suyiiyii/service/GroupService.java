@@ -58,7 +58,7 @@ public interface GroupService {
     void destroyGroup(@SubRegion(areaPrefix = "g") int gid);
 
     @Data
-    public static class GroupDto {
+    class GroupDto {
         int id;
         String name;
         String pepoleCount;
@@ -73,7 +73,7 @@ public interface GroupService {
     }
 
     @Data
-    public static class MemberDto {
+    class MemberDto {
         int id;
         String name;
         String role;

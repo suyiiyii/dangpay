@@ -19,7 +19,9 @@ public class FriendServiceImpl implements FriendService {
     RBACService rbacService;
     UserRoles userRoles;
 
-    public FriendServiceImpl(Session db, @Proxy(isNeedAuthorization = false, isNotProxy = true) RBACService rbacService, UserRoles userRoles) {
+    public FriendServiceImpl(Session db,
+                             @Proxy(isNeedAuthorization = false, isNotProxy = true) RBACService rbacService,
+                             UserRoles userRoles) {
         this.db = db;
         this.rbacService = rbacService;
         this.userRoles = userRoles;

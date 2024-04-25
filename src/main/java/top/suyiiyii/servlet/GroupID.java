@@ -17,12 +17,12 @@ import top.suyiiyii.su.validator.Regex;
 import java.util.List;
 
 public class GroupID {
-    private GroupService groupService;
-    private IngressServlet.SubMethod subMethod;
-    private RBACService rbacService;
-    private UserRoles userRoles;
-    private WalletService walletService;
-    private MessageService messageService;
+    private final GroupService groupService;
+    private final IngressServlet.SubMethod subMethod;
+    private final RBACService rbacService;
+    private final UserRoles userRoles;
+    private final WalletService walletService;
+    private final MessageService messageService;
 
     public GroupID(GroupService groupService,
                    IngressServlet.SubMethod subMethod,

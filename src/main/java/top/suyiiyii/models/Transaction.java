@@ -23,6 +23,8 @@ public class Transaction {
     @ColumnSetting(isNotNull = true, stringLength = 20)
     String status;
     @ColumnSetting(isNotNull = true)
+    int relateUserId;
+    @ColumnSetting(isNotNull = true)
     int createTime;
     @ColumnSetting(isNotNull = true)
     int lastUpdate;

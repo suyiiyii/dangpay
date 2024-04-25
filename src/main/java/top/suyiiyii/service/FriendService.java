@@ -14,7 +14,7 @@ public interface FriendService {
     List<FriendDto> getMyFriends(int uid);
 
     @Data
-    public static class FriendDto {
+    class FriendDto {
         int uid;
         String username;
     }

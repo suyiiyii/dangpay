@@ -26,8 +26,8 @@ import java.util.Arrays;
 @Slf4j
 @WebServlet("/")
 @MultipartConfig(
-        maxFileSize = 1024*1024*1024,
-        maxRequestSize = 1024*1024*1024,
+        maxFileSize = 1024 * 1024 * 1024,
+        maxRequestSize = 1024 * 1024 * 1024,
         fileSizeThreshold = 10240
 )
 public class IngressServlet extends HttpServlet {
@@ -77,7 +77,7 @@ public class IngressServlet extends HttpServlet {
         // 添加本地依赖，tokenData
         TokenData tokenData = (TokenData) req.getAttribute("tokenData");
         IOCManager.registerLocalBean(tokenData);
-        IOCManager.registerLocalBean(IOCManager.getGlobalBean(ModelManger.class).getSession());
+        IOCManager.registerLocalBean(top.suyiiyii.su.IOC.IOCManager.getGlobalBean(ModelManger.class).getSession());
         IOCManager.registerLocalBean(subMethod);
         IOCManager.registerLocalBean(IOCManager.getObj(UserRoles.class));
         IOCManager.registerLocalBean(IOCManager);

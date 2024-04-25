@@ -8,7 +8,7 @@ public class UploadService {
     private static S3Client s3Client;
 
     public UploadService(S3Client s3Client) {
-        this.s3Client = s3Client;
+        UploadService.s3Client = s3Client;
     }
 
     public String uploadAvatar(String filename, InputStream in, int uid) {

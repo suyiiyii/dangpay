@@ -19,7 +19,10 @@ public class WalletServiceImpl implements WalletService {
     ConfigManger configManger;
     UserService userService;
 
-    public WalletServiceImpl(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService, @Proxy(isNeedAuthorization = false) UserService userService, ConfigManger configManger) {
+    public WalletServiceImpl(Session db,
+                             @Proxy(isNeedAuthorization = false) RBACService rbacService,
+                             @Proxy(isNeedAuthorization = false) UserService userService,
+                             ConfigManger configManger) {
         this.db = db;
         this.userService = userService;
         this.rbacService = rbacService;

@@ -106,7 +106,7 @@ public class S3Client {
     }
 
     public String uploadFile(InputStream input, String extentionName) {
-        String objectID = UUID.randomUUID().toString() + extentionName;
+        String objectID = UUID.randomUUID() + extentionName;
         upload(bucket, objectID, input);
         return endpoint + "/" + bucket + "/" + objectID;
     }

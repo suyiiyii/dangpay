@@ -31,7 +31,11 @@ public class TransactionServiceImpl implements TransactionService {
     UserService userService;
     TransactionDao transactionDao;
 
-    public TransactionServiceImpl(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService, @Proxy(isNeedAuthorization = false) UserService userService, ConfigManger configManger, TransactionDao transactionDao) {
+    public TransactionServiceImpl(Session db,
+                                  @Proxy(isNeedAuthorization = false) RBACService rbacService,
+                                  @Proxy(isNeedAuthorization = false) UserService userService,
+                                  ConfigManger configManger,
+                                  TransactionDao transactionDao) {
         this.db = db;
         this.userService = userService;
         this.rbacService = rbacService;
@@ -243,6 +247,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setLastUpdate(UniversalUtils.getNow());
         transaction.setPlatform(requestTransactionResponse.getPlatform());
         transaction.setDescription("向 " + requestTransactionResponse.getPlatform() + " 平台的 " + wid + " 转账 " + transaction.getAmount() + " 元");
+        transaction.setRelateUserId(uid);
         db.insert(transaction);
         log.info("用户身份成功，创建transaction：" + transaction);
         // 冻结用户资金
@@ -352,6 +357,9 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setLastUpdate(UniversalUtils.getNow());
         transaction.setPlatform(request.getPlatform());
         transaction.setDescription(request.getTradeDescription());
+        // 设置关联用户
+        Wallet wallet = db.query(Wallet.class).eq("id", transactionIdentity.getWalletId()).first();
+        transaction.setRelateUserId(wallet.getOwnerId());
         int transactionId = db.insert(transaction, true);
         log.info("创建transaction：" + transaction);
 

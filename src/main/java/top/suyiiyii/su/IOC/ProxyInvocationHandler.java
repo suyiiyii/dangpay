@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.Event;
 import top.suyiiyii.service.ApproveService;
+import top.suyiiyii.service.ApproveServiceImpl;
 import top.suyiiyii.service.EventService;
 import top.suyiiyii.service.RBACService;
 import top.suyiiyii.su.UniversalUtils;
@@ -26,7 +27,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
     private final RBACService rbacService;
     private final Session db;
     private final ApproveService approveService;
-    private final ApproveService.ApplicantReason applicantReason;
+    private final ApproveServiceImpl.ApplicantReason applicantReason;
     private final EventService eventService;
     private final HttpServletRequest req;
     private int eventId;
@@ -42,7 +43,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
             @Proxy(isNeedAuthorization = false, isNotProxy = true) RBACService rbacService,
             Session db,
             @Proxy(isNeedAuthorization = false, isNotProxy = true) ApproveService approveService,
-            ApproveService.ApplicantReason applicantReason,
+            ApproveServiceImpl.ApplicantReason applicantReason,
             @Proxy(isNeedAuthorization = false, isNotProxy = true) EventService eventService,
             HttpServletRequest req) {
         this.userRoles = userRoles;
@@ -103,7 +104,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
         // 判断是否需要进行审批
         if (approveService.checkApprove(userRoles.getUid(), applicantReason.getReason(), method, List.of(args))) {
             log.info("方法" + method + "需要审批");
-            ApproveService.NeedApproveResponse response = new ApproveService.NeedApproveResponse();
+            ApproveServiceImpl.NeedApproveResponse response = new ApproveServiceImpl.NeedApproveResponse();
             response.setNeedApprove(true);
             response.setMsg("已提交审批");
             throw new Http_200_OK("已提交审批");

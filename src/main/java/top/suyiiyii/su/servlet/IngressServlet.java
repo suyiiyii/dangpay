@@ -11,7 +11,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.dto.UserRoles;
-import top.suyiiyii.service.ApproveService;
+import top.suyiiyii.service.ApproveServiceImpl;
 import top.suyiiyii.su.IOC.IOCManager;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.WebUtils;
@@ -89,7 +89,7 @@ public class IngressServlet extends HttpServlet {
         IOCManager.registerInterface2Impl(HttpServletResponse.class,resp.getClass());
 
 
-        ApproveService.ApplicantReason applicantReason = new ApproveService.ApplicantReason();
+        ApproveServiceImpl.ApplicantReason applicantReason = new ApproveServiceImpl.ApplicantReason();
         applicantReason.setReason(req.getHeader("X-Reason"));
         iocManager.registerLocalBean(applicantReason);
 

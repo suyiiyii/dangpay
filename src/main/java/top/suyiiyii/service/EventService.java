@@ -10,14 +10,7 @@ public class EventService {
         this.db = db;
     }
 
-    public void insertEvent(int uid, String method, String subjectId, String ip, String UA, int createTime) {
-        Event event = new Event();
-        event.setUid(uid);
-        event.setMethod(method);
-        event.setSubjectId(subjectId);
-        event.setIp(ip);
-        event.setUA(UA);
-        event.setCreateTime(createTime);
+    public void addEvent(Event event) {
         db.insert(event);
     }
 }

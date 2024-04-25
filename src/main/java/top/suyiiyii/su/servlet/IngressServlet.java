@@ -17,6 +17,7 @@ import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.WebUtils;
 import top.suyiiyii.su.exception.Http_404_NotFoundException;
 import top.suyiiyii.su.orm.core.ModelManger;
+import top.suyiiyii.su.orm.core.Session;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -46,7 +47,7 @@ public class IngressServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         // 创建IOC管理器
-        IOCManager IOCManager = new IOCManager();
+        IOCManager iocManager = new IOCManager();
         // 创建对象，通过依赖注入管理器获取对应的servlet
         // 获取调用的路径
         String path = req.getRequestURI();
@@ -76,22 +77,28 @@ public class IngressServlet extends HttpServlet {
 
         // 添加本地依赖，tokenData
         TokenData tokenData = (TokenData) req.getAttribute("tokenData");
-        IOCManager.registerLocalBean(tokenData);
-        IOCManager.registerLocalBean(top.suyiiyii.su.IOC.IOCManager.getGlobalBean(ModelManger.class).getSession());
-        IOCManager.registerLocalBean(subMethod);
-        IOCManager.registerLocalBean(IOCManager.getObj(UserRoles.class));
-        IOCManager.registerLocalBean(IOCManager);
+        iocManager.registerLocalBean(tokenData);
+        iocManager.registerLocalBean(top.suyiiyii.su.IOC.IOCManager.getGlobalBean(ModelManger.class).getSession());
+        iocManager.registerLocalBean(subMethod);
+        UserRoles userRoles = new UserRoles(tokenData.uid, iocManager.getObj(Session.class));
+        iocManager.registerLocalBean(userRoles);
+        iocManager.registerLocalBean(iocManager);
+        iocManager.registerLocalBean(req);
+        iocManager.registerLocalBean(resp);
+        IOCManager.registerInterface2Impl(HttpServletRequest.class,req.getClass());
+        IOCManager.registerInterface2Impl(HttpServletResponse.class,resp.getClass());
+
 
         ApproveService.ApplicantReason applicantReason = new ApproveService.ApplicantReason();
         applicantReason.setReason(req.getHeader("X-Reason"));
-        IOCManager.registerLocalBean(applicantReason);
+        iocManager.registerLocalBean(applicantReason);
 
-        log.info("tokenData：" + tokenData + "，userRoles：" + IOCManager.getObj(UserRoles.class));
+        log.info("tokenData：" + tokenData + "，userRoles：" + iocManager.getObj(UserRoles.class));
 
         // 通过反射创建对象
         Object servlet;
         try {
-            servlet = IOCManager.createObj(fullClassName);
+            servlet = iocManager.createObj(fullClassName);
         } catch (ClassNotFoundException e) {
             throw new Http_404_NotFoundException("404 Not Found");
         }
@@ -100,8 +107,8 @@ public class IngressServlet extends HttpServlet {
             methodGateway(req, resp, subMethod, servlet);
         } finally {
             // 销毁对象，递归调用字段的destroy方法
-            IOCManager.destroyObj(servlet);
-            IOCManager.destroy();
+            iocManager.destroyObj(servlet);
+            iocManager.destroy();
         }
     }
 

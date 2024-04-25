@@ -1,7 +1,10 @@
 package top.suyiiyii.su.IOC;
 
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
+import top.suyiiyii.models.Event;
 import top.suyiiyii.service.ApproveService;
 import top.suyiiyii.service.EventService;
 import top.suyiiyii.service.RBACService;
@@ -19,32 +22,36 @@ import java.util.List;
 @Slf4j
 @Proxy(isNeedAuthorization = false)
 public class ProxyInvocationHandler implements InvocationHandler {
-    private final Object target;
     private final UserRoles userRoles;
     private final RBACService rbacService;
     private final Session db;
     private final ApproveService approveService;
     private final ApproveService.ApplicantReason applicantReason;
     private final EventService eventService;
+    private final HttpServletRequest req;
+    private int eventId;
+    @Setter
+    private Object target;
     /**
      * 在代理对象被创建时，设置整个代理对象是否需要权限校验
      */
-    private  boolean isNeedAuthorization;
+    private boolean isNeedAuthorization;
 
-    public ProxyInvocationHandler(Object target,
-                                  UserRoles userRoles,
-                                  RBACService rbacService,
-                                  Session db,
-                                  ApproveService approveService,
-                                  ApproveService.ApplicantReason applicantReason,
-                                  EventService eventService) {
-        this.target = target;
+    public ProxyInvocationHandler(
+            UserRoles userRoles,
+            @Proxy(isNeedAuthorization = false, isNotProxy = true) RBACService rbacService,
+            Session db,
+            @Proxy(isNeedAuthorization = false, isNotProxy = true) ApproveService approveService,
+            ApproveService.ApplicantReason applicantReason,
+            @Proxy(isNeedAuthorization = false, isNotProxy = true) EventService eventService,
+            HttpServletRequest req) {
         this.userRoles = userRoles;
         this.rbacService = rbacService;
         this.db = db;
         this.approveService = approveService;
         this.applicantReason = applicantReason;
         this.eventService = eventService;
+        this.req = req;
     }
 
     public void setNeedAuthorization(boolean needAuthorization) {
@@ -123,6 +130,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
             }
         } catch (InvocationTargetException e) {
             // invoke方法抛出的是一个包装过的异常，需要通过getTargetException获取原始异常
+            db.update(Event.class).set("status", "errInExec").eq("id", eventId).execute();
             throw e.getTargetException();
         }
     }
@@ -132,6 +140,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
 
     private void checkAuthorization(Method method, Object[] args) {
         String permission = method.getDeclaringClass().getSimpleName() + UniversalUtils.capitalizeFirstLetter(method.getName());
+
         int subRegionId = 0;
         // 检查有没有参数有子区域注解
         Parameter[] parameters = method.getParameters();
@@ -147,6 +156,21 @@ public class ProxyInvocationHandler implements InvocationHandler {
             }
         }
         boolean result = rbacService.checkUserPermission(userRoles, permission);
+        String methodStr = method.getDeclaringClass().getName() + "/" + method.getName();
+        String ip = req.getRemoteAddr();
+        String UA = req.getHeader("User-Agent");
+
+        // 记录事件
+        Event event = new Event();
+        event.setUid(userRoles.getUid());
+        event.setMethod(methodStr);
+        event.setIp(ip);
+        event.setUa(UA);
+        event.setPermission(permission);
+        event.setCreateTime(UniversalUtils.getNow());
+        event.setStatus(result ? "success" : "fail");
+        this.eventId = db.insert(event, true);
+
         if (!result) {
             String message = "权限校验失败，请求用户: " + userRoles.uid + " 用户角色: " + userRoles.roles + " 请求权限: " + permission;
             log.info("权限校验失败，请求用户: {} 用户角色: {} 请求权限: {}", userRoles.uid, userRoles.roles, permission);

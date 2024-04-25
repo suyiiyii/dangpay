@@ -14,11 +14,13 @@ public class Event {
     @ColumnSetting(isNotNull = true, stringLength = 100)
     String method;
     @ColumnSetting(isNotNull = true, stringLength = 100)
-    String subjectId;
+    String permission;
     @ColumnSetting(isNotNull = true, stringLength = 100)
     String ip;
     @ColumnSetting(isNotNull = true, stringLength = 1000)
-    String UA;
+    String ua;
     @ColumnSetting(isNotNull = true)
     int createTime;
+    @ColumnSetting(isNotNull = true, stringLength = 20)
+    String status;
 }

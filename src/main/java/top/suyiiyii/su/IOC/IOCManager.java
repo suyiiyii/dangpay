@@ -143,6 +143,7 @@ public class IOCManager {
      * @return 需要的实例
      */
     public <T> T getObj(Class<T> clazz, boolean isNotProxy, boolean isNeedAuthorization) {
+        log.debug(clazz == null ? "null" : clazz.getSimpleName());
         log.info("开始注入对象: {}", clazz.getSimpleName());
         try {
             Class<?> clazzInterface = null;
@@ -150,6 +151,9 @@ public class IOCManager {
             if (clazz.isInterface()) {
                 clazzInterface = clazz;
                 clazz = (Class<T>) Interface2Impl.get(clazz);
+                if (clazz == null) {
+                    throw new RuntimeException("没有找到接口" + clazzInterface.getSimpleName() + "的实现类");
+                }
             }
             // 如果保存过这个类的局部实例，直接返回
             if (localBeans.containsKey(clazz)) {
@@ -192,14 +196,9 @@ public class IOCManager {
             } else {
                 // 否则创建代理对象
                 log.info("创建代理对象: {}", clazz.getSimpleName());
-                ProxyInvocationHandler handler = new ProxyInvocationHandler(obj,
-                        getObj(UserRoles.class, true, false),
-                        getObj(RBACService.class, true, false),
-                        getObj(Session.class, true, false),
-                        getObj(ApproveService.class, true, false),
-                        getObj(ApproveService.ApplicantReason.class, true, false),
-                        getObj(EventService.class, true, false));
+                ProxyInvocationHandler handler = getObj(ProxyInvocationHandler.class,true,false);
                 handler.setNeedAuthorization(isNeedAuthorization);
+                handler.setTarget(obj);
                 return (T) java.lang.reflect.Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), handler);
             }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {

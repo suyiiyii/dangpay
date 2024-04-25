@@ -386,6 +386,9 @@ public class GroupServiceImpl implements GroupService {
             if (!rbacService.checkUserRole(uid, "GroupAdmin/g" + gid)) {
                 throw new Http_400_BadRequestException("用户不是群组管理员");
             }
+            if (uid == userRoles.getUid()) {
+                throw new Http_400_BadRequestException("不能转让给自己");
+            }
             rbacService.deleteUserRole(userRoles.getUid(), "GroupCreator/g" + gid);
             rbacService.addUserRole(uid, "GroupCreator/g" + gid);
             db.commitTransaction();

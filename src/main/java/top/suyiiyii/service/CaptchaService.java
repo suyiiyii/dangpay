@@ -13,7 +13,7 @@ public class CaptchaService {
         this.configManger = configManger;
     }
 
-    public boolean VerifyCaptcha(String captcha) {
+    public boolean verifyCaptcha(String captcha) {
         String url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
         String secret = configManger.get("CF_SECRET_KEY");
         try {

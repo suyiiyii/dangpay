@@ -37,7 +37,7 @@ public class Login {
 
         log.info("校验验证码：" + request.captcha);
         // 验证码校验
-        if (!captchaService.VerifyCaptcha(request.captcha)) {
+        if (!captchaService.verifyCaptcha(request.captcha)) {
             throw new Http_400_BadRequestException("验证码错误");
         }
         log.info("验证码校验通过:" + request.captcha);

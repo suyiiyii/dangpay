@@ -3,6 +3,7 @@ package top.suyiiyii.servlet.user;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import top.suyiiyii.models.User;
+import top.suyiiyii.service.CaptchaService;
 import top.suyiiyii.service.MailService;
 import top.suyiiyii.service.UserService;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
@@ -16,11 +17,14 @@ import static top.suyiiyii.su.WebUtils.respWrite;
 public class Register {
     UserService userService;
     MailService mailService;
+    CaptchaService captchaService;
 
     public Register(UserService userService,
-                    MailService mailService) {
+                    MailService mailService,
+                    CaptchaService captchaService) {
         this.userService = userService;
         this.mailService = mailService;
+        this.captchaService = captchaService;
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -28,6 +32,8 @@ public class Register {
         if (!mailService.verifyCode(registerRequest.email, registerRequest.verifyCode)) {
             throw new Http_400_BadRequestException("验证码错误");
         }
+
+        captchaService.verifyCaptcha(registerRequest.captcha);
         User user = userService.register(registerRequest.username, registerRequest.password, registerRequest.phone, registerRequest.email);
         respWrite(response, user);
     }
@@ -43,6 +49,7 @@ public class Register {
         public String email;
         @Regex("^[a-zA-Z0-9_-]{4}$")
         public String verifyCode;
+        public String captcha;
     }
 }
 

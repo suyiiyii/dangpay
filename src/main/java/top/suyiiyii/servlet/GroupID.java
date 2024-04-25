@@ -155,7 +155,7 @@ public class GroupID {
     }
 
     public boolean doPostMessage(HttpServletRequest req, HttpServletResponse resp) {
-        MessageService.MessageSendRequest request = WebUtils.readRequestBody2Obj(req, MessageService.MessageSendRequest.class);
+        MessageServiceImpl.MessageSendRequest request = WebUtils.readRequestBody2Obj(req, MessageServiceImpl.MessageSendRequest.class);
         messageService.sendGroupMessage(subMethod.getId(), userRoles.getUid(), request.message);
         return true;
     }

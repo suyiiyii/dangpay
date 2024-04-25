@@ -3,6 +3,7 @@ package top.suyiiyii.service;
 import org.redisson.api.RedissonClient;
 import top.suyiiyii.dao.TransactionDao;
 import top.suyiiyii.su.ConfigManger;
+import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.MailSender;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
@@ -10,6 +11,7 @@ import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import java.time.Duration;
 import java.util.NoSuchElementException;
 
+@Repository
 public class MailServiceImpl implements MailService {
     private final MailSender mailSender;
     private final ConfigManger configManger;

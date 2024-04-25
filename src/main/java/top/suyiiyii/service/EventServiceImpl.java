@@ -1,8 +1,10 @@
 package top.suyiiyii.service;
 
 import top.suyiiyii.models.Event;
+import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.orm.core.Session;
 
+@Repository
 public class EventServiceImpl implements EventService {
     Session db;
 

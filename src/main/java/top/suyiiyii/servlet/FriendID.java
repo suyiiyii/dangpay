@@ -44,7 +44,7 @@ public class FriendID {
     }
 
     public boolean doPostMessage(HttpServletRequest req, HttpServletResponse resp) {
-        MessageService.MessageSendRequest request = WebUtils.readRequestBody2Obj(req, MessageService.MessageSendRequest.class);
+        MessageServiceImpl.MessageSendRequest request = WebUtils.readRequestBody2Obj(req, MessageServiceImpl.MessageSendRequest.class);
         messageService.sendUserMessage(userRoles.getUid(), subMethod.getId(), request.message);
         return true;
     }

@@ -4,8 +4,10 @@ import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import top.suyiiyii.su.ConfigManger;
+import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
 
+@Repository
 public class CaptchaServiceImpl implements CaptchaService {
     ConfigManger configManger;
 

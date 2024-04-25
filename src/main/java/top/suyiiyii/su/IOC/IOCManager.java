@@ -152,6 +152,7 @@ public class IOCManager {
                 clazzInterface = clazz;
                 clazz = (Class<T>) Interface2Impl.get(clazz);
                 if (clazz == null) {
+                    log.error("没有找到接口{}的实现类", clazzInterface.getSimpleName());
                     throw new RuntimeException("没有找到接口" + clazzInterface.getSimpleName() + "的实现类");
                 }
             }

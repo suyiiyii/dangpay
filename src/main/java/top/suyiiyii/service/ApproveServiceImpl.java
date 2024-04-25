@@ -6,6 +6,7 @@ import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.*;
 import top.suyiiyii.su.IOC.IOCManager;
 import top.suyiiyii.su.IOC.Proxy;
+import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.orm.core.Session;
 
@@ -19,6 +20,7 @@ import java.util.Base64;
 import java.util.List;
 
 @Slf4j
+@Repository
 public class ApproveServiceImpl implements ApproveService {
     private final Session db;
     private final RBACService rbacService;

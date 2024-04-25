@@ -53,7 +53,7 @@ public class MessageService {
         if (uuid.isEmpty()) {
             messageDao.sendSystemMessage(receiverId, message, uuid);
         } else {
-            messageDao.sendSystemMessage(receiverId, message, configManger.get("BASE_URL") + "/approve?uuid=" + uuid);
+            messageDao.sendSystemMessage(receiverId, message,  "/approve?uuid=" + uuid);
         }
     }
 

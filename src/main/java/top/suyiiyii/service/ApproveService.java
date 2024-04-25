@@ -95,6 +95,10 @@ public class ApproveService {
         // 申请创建群组
         if (methodStr.equals("top.suyiiyii.service.GroupService/createGroup")) {
             // 参数校验
+            // 检查同一个个用户是否已经有群组创建申请
+            if (db.query(PendingMethod.class).eq("applicant_id", uid).eq("method", methodStr).eq("status", "pending").exists()) {
+                throw new Http_400_BadRequestException("有群组创建申请待处理，请勿重复提交");
+            }
             //检查是否有同名群组
             String groupName = ((GroupModel) args.get(1)).getName();
             if (db.query(GroupModel.class).eq("name", groupName).exists()) {

@@ -97,7 +97,7 @@ public class GroupServiceImpl implements GroupService {
         List<GroupDto> groupDtos = groupModels.stream().map(groupModel -> {
             GroupDto groupDto = new GroupDto();
             UniversalUtils.updateObj(groupDto, groupModel);
-            groupDto.setPepoleCount(String.valueOf(db.query(RBACUser.class).eq("role", "GroupMember/g" + userRoles.getUid()).count()));
+            groupDto.setPepoleCount(String.valueOf(db.query(RBACUser.class).eq("role", "GroupMember/g" + groupDto.getId()).count()));
             groupDto.setAmIAdmin(rbacService.checkUserRole(userRoles.getUid(), "GroupAdmin/g" + groupModel.getId()));
             RBACUser creator = db.query(RBACUser.class).eq("role", "GroupCreator/g" + groupModel.getId()).first();
             groupDto.setGroupCreatorId(creator.getUid());

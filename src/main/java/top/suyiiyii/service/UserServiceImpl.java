@@ -111,7 +111,7 @@ public class UserServiceImpl implements UserService {
 //        }
         try {
             User user = db.query(User.class).eq("id", uid).first();
-            if (!rbacService.isAdmin(userRoles)) {
+            if (userRoles.getUid() != -1 && !rbacService.isAdmin(userRoles)) {
                 user.setPhone("");
             }
             return user;

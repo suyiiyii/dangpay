@@ -344,7 +344,8 @@ public class Session {
                 toUpdate.add(cur);
             }
         }
-        cache.clear();
+//        cache.clear();
+        // 这里遇到了问题，一个方法调用的其他方法可能会提交事务，这样会把原来的方法之前查找的数据都删除掉，这样就用不了全自动更新数据了
         if (!toUpdate.isEmpty()) {
             for (Object obj : toUpdate) {
                 this.update(obj);

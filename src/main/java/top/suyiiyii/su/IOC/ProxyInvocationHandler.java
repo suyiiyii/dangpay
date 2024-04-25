@@ -9,6 +9,7 @@ import top.suyiiyii.service.*;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_200_OK;
 import top.suyiiyii.su.exception.Http_403_ForbiddenException;
+import top.suyiiyii.su.orm.core.ModelManger;
 import top.suyiiyii.su.orm.core.Session;
 
 import java.lang.reflect.InvocationHandler;
@@ -131,7 +132,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
             }
         } catch (InvocationTargetException e) {
             // invoke方法抛出的是一个包装过的异常，需要通过getTargetException获取原始异常
-            Session db1= IOCManager.getBean(Session.class);
+            Session db1= IOCManager.getGlobalBean(ModelManger.class).getSession();
             assert db1 != null;
             db1.update(Event.class).set("status", "errInExec").eq("id", eventId).execute();
             throw e.getTargetException();

@@ -78,7 +78,7 @@ public class IngressServlet extends HttpServlet {
         // 添加本地依赖，tokenData
         TokenData tokenData = (TokenData) req.getAttribute("tokenData");
         iocManager.registerLocalBean(tokenData);
-        iocManager.registerLocalBean(top.suyiiyii.su.IOC.IOCManager.getGlobalBean(ModelManger.class).getSession());
+        iocManager.registerLocalBean(IOCManager.getGlobalBean(ModelManger.class).getSession());
         iocManager.registerLocalBean(subMethod);
         UserRoles userRoles = new UserRoles(tokenData.uid, iocManager.getObj(Session.class));
         iocManager.registerLocalBean(userRoles);

@@ -11,6 +11,6 @@ public class RBACUser {
     int id;
     @ColumnSetting(isNotNull = true)
     int uid;
-    @ColumnSetting(isNotNull = true, stringLength = 20)
+    @ColumnSetting(isNotNull = true, stringLength = 100)
     String role;
 }

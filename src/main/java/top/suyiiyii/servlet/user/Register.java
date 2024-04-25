@@ -25,10 +25,10 @@ public class Register {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         RegisterRequest registerRequest = readRequestBody2Obj(request, RegisterRequest.class);
-        if(!mailService.verifyCode(registerRequest.email, registerRequest.verifyCode)){
+        if (!mailService.verifyCode(registerRequest.email, registerRequest.verifyCode)) {
             throw new Http_400_BadRequestException("验证码错误");
         }
-        User user = userService.register(registerRequest.username, registerRequest.password, registerRequest.phone);
+        User user = userService.register(registerRequest.username, registerRequest.password, registerRequest.phone, registerRequest.email);
         respWrite(response, user);
     }
 

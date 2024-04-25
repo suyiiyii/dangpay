@@ -4,6 +4,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.service.ApproveService;
+import top.suyiiyii.service.EventService;
 import top.suyiiyii.service.RBACService;
 import top.suyiiyii.su.orm.core.Session;
 
@@ -195,9 +196,10 @@ public class IOCManager {
                         getObj(UserRoles.class, true, false),
                         getObj(RBACService.class, true, false),
                         getObj(Session.class, true, false),
-                        isNeedAuthorization,
                         getObj(ApproveService.class, true, false),
-                        getObj(ApproveService.ApplicantReason.class, true, false));
+                        getObj(ApproveService.ApplicantReason.class, true, false),
+                        getObj(EventService.class, true, false));
+                handler.setNeedAuthorization(isNeedAuthorization);
                 return (T) java.lang.reflect.Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), handler);
             }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {

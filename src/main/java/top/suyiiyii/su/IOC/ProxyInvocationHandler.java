@@ -3,6 +3,7 @@ package top.suyiiyii.su.IOC;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.service.ApproveService;
+import top.suyiiyii.service.EventService;
 import top.suyiiyii.service.RBACService;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_200_OK;
@@ -24,20 +25,30 @@ public class ProxyInvocationHandler implements InvocationHandler {
     private final Session db;
     private final ApproveService approveService;
     private final ApproveService.ApplicantReason applicantReason;
+    private final EventService eventService;
     /**
      * 在代理对象被创建时，设置整个代理对象是否需要权限校验
      */
-    private final boolean isNeedAuthorization;
+    private  boolean isNeedAuthorization;
 
-    public ProxyInvocationHandler(Object target, UserRoles userRoles, RBACService rbacService, Session db, boolean isNeedAuthorization, ApproveService approveService,
-                                  ApproveService.ApplicantReason applicantReason) {
+    public ProxyInvocationHandler(Object target,
+                                  UserRoles userRoles,
+                                  RBACService rbacService,
+                                  Session db,
+                                  ApproveService approveService,
+                                  ApproveService.ApplicantReason applicantReason,
+                                  EventService eventService) {
         this.target = target;
         this.userRoles = userRoles;
         this.rbacService = rbacService;
         this.db = db;
-        this.isNeedAuthorization = isNeedAuthorization;
         this.approveService = approveService;
         this.applicantReason = applicantReason;
+        this.eventService = eventService;
+    }
+
+    public void setNeedAuthorization(boolean needAuthorization) {
+        isNeedAuthorization = needAuthorization;
     }
 
     @Override

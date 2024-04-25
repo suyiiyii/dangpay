@@ -5,10 +5,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
 import top.suyiiyii.models.Event;
-import top.suyiiyii.service.ApproveService;
-import top.suyiiyii.service.ApproveServiceImpl;
-import top.suyiiyii.service.EventService;
-import top.suyiiyii.service.RBACService;
+import top.suyiiyii.service.*;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_200_OK;
 import top.suyiiyii.su.exception.Http_403_ForbiddenException;
@@ -30,6 +27,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
     private final ApproveServiceImpl.ApplicantReason applicantReason;
     private final EventService eventService;
     private final HttpServletRequest req;
+    private final GroupService groupService;
     private int eventId;
     @Setter
     private Object target;
@@ -45,7 +43,8 @@ public class ProxyInvocationHandler implements InvocationHandler {
             @Proxy(isNeedAuthorization = false, isNotProxy = true) ApproveService approveService,
             ApproveServiceImpl.ApplicantReason applicantReason,
             @Proxy(isNeedAuthorization = false, isNotProxy = true) EventService eventService,
-            HttpServletRequest req) {
+            HttpServletRequest req,
+            @Proxy(isNeedAuthorization = false, isNotProxy = true) GroupService groupService) {
         this.userRoles = userRoles;
         this.rbacService = rbacService;
         this.db = db;
@@ -53,6 +52,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
         this.applicantReason = applicantReason;
         this.eventService = eventService;
         this.req = req;
+        this.groupService = groupService;
     }
 
     public void setNeedAuthorization(boolean needAuthorization) {

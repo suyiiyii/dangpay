@@ -55,6 +55,7 @@ public class ApproveServiceImpl implements ApproveService {
         // 申请加入群组
         if (methodStr.equals("top.suyiiyii.service.GroupService/joinGroup")) {
             int gid = (int) args.get(0);
+            groupService.checkGroupStatus(gid);
             // 参数校验
             // 检查是否存在群组
             if (!db.query(GroupModel.class).eq("id", gid).exists()) {
@@ -79,6 +80,7 @@ public class ApproveServiceImpl implements ApproveService {
         if (methodStr.equals("top.suyiiyii.service.GroupService/inviteUser")) {
             int gid = (int) args.get(0);
             int inviteUid = (int) args.get(1);
+            groupService.checkGroupStatus(gid);
             // 参数校验
             // 检查是否存在群组
             if (!db.query(GroupModel.class).eq("id", gid).exists()) {

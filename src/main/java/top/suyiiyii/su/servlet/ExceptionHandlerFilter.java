@@ -76,7 +76,7 @@ public class ExceptionHandlerFilter implements Filter {
                 WebUtils.respWrite(resp, e.getMessage());
             }
         }
-        log.info("请求处理完成： " + req.getRequestURI());
+        log.info("请求处理完成： " + req.getMethod() + " " + req.getRequestURI());
     }
 
     @Override

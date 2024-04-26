@@ -300,11 +300,11 @@ public class TransactionServiceImpl implements TransactionService {
 
             log.info("用户身份认证成功，创建transaction：" + transaction);
             db.update(wallet);
+            db.commitTransaction();
         } catch (Exception e) {
             db.rollbackTransaction();
             throw e;
         } finally {
-            db.commitTransaction();
             lockService.unlock("w" + wid);
         }
 
@@ -350,25 +350,26 @@ public class TransactionServiceImpl implements TransactionService {
                 throw new Http_400_BadRequestException("请求第三方接口发生异常：" + response.code() + " " + responseBody);
             }
         } catch (Exception e) {
-            log.error("请求第三方接口失败", e);
+            log.error("请求第三方接口失败，开始手动回滚用户余额", e);
             // 手动回滚对数据库的修改
             try {
                 lockService.tryLock("t" + transaction.getId(), 10, 10, TimeUnit.SECONDS);
                 lockService.tryLock("w" + wid, 10, 10, TimeUnit.SECONDS);
                 db.beginTransaction();
                 Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
+                transaction = db.query(Transaction.class).eq("id", transaction.getId()).first();
                 // 判断是付款还是收款
                 if (transaction.getAmount() > 0) {
                     wallet.setAmount(wallet.getAmount() + transaction.getAmount());
                     wallet.setAmountInFrozen(wallet.getAmountInFrozen() - transaction.getAmount());
                 }
                 transaction.setStatus("fail");
+                db.commitTransaction();
             } catch (Exception e1) {
                 db.rollbackTransaction();
                 log.error("数据库手动回滚失败", e1);
                 throw e1;
             } finally {
-                db.commitTransaction();
                 lockService.unlock("w" + wid);
                 lockService.unlock("t" + transaction.getId());
             }
@@ -403,18 +404,24 @@ public class TransactionServiceImpl implements TransactionService {
             throw new Http_400_BadRequestException("ack请求失败");
         }
 
-        lockService.tryLock("w" + wid, 10, 10, java.util.concurrent.TimeUnit.SECONDS);
-        // 这里由于请求完
-        Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
-        // 更新transaction状态
-        transaction.setStatus("success");
-        transaction.setLastUpdate(UniversalUtils.getNow());
-        db.update(transaction);
-        // 更新wallet
-        wallet.setAmountInFrozen(wallet.getAmountInFrozen() - transaction.getAmount());
-        wallet.setLastUpdate(UniversalUtils.getNow());
-        db.commit();
-        lockService.unlock("w" + wid);
+        try {
+            lockService.tryLock("t" + transaction.getId(), 10, 10, TimeUnit.SECONDS);
+            lockService.tryLock("w" + wid, 10, 10, java.util.concurrent.TimeUnit.SECONDS);
+            db.beginTransaction();
+            Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
+            transaction = db.query(Transaction.class).eq("id", transaction.getId()).first();
+            // 更新transaction状态
+            transaction.setStatus("success");
+            transaction.setLastUpdate(UniversalUtils.getNow());
+            db.update(transaction);
+            // 更新wallet
+            wallet.setAmountInFrozen(wallet.getAmountInFrozen() - transaction.getAmount());
+            wallet.setLastUpdate(UniversalUtils.getNow());
+            db.commitTransaction();
+        } finally {
+            lockService.unlock("w" + wid);
+            lockService.unlock("t" + transaction.getId());
+        }
     }
 
     /**

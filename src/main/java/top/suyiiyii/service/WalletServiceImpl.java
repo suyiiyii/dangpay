@@ -154,6 +154,7 @@ public class WalletServiceImpl implements WalletService {
         wallet.setLastUpdate(UniversalUtils.getNow());
         wallet.setIsSubWallet(1);
         wallet.setFatherWalletId(groupWallet.getId());
+        wallet.setStatus("normal");
         int id = db.insert(wallet, true);
         // 给子账户拥有者分配钱包权限
         rbacService.addUserRole(uid, "WalletAdmin/w" + id);
@@ -225,6 +226,7 @@ public class WalletServiceImpl implements WalletService {
         transaction.setPlatform(platform);
         transaction.setDescription(description);
         transaction.setWalletId(fatherWalletId);
+        transaction.setRelateUserId(subWallet.getOwnerId());
         db.insert(transaction);
         // 记录交易（子钱包收款）
         transaction.setWalletId(subWalletId);

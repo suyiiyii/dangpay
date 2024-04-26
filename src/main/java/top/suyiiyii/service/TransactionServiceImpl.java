@@ -18,6 +18,7 @@ import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.orm.core.Session;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -414,6 +415,11 @@ public class TransactionServiceImpl implements TransactionService {
 
         db.commit();
         return true;
+    }
+
+    @Override
+    public List<Transaction> getAllTransactions(int page,int size) {
+        return db.query(Transaction.class).limit(page,size).all();
     }
 
 }

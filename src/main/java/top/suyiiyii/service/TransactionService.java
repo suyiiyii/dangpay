@@ -2,8 +2,11 @@ package top.suyiiyii.service;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import top.suyiiyii.models.Transaction;
 import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.IOC.SubRegion;
+
+import java.util.List;
 
 @Proxy(isNeedAuthorization = false)
 public interface TransactionService {
@@ -26,6 +29,9 @@ public interface TransactionService {
     StartTransactionResponse startTransaction(String code, StartTransactionRequest request);
 
     boolean ack(String ackCode);
+
+
+    List<Transaction> getAllTransactions(int page, int size);
 
     @Data
     class UserPayRequest {

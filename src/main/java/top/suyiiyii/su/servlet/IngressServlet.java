@@ -46,6 +46,8 @@ public class IngressServlet extends HttpServlet {
      */
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // 把所有请求头打印出来
+        req.getHeaderNames().asIterator().forEachRemaining(name -> log.info(name + ": " + req.getHeader(name)));
         // 创建IOC管理器
         IOCManager iocManager = new IOCManager();
         // 创建对象，通过依赖注入管理器获取对应的servlet

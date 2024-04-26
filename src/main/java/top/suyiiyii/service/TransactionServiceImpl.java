@@ -448,31 +448,42 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setLastUpdate(UniversalUtils.getNow());
         transaction.setPlatform(request.getPlatform());
         transaction.setDescription(request.getTradeDescription());
-        // 设置关联用户
-        Wallet wallet = db.query(Wallet.class).eq("id", transactionIdentity.getWalletId()).first();
-        transaction.setRelateUserId(wallet.getOwnerId());
-        // 检查钱包状态
+        try {
 
-        walletService.checkWalletStatus(transaction.getWalletId());
-        // 检查用户余额
-        if (wallet.getAmount() < transaction.getAmount()) {
-            log.error("用户余额不足 余额：" + wallet.getAmount() + "，交易金额：" + transaction.getAmount());
-            throw new Http_400_BadRequestException("用户余额不足");
+            // 设置关联用户
+            lockService.tryLock("w" + transaction.getWalletId(), 10, 10, TimeUnit.SECONDS);
+            Wallet wallet = db.query(Wallet.class).eq("id", transactionIdentity.getWalletId()).first();
+            transaction.setRelateUserId(wallet.getOwnerId());
+            // 检查钱包状态
+            walletService.checkWalletStatus(transaction.getWalletId());
+            // 判断是付款还是收款
+            if (transaction.getAmount() > 0) {
+                // 我方付款
+                // 检查用户余额
+                if (wallet.getAmount() < transaction.getAmount()) {
+                    log.error("用户余额不足 余额：" + wallet.getAmount() + "，交易金额：" + transaction.getAmount());
+                    throw new Http_400_BadRequestException("用户余额不足");
+                }
+                // 冻结用户资金
+                wallet.setAmount(wallet.getAmount() - transaction.getAmount());
+                wallet.setAmountInFrozen(wallet.getAmountInFrozen() + transaction.getAmount());
+            }
+            int transactionId = db.insert(transaction, true);
+            log.info("创建transaction：" + transaction);
+
+            // 构建一个ack地址，关连transaction信息
+            String ackCode = "ack" + UUID.randomUUID().toString().replace("-", "");
+            transactionDao.insert("ack_" + ackCode, String.valueOf(transactionId), Duration.ofMinutes(1));
+            // 构建返回信息
+            StartTransactionResponse response = new StartTransactionResponse();
+            response.setStatus("success");
+            response.setMessage("向 " + request.getPlatform() + " 平台的 " + transactionIdentity.getWalletId() + " 转账 " + transaction.getAmount() + " 元");
+            response.setCallback(configManger.get("BASE_URL") + "/api/ack?ackCode=" + ackCode);
+            response.setRequestId(request.getRequestId());
+            return response;
+        } finally {
+            lockService.unlock("w" + transaction.getWalletId());
         }
-        int transactionId = db.insert(transaction, true);
-        log.info("创建transaction：" + transaction);
-
-        // 构建一个ack地址，关连transaction信息
-        String ackCode = "ack" + UUID.randomUUID().toString().replace("-", "");
-        transactionDao.insert("ack_" + ackCode, String.valueOf(transactionId), Duration.ofMinutes(1));
-        // 构建返回信息
-        StartTransactionResponse response = new StartTransactionResponse();
-        response.setStatus("success");
-        response.setMessage("向 " + request.getPlatform() + " 平台的 " + transactionIdentity.getWalletId() + " 转账 " + transaction.getAmount() + " 元");
-        response.setCallback(configManger.get("BASE_URL") + "/api/ack?ackCode=" + ackCode);
-        response.setRequestId(request.getRequestId());
-        db.commit();
-        return response;
     }
 
     @Override
@@ -481,17 +492,23 @@ public class TransactionServiceImpl implements TransactionService {
         int transactionId = Integer.parseInt(transactionDao.get("ack_" + ackCode));
         transactionDao.delete("ack_" + ackCode);
 
-        // 更新transaction状态
-        Transaction transaction = db.query(Transaction.class).eq("id", transactionId).first();
-        transaction.setStatus("success");
-        transaction.setLastUpdate(UniversalUtils.getNow());
-        // 更新wallet
-        Wallet wallet = db.query(Wallet.class).eq("id", transaction.getWalletId()).first();
-        wallet.setAmount(wallet.getAmount() - transaction.getAmount());
-        wallet.setLastUpdate(UniversalUtils.getNow());
+        try {
+            lockService.tryLock("t" + transactionId, 10, 10, TimeUnit.SECONDS);
+            lockService.tryLock("w" + transactionId, 10, 10, TimeUnit.SECONDS);
+            // 更新transaction状态
+            Transaction transaction = db.query(Transaction.class).eq("id", transactionId).first();
+            transaction.setStatus("success");
+            transaction.setLastUpdate(UniversalUtils.getNow());
+            // 更新wallet
+            Wallet wallet = db.query(Wallet.class).eq("id", transaction.getWalletId()).first();
+            wallet.setAmount(wallet.getAmount() - transaction.getAmount());
+            wallet.setLastUpdate(UniversalUtils.getNow());
 
-        db.commit();
-        return true;
+            return true;
+        } finally {
+            lockService.unlock("w" + transactionId);
+            lockService.unlock("t" + transactionId);
+        }
     }
 
     @Override

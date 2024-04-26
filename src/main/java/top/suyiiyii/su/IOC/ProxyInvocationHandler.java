@@ -136,6 +136,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
             Session db1 = IOCManager.getGlobalBean(ModelManger.class).getSession();
             assert db1 != null;
             db1.update(Event.class).set("status", "errInExec").eq("id", eventId).execute();
+            db1.close();
             errorFlag = true;
             throw e.getTargetException();
         } finally {
@@ -143,6 +144,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
                 Session db1 = IOCManager.getGlobalBean(ModelManger.class).getSession();
                 assert db1 != null;
                 db1.update(Event.class).set("status", "success").eq("id", eventId).execute();
+                db1.close();
             }
         }
     }

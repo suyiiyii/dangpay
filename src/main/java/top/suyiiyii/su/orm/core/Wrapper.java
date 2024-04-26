@@ -28,6 +28,8 @@ public class Wrapper {
     private final List<String> whereStatement = new ArrayList<>();
     // set条件表
     private final List<String> setStatement = new ArrayList<>();
+    // 其他参数表
+    private final List<String> otherStatement = new ArrayList<>();
     // 参数列表
     private final List<Object> params = new ArrayList<>();
     private final CallBack callBack;
@@ -159,6 +161,19 @@ public class Wrapper {
         return this;
     }
 
+    /**
+     * order by语句，用于排序
+     * 默认升序
+     *
+     * @param key  字段名
+     * @param desc 是否降序
+     * @return this
+     */
+    public Wrapper orderBy(String key, boolean desc) {
+        otherStatement.add("ORDER BY `" + key + "`" + (desc ? " DESC" : " ASC"));
+        return this;
+    }
+
 
     /**
      * 构建sql语句，将where条件和set条件拼接到基础sql上
@@ -178,11 +193,16 @@ public class Wrapper {
             sql.append(String.join(" AND ", whereStatement));
         }
 
+        if (!otherStatement.isEmpty()) {
+            sql.append(" ");
+            sql.append(String.join(" ", otherStatement));
+        }
+
 
         if (pageNum != -1 && pageSize != -1) {
             sql.append(" LIMIT ").append((pageNum - 1) * pageSize).append(",").append(pageSize);
         }
-
+        log.info("sql: " + sql);
         return sql.toString();
     }
 

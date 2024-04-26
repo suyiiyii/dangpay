@@ -21,6 +21,6 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<Event> getEvents(int page, int size) {
-        return db.query(Event.class).limit(page, size).all();
+        return db.query(Event.class).limit(page, size).orderBy("id", true).all();
     }
 }

@@ -18,10 +18,12 @@ import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.orm.core.Session;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Repository
@@ -34,14 +36,7 @@ public class TransactionServiceImpl implements TransactionService {
     WalletService walletService;
     LockService lockService;
 
-    public TransactionServiceImpl(
-            Session db,
-            @Proxy(isNeedAuthorization = false) RBACService rbacService,
-            @Proxy(isNeedAuthorization = false) UserService userService,
-            ConfigManger configManger,
-            TransactionDao transactionDao,
-            @Proxy(isNeedAuthorization = false, isNotProxy = true) WalletService walletService,
-            LockService lockService) {
+    public TransactionServiceImpl(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService, @Proxy(isNeedAuthorization = false) UserService userService, ConfigManger configManger, TransactionDao transactionDao, @Proxy(isNeedAuthorization = false, isNotProxy = true) WalletService walletService, LockService lockService) {
         this.db = db;
         this.userService = userService;
         this.rbacService = rbacService;
@@ -233,7 +228,7 @@ public class TransactionServiceImpl implements TransactionService {
      */
     @Override
 //    @Proxy(isTransaction = true)
-    public UserPayResponse userPay(@SubRegion(lockKey = "w") int wid, int uid, UserPayRequest userPayRequest) {
+    public UserPayResponse userPay(int wid, int uid, UserPayRequest userPayRequest) {
         // 验证用户身份
         if (!userService.checkPassword(userPayRequest.getPassword(), uid)) {
             log.error("用户支付失败，密码错误");
@@ -264,34 +259,54 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     private @NotNull StartTransactionResult doStartTransaction(int wid, int uid, RequestTransactionResponse requestTransactionResponse) {
-        // 检查钱包余额
-        Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
-        if (wallet.getAmount() < requestTransactionResponse.getSpecifiedAmount()) {
-            log.error("钱包余额不足 余额：" + wallet.getAmount() + "，交易金额：" + requestTransactionResponse.getSpecifiedAmount());
-            throw new Http_400_BadRequestException("用户余额不足");
+        if (!requestTransactionResponse.isAmountSpecified) {
+            // TODO: 处理未指定金额的情况
+            throw new Http_400_BadRequestException("未指定金额的情况");
         }
 
-        lockService.tryLock("w" + wid, 10, 10, java.util.concurrent.TimeUnit.SECONDS);
-        // 创建transaction
-        Transaction transaction = new Transaction();
-        transaction.setWalletId(wid);
-        transaction.setAmount(requestTransactionResponse.isAmountSpecified ? requestTransactionResponse.getSpecifiedAmount() : 0);
-        transaction.setType("online_pay");
-        transaction.setStatus("frozen");
-        transaction.setCreateTime(UniversalUtils.getNow());
-        transaction.setLastUpdate(UniversalUtils.getNow());
-        transaction.setPlatform(requestTransactionResponse.getPlatform());
-        transaction.setDescription("向 " + requestTransactionResponse.getPlatform() + " 平台的 " + wid + " 转账 " + transaction.getAmount() + " 元");
-        transaction.setRelateUserId(uid);
-        transaction.setId(db.insert(transaction, true));
-        log.info("用户身份认证成功，创建transaction：" + transaction);
-        // 冻结用户资金
-        wallet.setAmount(wallet.getAmount() - transaction.getAmount());
-        wallet.setAmountInFrozen(wallet.getAmountInFrozen() + transaction.getAmount());
-        wallet.setLastUpdate(UniversalUtils.getNow());
-        db.update(wallet);
-        db.commit();
-        lockService.unlock("w" + wid);
+
+        Transaction transaction;
+        try {
+
+            lockService.tryLock("w" + wid, 10, 10, java.util.concurrent.TimeUnit.SECONDS);
+            db.beginTransaction();
+            // 创建transaction
+            transaction = new Transaction();
+            transaction.setWalletId(wid);
+            transaction.setAmount(requestTransactionResponse.getSpecifiedAmount());
+            transaction.setType("online_pay");
+            transaction.setStatus("frozen");
+            transaction.setCreateTime(UniversalUtils.getNow());
+            transaction.setLastUpdate(UniversalUtils.getNow());
+            transaction.setPlatform(requestTransactionResponse.getPlatform());
+            transaction.setDescription("向 " + requestTransactionResponse.getPlatform() + " 平台的 " + wid + " 转账 " + transaction.getAmount() + " 元");
+            transaction.setRelateUserId(uid);
+            transaction.setId(db.insert(transaction, true));
+            // 判断是付款还是收款
+            Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
+            if (requestTransactionResponse.getSpecifiedAmount() < 0) {
+                // 收款
+            } else {
+                // 检查钱包余额
+                if (wallet.getAmount() < requestTransactionResponse.getSpecifiedAmount()) {
+                    log.error("钱包余额不足 余额：" + wallet.getAmount() + "，交易金额：" + requestTransactionResponse.getSpecifiedAmount());
+                    throw new Http_400_BadRequestException("用户余额不足");
+                }
+                // 冻结用户资金
+                wallet.setAmount(wallet.getAmount() - transaction.getAmount());
+                wallet.setAmountInFrozen(wallet.getAmountInFrozen() + transaction.getAmount());
+                wallet.setLastUpdate(UniversalUtils.getNow());
+            }
+
+            log.info("用户身份认证成功，创建transaction：" + transaction);
+            db.update(wallet);
+        } catch (Exception e) {
+            db.rollbackTransaction();
+            throw e;
+        } finally {
+            db.commitTransaction();
+            lockService.unlock("w" + wid);
+        }
 
 
         // 向第三方平台发起支付请求
@@ -334,17 +349,37 @@ public class TransactionServiceImpl implements TransactionService {
                 log.error("请求第三方接口发生异常：" + response.code() + " " + responseBody);
                 throw new Http_400_BadRequestException("请求第三方接口发生异常：" + response.code() + " " + responseBody);
             }
-        } catch (Http_400_BadRequestException e) {
-            throw e;
         } catch (Exception e) {
             log.error("请求第三方接口失败", e);
-            throw new Http_400_BadRequestException("请求第三方接口失败");
+            // 手动回滚对数据库的修改
+            try {
+                lockService.tryLock("t" + transaction.getId(), 10, 10, TimeUnit.SECONDS);
+                lockService.tryLock("w" + wid, 10, 10, TimeUnit.SECONDS);
+                db.beginTransaction();
+                Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
+                // 判断是付款还是收款
+                if (transaction.getAmount() > 0) {
+                    wallet.setAmount(wallet.getAmount() + transaction.getAmount());
+                    wallet.setAmountInFrozen(wallet.getAmountInFrozen() - transaction.getAmount());
+                }
+                transaction.setStatus("fail");
+            } catch (Exception e1) {
+                db.rollbackTransaction();
+                log.error("数据库手动回滚失败", e1);
+                throw e1;
+            } finally {
+                db.commitTransaction();
+                lockService.unlock("w" + wid);
+                lockService.unlock("t" + transaction.getId());
+            }
+            try {
+                throw e;
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
         }
         StartTransactionResult tempResult = new StartTransactionResult(transaction, startTransactionResponse);
         return tempResult;
-    }
-
-    private record StartTransactionResult(Transaction transaction, StartTransactionResponse startTransactionResponse) {
     }
 
     private void sendAck(StartTransactionResponse startTransactionResponse, Transaction transaction, int wid) {
@@ -446,7 +481,6 @@ public class TransactionServiceImpl implements TransactionService {
         int transactionId = Integer.parseInt(transactionDao.get("ack_" + ackCode));
         transactionDao.delete("ack_" + ackCode);
 
-        lockService
         // 更新transaction状态
         Transaction transaction = db.query(Transaction.class).eq("id", transactionId).first();
         transaction.setStatus("success");
@@ -463,6 +497,9 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public List<Transaction> getAllTransactions(int page, int size) {
         return db.query(Transaction.class).limit(page, size).all();
+    }
+
+    private record StartTransactionResult(Transaction transaction, StartTransactionResponse startTransactionResponse) {
     }
 
 }

@@ -62,7 +62,7 @@ public class LockService {
             localLock.unlock();
             log.debug("成功释放锁");
         } else {
-            throw new RuntimeException("逻辑错误！！！当前线程未持有锁");
+            throw new RuntimeException("逻辑错误！！！当前线程未持有锁或重复释放锁");
         }
     }
 

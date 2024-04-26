@@ -44,7 +44,7 @@ public class WalletServiceImpl implements WalletService {
     @Proxy(isTransaction = true)
     public void createPersonalWallet(int uid) {
         // 检查是否已经有钱包
-        if (db.query(Wallet.class).eq("owner_id", uid).eq("owner_type", "user").exists()) {
+        if (db.query(Wallet.class).eq("owner_id", uid).eq("owner_type", "user").eq("is_sub_wallet", 0).exists()) {
             throw new Http_400_BadRequestException("钱包已存在");
         }
         // 创建个人钱包
@@ -262,7 +262,7 @@ public class WalletServiceImpl implements WalletService {
         Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
         if (!wallet.getStatus().equals("normal")) {
             log.error("钱包状态异常，钱包id：" + wallet.getId() + "，状态：" + wallet.getStatus());
-            throw new Http_400_BadRequestException("请求的钱包状态异常，请联系管理员或稍后再试");
+            throw new Http_400_BadRequestException("您的钱包状态异常，请联系管理员或稍后再试");
         }
     }
 }

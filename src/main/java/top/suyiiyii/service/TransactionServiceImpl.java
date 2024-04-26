@@ -87,6 +87,7 @@ public class TransactionServiceImpl implements TransactionService {
      * @return
      */
     @Override
+    @Proxy(isTransaction = true)
     public String createCode(int identityId) {
 
         // 创建交易码

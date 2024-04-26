@@ -1,5 +1,8 @@
 package top.suyiiyii.service;
 
+import top.suyiiyii.su.IOC.Proxy;
+
+@Proxy(isNeedAuthorization = true)
 public interface MailService {
     void sendMail(String to, String subject, String content);
 

@@ -2,11 +2,13 @@ package top.suyiiyii.service;
 
 import lombok.Data;
 import top.suyiiyii.models.Message;
+import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.IOC.SubRegion;
 import top.suyiiyii.su.validator.Regex;
 
 import java.util.List;
 
+@Proxy(isNeedAuthorization = true)
 public interface MessageService {
     void sendGroupMessage(@SubRegion(areaPrefix = "g") int gid, int uid, String message);
 

@@ -5,7 +5,7 @@ import top.suyiiyii.su.IOC.Proxy;
 
 import java.util.List;
 
-@Proxy(isNeedAuthorization = false)
+@Proxy(isNeedAuthorization = true)
 public interface FriendService {
     void addFriend(int uid1, int uid2);
 

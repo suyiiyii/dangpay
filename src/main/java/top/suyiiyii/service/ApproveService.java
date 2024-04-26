@@ -1,21 +1,19 @@
 package top.suyiiyii.service;
 
 import lombok.Data;
-import lombok.SneakyThrows;
+import top.suyiiyii.su.IOC.Proxy;
 
 import java.lang.reflect.Method;
 import java.util.List;
 
+@Proxy(isNeedAuthorization = true)
 public interface ApproveService {
     boolean checkApprove(int uid, String reason, Method method, List<Object> args);
 
-    @SneakyThrows
     String submitApplicant(int uid, String reason, Method method, List<Object> args);
 
-    @SneakyThrows
     void approve(String uuid, String reason);
 
-    @SneakyThrows
     void reject(String uuid, String reason);
 
     @Data

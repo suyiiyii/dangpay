@@ -8,13 +8,12 @@ import top.suyiiyii.su.IOC.SubRegion;
 
 import java.util.List;
 
-@Proxy(isNeedAuthorization = false)
+@Proxy(isNeedAuthorization = true)
 public interface TransactionService {
     String createIdentity(int WalletId, boolean isAmountSpecified, int amount, String type, String description);
 
     String createMoneyReceiveIdentity(int WalletId, boolean isAmountSpecified, int amount, String description);
 
-    @Proxy(isTransaction = true)
     String createCode(int identityId);
 
     String generateCode();
@@ -23,7 +22,6 @@ public interface TransactionService {
 
     RequestTransactionResponse requestTransaction(String identity, RequestTransactionRequest request);
 
-    @Proxy(isTransaction = true)
     UserPayResponse userPay(int wid, int uid, UserPayRequest userPayRequest);
 
     StartTransactionResponse startTransaction(String code, StartTransactionRequest request);

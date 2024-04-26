@@ -24,7 +24,6 @@ import java.util.UUID;
 
 @Slf4j
 @Repository
-@Proxy(isNeedAuthorization = false)
 public class TransactionServiceImpl implements TransactionService {
     Session db;
     RBACService rbacService;
@@ -86,9 +85,8 @@ public class TransactionServiceImpl implements TransactionService {
      * @param identityId identityId
      * @return
      */
-    @Override
     @Proxy(isTransaction = true)
-    public String createCode(int identityId) {
+    private String createCode(int identityId) {
 
         // 创建交易码
         String transactionCode = generateCode();
@@ -102,7 +100,6 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionCode;
     }
 
-    @Override
     public String generateCode() {
         return UUID.randomUUID().toString();
     }
@@ -201,7 +198,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    @Proxy(isTransaction = true, isNeedAuthorization = false)
+    @Proxy(isTransaction = true)
     public RequestTransactionResponse requestTransaction(String identity, RequestTransactionRequest request) {
         // 查询交易信息
         TransactionIdentity transactionIdentity = db.query(TransactionIdentity.class).eq("identity", identity).first();
@@ -353,7 +350,7 @@ public class TransactionServiceImpl implements TransactionService {
      * @return 响应体
      */
     @Override
-    @Proxy(isTransaction = true, isNeedAuthorization = false)
+    @Proxy(isTransaction = true)
     public StartTransactionResponse startTransaction(String code, StartTransactionRequest request) {
         // 查询缓存的code和identityId的对应关系
         CodeInCache codeInCache;

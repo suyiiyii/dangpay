@@ -14,10 +14,6 @@ public interface TransactionService {
 
     String createMoneyReceiveIdentity(int WalletId, boolean isAmountSpecified, int amount, String description);
 
-    String createCode(int identityId);
-
-    String generateCode();
-
     ScanQRCodeResponse scanQRCode(@SubRegion(areaPrefix = "w") int wid, String callbackUrl);
 
     RequestTransactionResponse requestTransaction(String identity, RequestTransactionRequest request);

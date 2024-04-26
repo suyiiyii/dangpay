@@ -18,7 +18,7 @@ public interface MessageService {
 
     List<Message> getUserMessage(int uid, int senderId);
 
-    List<Message> getGroupMessage(int gid);
+    List<Message> getGroupMessage(@SubRegion(areaPrefix = "g") int gid);
 
     @Data
     public static class MessageSendRequest {

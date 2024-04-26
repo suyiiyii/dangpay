@@ -231,7 +231,7 @@ public class TransactionServiceImpl implements TransactionService {
      * 用户获得扫码结构之后，请求确认交易接口，服务器解密code，查询到对应的identity，然后创建transaction，设置为frozen状态，向第三方平台发起支付请求
      */
     @Override
-    @Proxy(isTransaction = true)
+//    @Proxy(isTransaction = true)
     public UserPayResponse userPay(@SubRegion(lockKey = "w") int wid, int uid, UserPayRequest userPayRequest) {
         // 验证用户身份
         if (!userService.checkPassword(userPayRequest.getPassword(), uid)) {
@@ -411,6 +411,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Proxy(isTransaction = true)
     public boolean ack(String ackCode) {
         int transactionId = Integer.parseInt(transactionDao.get("ack_" + ackCode));
         transactionDao.delete("ack_" + ackCode);

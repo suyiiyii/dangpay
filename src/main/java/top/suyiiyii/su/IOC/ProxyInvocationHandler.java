@@ -29,6 +29,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
     private final EventService eventService;
     private final HttpServletRequest req;
     private final GroupService groupService;
+    private final LockService lockService;
     private int eventId;
     @Setter
     private Object target;
@@ -45,7 +46,8 @@ public class ProxyInvocationHandler implements InvocationHandler {
             ApproveServiceImpl.ApplicantReason applicantReason,
             @Proxy(isNeedAuthorization = false, isNotProxy = true) EventService eventService,
             HttpServletRequest req,
-            @Proxy(isNeedAuthorization = false, isNotProxy = true) GroupService groupService) {
+            @Proxy(isNeedAuthorization = false, isNotProxy = true) GroupService groupService,
+            LockService lockService) {
         this.userRoles = userRoles;
         this.rbacService = rbacService;
         this.db = db;
@@ -54,6 +56,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
         this.eventService = eventService;
         this.req = req;
         this.groupService = groupService;
+        this.lockService = lockService;
     }
 
     public void setNeedAuthorization(boolean needAuthorization) {
@@ -111,8 +114,28 @@ public class ProxyInvocationHandler implements InvocationHandler {
             throw new Http_200_OK("已提交审批");
         }
 
+        // 枚举参数，判断有没有加锁注解
+        boolean isNeedLock = false;
+        String lockKey = "";
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof Integer) {
+                if (method.getParameters()[i].isAnnotationPresent(SubRegion.class)) {
+                    SubRegion annotation = method.getParameters()[i].getAnnotation(SubRegion.class);
+                    if (annotation.lockKey().equals(""))
+                        continue;
+                    isNeedLock = true;
+                    lockKey = annotation.lockKey() + "_" + args[i].toString();
+                    break;
+                }
+            }
+        }
+
         boolean errorFlag = false;
         try {
+            // 如果需要加锁，则加锁
+            if (isNeedLock) {
+                lockService.tryLock(lockKey, 100, 100, java.util.concurrent.TimeUnit.SECONDS);
+            }
             // 如果需要事务，则开启事务
             if (isTransaction && !db.isTransaction()) {
                 try {
@@ -145,6 +168,10 @@ public class ProxyInvocationHandler implements InvocationHandler {
                 assert db1 != null;
                 db1.update(Event.class).set("status", "success").eq("id", eventId).execute();
                 db1.close();
+                // 如果加了锁，则释放锁
+                if (isNeedLock) {
+                    lockService.unlock(lockKey);
+                }
             }
         }
     }

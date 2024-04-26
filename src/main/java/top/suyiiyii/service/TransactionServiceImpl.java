@@ -396,6 +396,7 @@ public class TransactionServiceImpl implements TransactionService {
         response.setMessage("向 " + request.getPlatform() + " 平台的 " + transactionIdentity.getWalletId() + " 转账 " + transaction.getAmount() + " 元");
         response.setCallback(configManger.get("BASE_URL") + "/api/ack?ackCode=" + ackCode);
         response.setRequestId(request.getRequestId());
+        db.commit();
         return response;
     }
 

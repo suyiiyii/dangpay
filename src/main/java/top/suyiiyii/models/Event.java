@@ -5,7 +5,7 @@ import top.suyiiyii.su.orm.annotation.ColumnSetting;
 import top.suyiiyii.su.orm.annotation.TableRegister;
 
 @Data
-@TableRegister("event")
+@TableRegister("Event")
 public class Event {
     @ColumnSetting(isPrimaryKey = true, isAutoIncrement = true)
     int id;

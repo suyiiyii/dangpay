@@ -12,13 +12,13 @@ import java.util.List;
 public interface TransactionService {
     String createIdentity(int WalletId, boolean isAmountSpecified, int amount, String type, String description);
 
-    String createMoneyReceiveIdentity(int WalletId, boolean isAmountSpecified, int amount, String description);
+    String createMoneyReceiveIdentity(@SubRegion(areaPrefix = "w") int wid, boolean isAmountSpecified, int amount, String description);
 
     ScanQRCodeResponse scanQRCode(@SubRegion(areaPrefix = "w") int wid, String callbackUrl);
 
     RequestTransactionResponse requestTransaction(String identity, RequestTransactionRequest request);
 
-    UserPayResponse userPay(int wid, int uid, UserPayRequest userPayRequest);
+    UserPayResponse userPay(@SubRegion(areaPrefix = "w") int wid, int uid, UserPayRequest userPayRequest);
 
     StartTransactionResponse startTransaction(String code, StartTransactionRequest request);
 

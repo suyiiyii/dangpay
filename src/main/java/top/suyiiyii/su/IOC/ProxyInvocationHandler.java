@@ -111,6 +111,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
             throw new Http_200_OK("已提交审批");
         }
 
+        boolean errorFlag = false;
         try {
             // 如果需要事务，则开启事务
             if (isTransaction && !db.isTransaction()) {
@@ -132,10 +133,17 @@ public class ProxyInvocationHandler implements InvocationHandler {
             }
         } catch (InvocationTargetException e) {
             // invoke方法抛出的是一个包装过的异常，需要通过getTargetException获取原始异常
-            Session db1= IOCManager.getGlobalBean(ModelManger.class).getSession();
+            Session db1 = IOCManager.getGlobalBean(ModelManger.class).getSession();
             assert db1 != null;
             db1.update(Event.class).set("status", "errInExec").eq("id", eventId).execute();
+            errorFlag = true;
             throw e.getTargetException();
+        } finally {
+            if (!errorFlag) {
+                Session db1 = IOCManager.getGlobalBean(ModelManger.class).getSession();
+                assert db1 != null;
+                db1.update(Event.class).set("status", "success").eq("id", eventId).execute();
+            }
         }
     }
 
@@ -178,7 +186,7 @@ public class ProxyInvocationHandler implements InvocationHandler {
         event.setUa(UA);
         event.setPermission(permission);
         event.setCreateTime(UniversalUtils.getNow());
-        event.setStatus(result ? "success" : "fail");
+        event.setStatus(result ? "running" : "authFail");
         this.eventId = db.insert(event, true);
 
         if (!result) {

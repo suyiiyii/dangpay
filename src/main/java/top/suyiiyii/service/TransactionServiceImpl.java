@@ -68,12 +68,12 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public String createMoneyReceiveIdentity(int WalletId, boolean isAmountSpecified, int amount, String description) {
+    public String createMoneyReceiveIdentity(@SubRegion(areaPrefix = "w") int wid, boolean isAmountSpecified, int amount, String description) {
         if (amount <= 0) {
             log.error("收款码的金额必须大于0，用户输入的金额：" + amount);
             throw new Http_400_BadRequestException("收款码的金额必须大于0");
         }
-        return createIdentity(WalletId, isAmountSpecified, amount, "money_receive", description);
+        return createIdentity(wid, isAmountSpecified, amount, "money_receive", description);
     }
 
 
@@ -314,6 +314,13 @@ public class TransactionServiceImpl implements TransactionService {
                 Request ackRequest = new Request.Builder().url(ackUrl).post(RequestBody.create("", MediaType.parse("text/plain"))).build();
                 // 发送请求
                 okhttp3.Response ackResponse = client.newCall(ackRequest).execute();
+                // 检查ack请求是否成功
+                if (ackResponse.isSuccessful()) {
+                    log.info("ack请求成功");
+                } else {
+                    log.error("ack请求失败：" + ackResponse.code());
+                    throw new Http_400_BadRequestException("ack请求失败");
+                }
 
                 // 更新transaction状态
                 transaction.setStatus("success");

@@ -143,8 +143,7 @@ public class IOCManager {
      * @return 需要的实例
      */
     public <T> T getObj(Class<T> clazz, boolean isNotProxy, boolean isNeedAuthorization) {
-        log.debug(clazz == null ? "null" : clazz.getSimpleName());
-        log.info("开始注入对象: {}", clazz.getSimpleName());
+//        log.info("开始注入对象: {}", clazz.getSimpleName());
         try {
             Class<?> clazzInterface = null;
             // 如果是接口，获取实现类

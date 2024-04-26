@@ -95,7 +95,7 @@ public class SuConnectionPool implements ConnectionPool {
             connection = availableConnections.iterator().next();
             availableConnections.remove(connection);
             usedConnections.add(connection);
-            if (!connection.isValid(1) || connection.isClosed()) {
+            if (!connection.isValid(1)) {
                 log.warn("获取到的连接已失效，重新获取");
                 usedConnections.remove(connection);
                 connection = this.getConnection();

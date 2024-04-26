@@ -410,7 +410,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setLastUpdate(UniversalUtils.getNow());
         // 更新wallet
         Wallet wallet = db.query(Wallet.class).eq("id", transaction.getWalletId()).first();
-        wallet.setAmount(wallet.getAmount() + transaction.getAmount());
+        wallet.setAmount(wallet.getAmount() - transaction.getAmount());
         wallet.setLastUpdate(UniversalUtils.getNow());
 
         db.commit();

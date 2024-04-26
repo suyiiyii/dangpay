@@ -5,6 +5,7 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import org.jetbrains.annotations.NotNull;
 import top.suyiiyii.dao.TransactionDao;
 import top.suyiiyii.models.Transaction;
 import top.suyiiyii.models.TransactionIdentity;
@@ -250,13 +251,27 @@ public class TransactionServiceImpl implements TransactionService {
             throw new Http_400_BadRequestException("code不存在或已过期");
         }
 
-        // 检查用户余额
+        StartTransactionResult tempResult = doStartTransaction(wid, uid, requestTransactionResponse);
+
+        sendAck(tempResult.startTransactionResponse(), tempResult.transaction(), wid);
+
+        // 构建返回信息
+        UserPayResponse userPayResponse = new UserPayResponse();
+        userPayResponse.setStatus("success");
+        userPayResponse.setMessage("支付成功");
+        userPayResponse.setRequestId(userPayRequest.getRequestId());
+        return userPayResponse;
+    }
+
+    private @NotNull StartTransactionResult doStartTransaction(int wid, int uid, RequestTransactionResponse requestTransactionResponse) {
+        // 检查钱包余额
         Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
         if (wallet.getAmount() < requestTransactionResponse.getSpecifiedAmount()) {
-            log.error("用户余额不足 余额：" + wallet.getAmount() + "，交易金额：" + requestTransactionResponse.getSpecifiedAmount());
+            log.error("钱包余额不足 余额：" + wallet.getAmount() + "，交易金额：" + requestTransactionResponse.getSpecifiedAmount());
             throw new Http_400_BadRequestException("用户余额不足");
         }
 
+        lockService.tryLock("w" + wid, 10, 10, java.util.concurrent.TimeUnit.SECONDS);
         // 创建transaction
         Transaction transaction = new Transaction();
         transaction.setWalletId(wid);
@@ -269,12 +284,14 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setDescription("向 " + requestTransactionResponse.getPlatform() + " 平台的 " + wid + " 转账 " + transaction.getAmount() + " 元");
         transaction.setRelateUserId(uid);
         transaction.setId(db.insert(transaction, true));
-        log.info("用户身份成功，创建transaction：" + transaction);
+        log.info("用户身份认证成功，创建transaction：" + transaction);
         // 冻结用户资金
         wallet.setAmount(wallet.getAmount() - transaction.getAmount());
         wallet.setAmountInFrozen(wallet.getAmountInFrozen() + transaction.getAmount());
         wallet.setLastUpdate(UniversalUtils.getNow());
         db.update(wallet);
+        db.commit();
+        lockService.unlock("w" + wid);
 
 
         // 向第三方平台发起支付请求
@@ -293,6 +310,7 @@ public class TransactionServiceImpl implements TransactionService {
         // 请求第三方平台
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder().url(requestTransactionResponse.getCallback()).post(RequestBody.create(startTransactionRequestJson.getBytes())).addHeader("X-Signature", sign).build();
+        StartTransactionResponse startTransactionResponse;
         try {
             // 发送请求
             okhttp3.Response response = client.newCall(request).execute();
@@ -300,7 +318,7 @@ public class TransactionServiceImpl implements TransactionService {
             String responseBody = response.body().string();
             if (response.isSuccessful()) {
                 // 解析响应体
-                StartTransactionResponse startTransactionResponse = UniversalUtils.json2Obj(responseBody, StartTransactionResponse.class);
+                startTransactionResponse = UniversalUtils.json2Obj(responseBody, StartTransactionResponse.class);
                 log.debug("请求第三方接口成功，返回信息：" + startTransactionResponse);
                 // 验证签名
                 String signature = response.header("X-Signature");
@@ -312,27 +330,6 @@ public class TransactionServiceImpl implements TransactionService {
                     log.error("请求第三方接口失败，签名错误，Platform：" + requestTransactionResponse.getPlatform() + "，X-Signature：" + response.header("X-Signature") + "，ResponseBody：" + responseBody);
                     throw new Http_400_BadRequestException("请求第三方接口失败，签名错误");
                 }
-                // 响应ack
-                String ackUrl = startTransactionResponse.getCallback();
-                // 构建请求
-                Request ackRequest = new Request.Builder().url(ackUrl).post(RequestBody.create("", MediaType.parse("text/plain"))).build();
-                // 发送请求
-                okhttp3.Response ackResponse = client.newCall(ackRequest).execute();
-                // 检查ack请求是否成功
-                if (ackResponse.isSuccessful()) {
-                    log.info("ack请求成功");
-                } else {
-                    log.error("ack请求失败：" + ackResponse.code());
-                    throw new Http_400_BadRequestException("ack请求失败");
-                }
-
-                // 更新transaction状态
-                transaction.setStatus("success");
-                transaction.setLastUpdate(UniversalUtils.getNow());
-                db.update(transaction);
-                // 更新wallet
-                wallet.setAmountInFrozen(wallet.getAmountInFrozen() - transaction.getAmount());
-                wallet.setLastUpdate(UniversalUtils.getNow());
             } else {
                 log.error("请求第三方接口发生异常：" + response.code() + " " + responseBody);
                 throw new Http_400_BadRequestException("请求第三方接口发生异常：" + response.code() + " " + responseBody);
@@ -343,14 +340,46 @@ public class TransactionServiceImpl implements TransactionService {
             log.error("请求第三方接口失败", e);
             throw new Http_400_BadRequestException("请求第三方接口失败");
         }
+        StartTransactionResult tempResult = new StartTransactionResult(transaction, startTransactionResponse);
+        return tempResult;
+    }
 
-        // 构建返回信息
-        UserPayResponse userPayResponse = new UserPayResponse();
-        userPayResponse.setStatus("success");
-        userPayResponse.setMessage("支付成功");
-        userPayResponse.setRequestId(userPayRequest.getRequestId());
+    private record StartTransactionResult(Transaction transaction, StartTransactionResponse startTransactionResponse) {
+    }
+
+    private void sendAck(StartTransactionResponse startTransactionResponse, Transaction transaction, int wid) {
+        OkHttpClient client = new OkHttpClient();
+        try {
+            // ack
+            String ackUrl = startTransactionResponse.getCallback();
+            // 构建请求
+            Request ackRequest = new Request.Builder().url(ackUrl).post(RequestBody.create("", MediaType.parse("text/plain"))).build();
+            // 发送请求
+            okhttp3.Response ackResponse = client.newCall(ackRequest).execute();
+            // 检查ack请求是否成功
+            if (ackResponse.isSuccessful()) {
+                log.info("ack请求成功");
+            } else {
+                log.error("ack请求失败：" + ackResponse.code());
+                throw new Http_400_BadRequestException("ack请求失败");
+            }
+        } catch (Exception e) {
+            log.error("ack请求失败", e);
+            throw new Http_400_BadRequestException("ack请求失败");
+        }
+
+        lockService.tryLock("w" + wid, 10, 10, java.util.concurrent.TimeUnit.SECONDS);
+        // 这里由于请求完
+        Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
+        // 更新transaction状态
+        transaction.setStatus("success");
+        transaction.setLastUpdate(UniversalUtils.getNow());
+        db.update(transaction);
+        // 更新wallet
+        wallet.setAmountInFrozen(wallet.getAmountInFrozen() - transaction.getAmount());
+        wallet.setLastUpdate(UniversalUtils.getNow());
         db.commit();
-        return userPayResponse;
+        lockService.unlock("w" + wid);
     }
 
     /**
@@ -388,6 +417,7 @@ public class TransactionServiceImpl implements TransactionService {
         Wallet wallet = db.query(Wallet.class).eq("id", transactionIdentity.getWalletId()).first();
         transaction.setRelateUserId(wallet.getOwnerId());
         // 检查钱包状态
+
         walletService.checkWalletStatus(transaction.getWalletId());
         // 检查用户余额
         if (wallet.getAmount() < transaction.getAmount()) {
@@ -416,6 +446,7 @@ public class TransactionServiceImpl implements TransactionService {
         int transactionId = Integer.parseInt(transactionDao.get("ack_" + ackCode));
         transactionDao.delete("ack_" + ackCode);
 
+        lockService
         // 更新transaction状态
         Transaction transaction = db.query(Transaction.class).eq("id", transactionId).first();
         transaction.setStatus("success");

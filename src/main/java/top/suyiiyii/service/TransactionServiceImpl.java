@@ -266,7 +266,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setPlatform(requestTransactionResponse.getPlatform());
         transaction.setDescription("向 " + requestTransactionResponse.getPlatform() + " 平台的 " + wid + " 转账 " + transaction.getAmount() + " 元");
         transaction.setRelateUserId(uid);
-        db.insert(transaction);
+        transaction.setId(db.insert(transaction, true));
         log.info("用户身份成功，创建transaction：" + transaction);
         // 冻结用户资金
         wallet.setAmount(wallet.getAmount() - transaction.getAmount());
@@ -340,6 +340,7 @@ public class TransactionServiceImpl implements TransactionService {
         userPayResponse.setStatus("success");
         userPayResponse.setMessage("支付成功");
         userPayResponse.setRequestId(userPayRequest.getRequestId());
+        db.commit();
         return userPayResponse;
     }
 
@@ -419,8 +420,8 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public List<Transaction> getAllTransactions(int page,int size) {
-        return db.query(Transaction.class).limit(page,size).all();
+    public List<Transaction> getAllTransactions(int page, int size) {
+        return db.query(Transaction.class).limit(page, size).all();
     }
 
 }

@@ -212,6 +212,9 @@ public class ProxyInvocationHandler implements InvocationHandler {
         if (req.getHeader("X-FORWARDED-FOR") != null) {
             event.setIp(req.getHeader("X-FORWARDED-FOR"));
         }
+        if (req.getHeader("x-caddy-real-ip") != null) {
+            event.setIp(req.getHeader("x-caddy-real-ip"));
+        }
         event.setUa(UA);
         event.setPermission(permission);
         event.setCreateTime(UniversalUtils.getNow());

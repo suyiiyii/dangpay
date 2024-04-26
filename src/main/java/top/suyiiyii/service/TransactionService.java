@@ -18,7 +18,7 @@ public interface TransactionService {
 
     RequestTransactionResponse requestTransaction(String identity, RequestTransactionRequest request);
 
-    UserPayResponse userPay(@SubRegion(areaPrefix = "w") int wid, int uid, UserPayRequest userPayRequest);
+    UserPayResponse userPay(@SubRegion(areaPrefix = "w",lockKey = "w") int wid, int uid, UserPayRequest userPayRequest);
 
     StartTransactionResponse startTransaction(String code, StartTransactionRequest request);
 

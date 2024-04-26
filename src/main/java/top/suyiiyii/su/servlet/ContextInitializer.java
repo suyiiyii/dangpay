@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
+import top.suyiiyii.service.LockService;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.IOC.IOCManager;
 import top.suyiiyii.su.MailSender;
@@ -79,6 +80,10 @@ public class ContextInitializer implements ServletContextListener {
                 configManger.get("MAIL_PASSWORD")
         );
         IOCManager.registerGlobalBean(mailSender);
+
+        // 锁服务
+        LockService lockService = new LockService(redisson);
+        IOCManager.registerGlobalBean(lockService);
 
         log.info("依赖注入完成");
     }

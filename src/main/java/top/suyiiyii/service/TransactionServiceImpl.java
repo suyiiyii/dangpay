@@ -31,19 +31,23 @@ public class TransactionServiceImpl implements TransactionService {
     UserService userService;
     TransactionDao transactionDao;
     WalletService walletService;
+    LockService lockService;
 
-    public TransactionServiceImpl(Session db,
-                                  @Proxy(isNeedAuthorization = false) RBACService rbacService,
-                                  @Proxy(isNeedAuthorization = false) UserService userService,
-                                  ConfigManger configManger,
-                                  TransactionDao transactionDao,
-                                  @Proxy(isNeedAuthorization = false, isNotProxy = true) WalletService walletService) {
+    public TransactionServiceImpl(
+            Session db,
+            @Proxy(isNeedAuthorization = false) RBACService rbacService,
+            @Proxy(isNeedAuthorization = false) UserService userService,
+            ConfigManger configManger,
+            TransactionDao transactionDao,
+            @Proxy(isNeedAuthorization = false, isNotProxy = true) WalletService walletService,
+            LockService lockService) {
         this.db = db;
         this.userService = userService;
         this.rbacService = rbacService;
         this.configManger = configManger;
         this.transactionDao = transactionDao;
         this.walletService = walletService;
+        this.lockService = lockService;
     }
 
     @Override

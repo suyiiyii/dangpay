@@ -142,7 +142,7 @@ public class UserServiceImpl implements UserService {
         user.setUsername(username);
         user.setPassword(getHashed(password));
         user.setPhone(phone);
-        user.setIconUrl("");
+        user.setIconUrl("https://buk.s3.99.suyiiyii.top/buk/5112ddcc-c3bb-4c72-a1c1-6b3391fbdb7b14.png");
         user.setStatus("normal");
         user.setEmail(email);
         int id = db.insert(user, true);

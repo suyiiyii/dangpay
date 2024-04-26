@@ -1,5 +1,7 @@
 package top.suyiiyii.su.orm.core;
 
+import lombok.extern.slf4j.Slf4j;
+import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.orm.struct.CallBack;
 
 import java.sql.PreparedStatement;
@@ -17,6 +19,7 @@ import java.util.NoSuchElementException;
  *
  * @author suyiiyii
  */
+@Slf4j
 public class Wrapper {
     /**
      * 线程安全：对象仅作为session的工具类，线程安全同session
@@ -228,7 +231,8 @@ public class Wrapper {
         try {
             return (List<T>) callBack.call(this);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            log.error("查询失败", e);
+            throw new Http_400_BadRequestException("查询失败");
         }
     }
 

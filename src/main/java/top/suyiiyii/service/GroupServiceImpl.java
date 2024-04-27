@@ -291,6 +291,13 @@ public class GroupServiceImpl implements GroupService {
             if (db.query(RBACUser.class).eq("uid", uid).eq("role", "GroupCreator/g" + gid).exists()) {
                 throw new Http_400_BadRequestException("群主不能退出");
             }
+            // 检查用户关连的群组子钱包是否为空
+            Wallet mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+            Wallet wallet = db.query(Wallet.class).eq("owner_id", uid).eq("owner_type", "user").eq("father_wallet_id", mainWallet.getId()).first();
+            if (wallet.getAmount() != 0 || wallet.getAmountInFrozen() != 0) {
+                throw new Http_400_BadRequestException("请清空该成员的钱包后再试");
+            }
+
             // 删除用户的群组身份
             rbacService.deleteUserRole(uid, "GroupMember/g" + gid);
             rbacService.deleteUserRole(uid, "GroupAdmin/g" + gid);

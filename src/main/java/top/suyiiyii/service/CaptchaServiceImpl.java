@@ -42,6 +42,6 @@ public class CaptchaServiceImpl implements CaptchaService {
             }
         } catch (Exception ignored) {
         }
-        throw new Http_400_BadRequestException("验证码验证失败");
+        throw new Http_400_BadRequestException("人机验证码验证失败，请刷新页面后重试");
     }
 }

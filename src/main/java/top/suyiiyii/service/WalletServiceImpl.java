@@ -92,6 +92,7 @@ public class WalletServiceImpl implements WalletService {
 
 
     /**
+     * deprecated
      * 创建子账户
      * 一个父账户可以有多个子账户
      *
@@ -158,6 +159,11 @@ public class WalletServiceImpl implements WalletService {
         int id = db.insert(wallet, true);
         // 给子账户拥有者分配钱包权限
         rbacService.addUserRole(uid, "WalletAdmin/w" + id);
+        // 给管理员分配观察者权限
+        List<Integer> admins = rbacService.getUserByRole("GroupAdmin/g" + gid);
+        for (int admin : admins) {
+            rbacService.addUserRole(admin, "WalletObserver/w" + id);
+        }
     }
 
     @Override

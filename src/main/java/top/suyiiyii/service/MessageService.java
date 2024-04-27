@@ -23,12 +23,12 @@ public interface MessageService {
     List<Message> getGroupMessage(@SubRegion(areaPrefix = "g") int gid);
 
     @Data
-    public static class MessageSendRequest {
+    class MessageSendRequest {
         @Regex("[0-9]+")
         public int receiverId;
         @Regex("[0-9]+")
         public int groupId;
-        @Regex("[.\\n]{1,888}")
+        @Regex("(?s).{1,888}")
         public String message;
     }
 }

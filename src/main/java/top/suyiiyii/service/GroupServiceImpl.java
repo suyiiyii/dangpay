@@ -219,7 +219,8 @@ public class GroupServiceImpl implements GroupService {
         // 解封群组的钱包
         db.update(Wallet.class).set("status", "normal").eq("owner_id", gid).eq("owner_type", "group").execute();
         // 解封群组的子钱包
-        db.update(Wallet.class).set("status", "normal").eq("father_wallet_id", gid).execute();
+        Wallet mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+        db.update(Wallet.class).set("status", "normal").eq("father_wallet_id", mainWallet.getId()).execute();
         db.commit();
     }
 

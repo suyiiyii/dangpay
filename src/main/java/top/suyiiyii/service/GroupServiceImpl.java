@@ -303,7 +303,7 @@ public class GroupServiceImpl implements GroupService {
             rbacService.deleteUserRole(uid, "GroupAdmin/g" + gid);
             try {
                 // 删除用户的钱包管理员身份
-                Wallet wallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+                wallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
                 rbacService.deleteUserRole(uid, "WalletAdmin/w" + wallet.getId());
                 // 删除用户的子钱包观察者身份
                 List<Wallet> subWallets = db.query(Wallet.class).eq("father_wallet_id", wallet.getId()).all();

@@ -416,8 +416,14 @@ public class TransactionServiceImpl implements TransactionService {
             transaction.setLastUpdate(UniversalUtils.getNow());
             db.update(transaction);
             // 更新wallet
-            wallet.setAmountInFrozen(wallet.getAmountInFrozen() - transaction.getAmount());
-            wallet.setLastUpdate(UniversalUtils.getNow());
+            if (transaction.getAmount() > 0) {
+                // 我方付款，清除用户冻结的资金
+                wallet.setAmountInFrozen(wallet.getAmountInFrozen() - transaction.getAmount());
+                wallet.setLastUpdate(UniversalUtils.getNow());
+            } else {
+                // 我方收款，直接增加用户资金
+                wallet.setAmount(wallet.getAmount() - transaction.getAmount());
+            }
             db.commitTransaction();
         } finally {
             lockService.unlock("w" + wid);
@@ -508,11 +514,16 @@ public class TransactionServiceImpl implements TransactionService {
             Transaction transaction = db.query(Transaction.class).eq("id", transactionId).first();
             transaction.setStatus("success");
             transaction.setLastUpdate(UniversalUtils.getNow());
-            // 更新wallet
             Wallet wallet = db.query(Wallet.class).eq("id", transaction.getWalletId()).first();
-            wallet.setAmount(wallet.getAmount() - transaction.getAmount());
-            wallet.setLastUpdate(UniversalUtils.getNow());
-
+            // 更新wallet
+            if (transaction.getAmount() > 0) {
+                // 我方付款，清除用户冻结的资金
+                wallet.setAmountInFrozen(wallet.getAmountInFrozen() - transaction.getAmount());
+                wallet.setLastUpdate(UniversalUtils.getNow());
+            } else {
+                // 我方收款，直接增加用户资金
+                wallet.setAmount(wallet.getAmount() - transaction.getAmount());
+            }
             return true;
         } finally {
             lockService.unlock("w" + transactionId);

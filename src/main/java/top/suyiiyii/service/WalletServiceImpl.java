@@ -256,6 +256,9 @@ public class WalletServiceImpl implements WalletService {
     public void allocateGroupWallet(@SubRegion(areaPrefix = "g") int gid, int subWalletId, int amount) {
         groupService.checkGroupStatus(gid);
         // 获取群组的主账户id
+        if (amount == 0){
+            throw new IllegalArgumentException("分配金额不能为0");
+        }
         Wallet groupWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
         if (groupWallet == null) {
             throw new IllegalArgumentException("群组钱包不存在");

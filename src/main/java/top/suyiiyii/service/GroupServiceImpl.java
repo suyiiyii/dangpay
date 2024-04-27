@@ -300,6 +300,8 @@ public class GroupServiceImpl implements GroupService {
                 if (wallet.getAmount() != 0 || wallet.getAmountInFrozen() != 0) {
                     throw new Http_400_BadRequestException("请清空该成员的钱包后再试");
                 }
+                // 删除子钱包
+                db.delete(Wallet.class).eq("id", wallet.getId()).execute();
             } catch (NoSuchElementException ignore) {
             }
 

@@ -15,13 +15,19 @@ public class UploadServiceImpl implements UploadService {
 
     @Override
     public String uploadAvatar(String filename, InputStream in, int uid) {
-        String ext = filename.substring(filename.lastIndexOf("."));
+        String ext = "";
+        if (filename.contains(".")) {
+            ext = filename.substring(filename.lastIndexOf("."));
+        }
         return s3Client.uploadFile(in, uid + ext);
     }
 
     @Override
     public String uploadFile(String filename, InputStream in, int uid) {
-        String ext = filename.substring(filename.lastIndexOf("."));
+        String ext = "";
+        if (filename.contains(".")) {
+            ext = filename.substring(filename.lastIndexOf("."));
+        }
         return s3Client.uploadFile(in, uid + ext);
     }
 }

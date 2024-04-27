@@ -1,5 +1,6 @@
 package top.suyiiyii.service;
 
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -7,6 +8,7 @@ import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
 
+@Slf4j
 @Repository
 public class CaptchaServiceImpl implements CaptchaService {
     ConfigManger configManger;
@@ -18,9 +20,11 @@ public class CaptchaServiceImpl implements CaptchaService {
     @Override
     public boolean verifyCaptcha(String captcha) {
         // 跳过非dangpay平台的验证
-        if (!configManger.get("PLATFORM_NAME").equals("dangpay")){
+        if (!configManger.get("PLATFORM_NAME").equals("dangpay")) {
+            log.info("当前平台是{}，跳过验证码验证", configManger.get("PLATFORM_NAME"));
             return true;
         }
+        log.info("开始验证人机验证码" + captcha);
         String url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
         String secret = configManger.get("CF_SECRET_KEY");
         try {
@@ -38,10 +42,12 @@ public class CaptchaServiceImpl implements CaptchaService {
             okhttp3.Response response = client.newCall(request).execute();
             if (response.isSuccessful()) {
                 String body = response.body().string();
+                log.info("人机验证码验证结果" + body);
                 return body.contains("\"success\":true");
             }
         } catch (Exception ignored) {
         }
+        log.info("人机验证码验证失败" + captcha);
         throw new Http_400_BadRequestException("人机验证码验证失败，请刷新页面后重试");
     }
 }

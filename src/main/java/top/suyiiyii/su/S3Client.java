@@ -105,8 +105,16 @@ public class S3Client {
         return endpoint + "/" + bucket + "/" + objectID;
     }
 
-    public String uploadFile(InputStream input, String extentionName) {
-        String objectID = UUID.randomUUID() + extentionName;
+    /**
+     * 接收文件流，自动使用随机uuid命名并保留扩展名
+     * 返回公网上可以直接访问的URL
+     *
+     * @param input         文件流
+     * @param extensionName 扩展名
+     * @return 文件的URL
+     */
+    public String uploadFile(InputStream input, String extensionName) {
+        String objectID = UUID.randomUUID() + extensionName;
         upload(bucket, objectID, input);
         return endpoint + "/" + bucket + "/" + objectID;
     }

@@ -36,18 +36,25 @@ public class Upload {
             if (in == null) {
                 throw new Http_400_BadRequestException("文件不能为空");
             }
-            // 如果文件超过1m，返回400
-            if (filePart.getSize() > 1024 * 1024) {
-                throw new Http_400_BadRequestException("文件大小不能超过1M");
+            if (req.getParameter("type") != null && req.getParameter("type").equals("file")) {
+                // 如果文件超过10m，返回400
+                if (filePart.getSize() > 1024 * 1024 * 10) {
+                    throw new Http_400_BadRequestException("文件大小不能超过10M");
+                }
+                // 将文件保存到S3
+                return uploadService.uploadFile(fileName, in, userRoles.getUid());
+            } else {
+                // 如果文件超过1m，返回400
+                if (filePart.getSize() > 1024 * 1024) {
+                    throw new Http_400_BadRequestException("文件大小不能超过1M");
+                }
+                // 如果文件扩展名不是png或jpg，返回400
+                if (!fileName.endsWith(".png") && !fileName.endsWith(".jpg")) {
+                    throw new Http_400_BadRequestException("只能上传png或jpg文件");
+                }
+                // 将文件保存到S3
+                return uploadService.uploadAvatar(fileName, in, userRoles.getUid());
             }
-            // 如果文件扩展名不是png或jpg，返回400
-            if (!fileName.endsWith(".png") && !fileName.endsWith(".jpg")) {
-                throw new Http_400_BadRequestException("只能上传png或jpg文件");
-            }
-
-            // 将文件保存到S3
-            return uploadService.uploadAvatar(fileName, in, userRoles.getUid());
-
         } catch (IOException | ServletException e) {
             throw new Http_400_BadRequestException("文件上传失败");
         }

@@ -20,10 +20,10 @@ public class CaptchaServiceImpl implements CaptchaService {
     @Override
     public boolean verifyCaptcha(String captcha) {
         // 跳过非dangpay平台的验证
-//        if (!configManger.get("PLATFORM_NAME").equals("dangpay")) {
-//            log.info("当前平台是{}，跳过验证码验证", configManger.get("PLATFORM_NAME"));
-//            return true;
-//        }
+        if (!configManger.get("PLATFORM_NAME").equals("dangpay")) {
+            log.info("当前平台是{}，跳过验证码验证", configManger.get("PLATFORM_NAME"));
+            return true;
+        }
         log.info("开始验证人机验证码" + captcha);
         String url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
         String secret = configManger.get("CF_SECRET_KEY");

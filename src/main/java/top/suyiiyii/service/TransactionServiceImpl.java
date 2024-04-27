@@ -78,8 +78,8 @@ public class TransactionServiceImpl implements TransactionService {
         // 阻止直接使用群组主钱包进行交易
         Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
         if (wallet.getOwnerType().equals("group")) {
-            log.error("群组主钱包不允许进行交易");
-            throw new Http_400_BadRequestException("群组主钱包不允许进行交易");
+            log.error("群组主钱包不允许与第三方进行交易，请使用群组子钱包进行交易");
+            throw new Http_400_BadRequestException("群组主钱包不允许与第三方进行交易，请使用群组子钱包进行交易");
         }
         return createIdentity(wid, isAmountSpecified, amount, "money_receive", description);
     }
@@ -134,8 +134,8 @@ public class TransactionServiceImpl implements TransactionService {
         // 阻止直接使用群组主钱包进行交易
         Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
         if (wallet.getOwnerType().equals("group")) {
-            log.error("群组主钱包不允许进行交易");
-            throw new Http_400_BadRequestException("群组主钱包不允许进行交易");
+            log.error("群组主钱包不允许与第三方进行交易，请使用群组子钱包进行交易");
+            throw new Http_400_BadRequestException("群组主钱包不允许与第三方进行交易，请使用群组子钱包进行交易");
         }
         // 请求第三方接口，获取交易信息
         // 创建transaction，设置为pending状态，并返回给用户

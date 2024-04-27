@@ -168,10 +168,12 @@ public class GroupID {
 
     @Data
     public static class AllocateDto {
+        // 限制为正整数
         @Regex("[0-9]+")
-        private int id;
-        @Regex("-?[0-9]+")
-        private int amount;
+        int id;
+        // 限制为10位以内的正整数
+        @Regex("-?[0-9]{1,10}")
+        int amount;
     }
 
 

@@ -81,6 +81,12 @@ public class TransactionServiceImpl implements TransactionService {
             log.error("收款码的金额必须大于0，用户输入的金额：" + amount);
             throw new Http_400_BadRequestException("收款码的金额必须大于0");
         }
+        // 阻止直接使用群组主钱包进行交易
+        Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
+        if (wallet.getOwnerType().equals("group") && wallet.getOwnerId() == 0) {
+            log.error("群组主钱包不允许进行交易");
+            throw new Http_400_BadRequestException("群组主钱包不允许进行交易");
+        }
         return createIdentity(wid, isAmountSpecified, amount, "money_receive", description);
     }
 
@@ -131,6 +137,12 @@ public class TransactionServiceImpl implements TransactionService {
     public ScanQRCodeResponse scanQRCode(@SubRegion(areaPrefix = "w") int wid, String callbackUrl) {
         // 检查钱包状态
         walletService.checkWalletStatus(wid);
+        // 阻止直接使用群组主钱包进行交易
+        Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
+        if (wallet.getOwnerType().equals("group") && wallet.getOwnerId() == 0) {
+            log.error("群组主钱包不允许进行交易");
+            throw new Http_400_BadRequestException("群组主钱包不允许进行交易");
+        }
         // 请求第三方接口，获取交易信息
         // 创建transaction，设置为pending状态，并返回给用户
         OkHttpClient client = new OkHttpClient();
@@ -195,7 +207,7 @@ public class TransactionServiceImpl implements TransactionService {
 
 
         // 检查用户余额
-        Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
+        wallet = db.query(Wallet.class).eq("id", wid).first();
         if (wallet.getAmount() < requestTransactionResponse.getSpecifiedAmount()) {
             log.error("用户余额不足 余额：" + wallet.getAmount() + "，交易金额：" + requestTransactionResponse.getSpecifiedAmount());
             scanQRCodeResponse.setMessage("用户余额不足");

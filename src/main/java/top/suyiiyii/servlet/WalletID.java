@@ -46,7 +46,7 @@ public class WalletID {
      * @return
      */
     public boolean doPostAllocate(HttpServletRequest req, HttpServletResponse resp) {
-        allocateDto idDto = WebUtils.readRequestBody2Obj(req, allocateDto.class);
+        GroupID.AllocateDto idDto = WebUtils.readRequestBody2Obj(req, GroupID.AllocateDto.class);
         walletService.allocate(subMethod.getId(), idDto.id, idDto.amount);
         return true;
     }
@@ -94,12 +94,5 @@ public class WalletID {
         int amount;
         String description;
     }
-
-    @Data
-    public static class allocateDto {
-        int id;
-        int amount;
-    }
-
 
 }

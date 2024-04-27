@@ -78,7 +78,11 @@ public class GroupServiceImpl implements GroupService {
             } catch (NoSuchElementException ignored) {
             }
         }
-        UniversalUtils.updateObj(groupModel1, groupModel);
+        groupModel1.setName(groupModel.getName());
+        groupModel1.setEnterpriseScale(groupModel.getEnterpriseScale());
+        groupModel1.setIndustry(groupModel.getIndustry());
+        groupModel1.setAddress(groupModel.getAddress());
+        groupModel1.setContact(groupModel.getContact());
         db.commit();
     }
 
@@ -191,8 +195,11 @@ public class GroupServiceImpl implements GroupService {
         // 封禁群组的钱包
         db.update(Wallet.class).set("status", "ban").eq("owner_id", gid).eq("owner_type", "group").execute();
         // 封禁群组的子钱包
-        Wallet mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
-        db.update(Wallet.class).set("status", "ban").eq("father_wallet_id", mainWallet.getId()).execute();
+        try {
+            Wallet mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+            db.update(Wallet.class).set("status", "ban").eq("father_wallet_id", mainWallet.getId()).execute();
+        } catch (NoSuchElementException ignore) {
+        }
         db.commit();
     }
 
@@ -284,8 +291,20 @@ public class GroupServiceImpl implements GroupService {
             if (db.query(RBACUser.class).eq("uid", uid).eq("role", "GroupCreator/g" + gid).exists()) {
                 throw new Http_400_BadRequestException("群主不能退出");
             }
+            // 删除用户的群组身份
             rbacService.deleteUserRole(uid, "GroupMember/g" + gid);
             rbacService.deleteUserRole(uid, "GroupAdmin/g" + gid);
+            try {
+                // 删除用户的钱包管理员身份
+                Wallet wallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+                rbacService.deleteUserRole(uid, "WalletAdmin/w" + wallet.getId());
+                // 删除用户的子钱包观察者身份
+                List<Wallet> subWallets = db.query(Wallet.class).eq("father_wallet_id", wallet.getId()).all();
+                for (Wallet subWallet : subWallets) {
+                    rbacService.deleteUserRole(uid, "WalletSpectator/w" + subWallet.getId());
+                }
+            } catch (NoSuchElementException ignore) {
+            }
             db.commitTransaction();
         } catch (Exception e) {
             db.rollbackTransaction();
@@ -302,28 +321,21 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public void kickGroupMember(@SubRegion(areaPrefix = "g") int gid, int uid) {
         checkGroupStatus(gid);
-        try {
-            db.beginTransaction();
-            if (!rbacService.checkUserRole(uid, "GroupMember/g" + gid)) {
-                throw new Http_400_BadRequestException("用户不是群组成员");
-            }
-            if (uid == userRoles.getUid()) {
-                throw new Http_400_BadRequestException("不能踢自己");
-            }
-            // 群主能踢管理员和普通成员，管理员只能踢普通成员
-            if (rbacService.checkUserRole(uid, "GroupCreator/g" + gid)) {
-                throw new Http_400_BadRequestException("不能踢群主");
-            }
-            if (!rbacService.checkUserRole(userRoles, "GroupCreator/g" + gid) && rbacService.checkUserRole(uid, "GroupAdmin/g" + gid)) {
-                throw new Http_400_BadRequestException("只有群主能踢管理员");
-            }
-            rbacService.deleteUserRole(uid, "GroupMember/g" + gid);
-            rbacService.deleteUserRole(uid, "GroupAdmin/g" + gid);
-            db.commitTransaction();
-        } catch (Exception e) {
-            db.rollbackTransaction();
-            throw e;
+        db.beginTransaction();
+        if (!rbacService.checkUserRole(uid, "GroupMember/g" + gid)) {
+            throw new Http_400_BadRequestException("用户不是群组成员");
         }
+        if (uid == userRoles.getUid()) {
+            throw new Http_400_BadRequestException("不能踢自己");
+        }
+        // 群主能踢管理员和普通成员，管理员只能踢普通成员
+        if (rbacService.checkUserRole(uid, "GroupCreator/g" + gid)) {
+            throw new Http_400_BadRequestException("不能踢群主");
+        }
+        if (!rbacService.checkUserRole(userRoles, "GroupCreator/g" + gid) && rbacService.checkUserRole(uid, "GroupAdmin/g" + gid)) {
+            throw new Http_400_BadRequestException("只有群主能踢管理员");
+        }
+        leaveGroup(gid, uid);
     }
 
     /**
@@ -385,7 +397,19 @@ public class GroupServiceImpl implements GroupService {
         if (!rbacService.checkUserRole(uid, "GroupMember/g" + gid)) {
             throw new Http_400_BadRequestException("用户不是群组成员");
         }
+        // 添加管理员身份
         rbacService.addUserRole(uid, "GroupAdmin/g" + gid);
+        try {
+            // 添加钱包管理员身份
+            Wallet wallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+            rbacService.addUserRole(uid, "WalletAdmin/w" + wallet.getId());
+            // 添加子钱包观察者身份
+            List<Wallet> subWallets = db.query(Wallet.class).eq("father_wallet_id", wallet.getId()).all();
+            for (Wallet subWallet : subWallets) {
+                rbacService.addUserRole(uid, "WalletSpectator/w" + subWallet.getId());
+            }
+        } catch (NoSuchElementException ignore) {
+        }
     }
 
     /**

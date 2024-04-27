@@ -91,10 +91,11 @@ public class WebUtils {
     }
 
     private static void checkNode(JsonNode node) {
-        if (node.isInt()) {
+        if (node.isNumber()) {
             BigInteger bigInteger = node.bigIntegerValue();
             if (bigInteger.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) {
-                throw new Http_400_BadRequestException("传入的数字过大");
+                String nodeStr = node.toString();
+                throw new Http_400_BadRequestException("传入的数字过大" + nodeStr);
             }
         } else if (node.isContainerNode()) {
             for (JsonNode subNode : node) {

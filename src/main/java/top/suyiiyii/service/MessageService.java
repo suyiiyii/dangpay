@@ -28,7 +28,7 @@ public interface MessageService {
         public int receiverId;
         @Regex("[0-9]+")
         public int groupId;
-        @Regex(".{1,888}")
+        @Regex("[.\\n]{1,888}")
         public String message;
     }
 }

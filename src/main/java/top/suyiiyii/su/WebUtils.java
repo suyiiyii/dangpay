@@ -1,5 +1,7 @@
 package top.suyiiyii.su;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,6 +12,7 @@ import top.suyiiyii.su.validator.Validator;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 
 /**
  * 用来处理请求和响应的工具类
@@ -68,12 +71,35 @@ public class WebUtils {
             if (str.isEmpty()) {
                 throw new IOException("请求体为空");
             }
+            // 检查是否有过大的数字
+            checkIntSizeInJson(str);
             T t = MAPPER.readValue(str, valueType);
             Validator.check(t);
             return t;
         } catch (IOException e) {
             log.error("请求体格式错误", e);
             throw new Http_400_BadRequestException("请求体格式错误");
+        }
+    }
+
+    public static void checkIntSizeInJson(String jsonString) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode rootNode = objectMapper.readTree(jsonString);
+
+        // 遍历JSON树
+        checkNode(rootNode);
+    }
+
+    private static void checkNode(JsonNode node) {
+        if (node.isInt()) {
+            BigInteger bigInteger = node.bigIntegerValue();
+            if (bigInteger.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) {
+                throw new Http_400_BadRequestException("传入的数字过大");
+            }
+        } else if (node.isContainerNode()) {
+            for (JsonNode subNode : node) {
+                checkNode(subNode);
+            }
         }
     }
 

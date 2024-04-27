@@ -214,6 +214,14 @@ public class WalletServiceImpl implements WalletService {
         // 检查账户状态
         checkWalletStatus(fatherWalletId);
         checkWalletStatus(subWalletId);
+        // 检查分配之后钱包金额会不会是负数
+        if (subWallet.getAmount() + amount < 0) {
+            throw new IllegalArgumentException("分配之后子账户余额将为负数");
+        }
+        if (fatherWallet.getAmount() - amount < 0) {
+            throw new IllegalArgumentException("分配之后父账户余额将为负数");
+        }
+
         // 转账，减少父账户资金，增加子账户资金
         fatherWallet.setAmount(fatherWallet.getAmount() - amount);
         subWallet.setAmount(subWallet.getAmount() + amount);

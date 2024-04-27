@@ -214,11 +214,8 @@ public class WalletServiceImpl implements WalletService {
         // 检查账户状态
         checkWalletStatus(fatherWalletId);
         checkWalletStatus(subWalletId);
-        // 转账，冻结父账户资金，增加子账户资金
+        // 转账，减少父账户资金，增加子账户资金
         fatherWallet.setAmount(fatherWallet.getAmount() - amount);
-        if (amount > 0) {
-            fatherWallet.setAmountInFrozen(fatherWallet.getAmountInFrozen() + amount);
-        }
         subWallet.setAmount(subWallet.getAmount() + amount);
         // 记录交易（父钱包付款）
         String platform = configManger.get("PLATFORM_NAME");

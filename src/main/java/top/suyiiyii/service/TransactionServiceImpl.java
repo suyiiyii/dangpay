@@ -37,13 +37,7 @@ public class TransactionServiceImpl implements TransactionService {
     LockService lockService;
     MessageService messageService;
 
-    public TransactionServiceImpl(Session db,
-                                  @Proxy(isNeedAuthorization = false) RBACService rbacService,
-                                  @Proxy(isNeedAuthorization = false) UserService userService,
-                                  ConfigManger configManger, TransactionDao transactionDao,
-                                  @Proxy(isNeedAuthorization = false, isNotProxy = true) WalletService walletService,
-                                  LockService lockService,
-                                  @Proxy(isNeedAuthorization = false) MessageService messageService) {
+    public TransactionServiceImpl(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService, @Proxy(isNeedAuthorization = false) UserService userService, ConfigManger configManger, TransactionDao transactionDao, @Proxy(isNeedAuthorization = false, isNotProxy = true) WalletService walletService, LockService lockService, @Proxy(isNeedAuthorization = false) MessageService messageService) {
         this.db = db;
         this.userService = userService;
         this.rbacService = rbacService;
@@ -83,7 +77,7 @@ public class TransactionServiceImpl implements TransactionService {
         }
         // 阻止直接使用群组主钱包进行交易
         Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
-        if (wallet.getOwnerType().equals("group") && wallet.getOwnerId() == 0) {
+        if (wallet.getOwnerType().equals("group")) {
             log.error("群组主钱包不允许进行交易");
             throw new Http_400_BadRequestException("群组主钱包不允许进行交易");
         }
@@ -139,7 +133,7 @@ public class TransactionServiceImpl implements TransactionService {
         walletService.checkWalletStatus(wid);
         // 阻止直接使用群组主钱包进行交易
         Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
-        if (wallet.getOwnerType().equals("group") && wallet.getOwnerId() == 0) {
+        if (wallet.getOwnerType().equals("group")) {
             log.error("群组主钱包不允许进行交易");
             throw new Http_400_BadRequestException("群组主钱包不允许进行交易");
         }

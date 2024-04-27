@@ -1,5 +1,6 @@
 package top.suyiiyii.su.orm.utils;
 
+import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.su.orm.core.ConnectionManger;
 import top.suyiiyii.su.orm.struct.Table;
 
@@ -12,6 +13,7 @@ import java.sql.*;
  *
  * @author suyiiyii
  */
+@Slf4j
 public class SqlExecutor {
     /**
      * 线程安全：对象仅作为session的工具类，线程安全同session
@@ -75,16 +77,12 @@ public class SqlExecutor {
      * @return 是否执行成功
      */
     public boolean execute(PreparedStatement preparedStatement, boolean isBatch) throws SQLException {
-        try {
-            if (isBatch) {
-                preparedStatement.executeBatch();
-            } else {
-                preparedStatement.execute();
-            }
-            return true;
-        } finally {
-            connectionManger.returnConnection(conn);
+        if (isBatch) {
+            preparedStatement.executeBatch();
+        } else {
+            preparedStatement.execute();
         }
+        return true;
     }
 
     /**

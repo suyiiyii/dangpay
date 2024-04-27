@@ -25,5 +25,7 @@ public class Wallet {
     int fatherWalletId;
     @ColumnSetting(isNotNull = true)
     int lastUpdate;
+    @ColumnSetting(isNotNull = true, stringLength = 20)
+    String status;
 }
 

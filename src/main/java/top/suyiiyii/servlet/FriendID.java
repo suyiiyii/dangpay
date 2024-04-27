@@ -13,13 +13,13 @@ import java.util.List;
 
 public class FriendID {
 
-    private GroupService groupService;
-    private IngressServlet.SubMethod subMethod;
-    private RBACService rbacService;
-    private UserRoles userRoles;
-    private WalletService walletService;
-    private MessageService messageService;
-    private FriendService friendService;
+    private final GroupService groupService;
+    private final IngressServlet.SubMethod subMethod;
+    private final RBACService rbacService;
+    private final UserRoles userRoles;
+    private final WalletService walletService;
+    private final MessageService messageService;
+    private final FriendService friendService;
 
     public FriendID(GroupService groupService,
                     IngressServlet.SubMethod subMethod,
@@ -44,7 +44,7 @@ public class FriendID {
     }
 
     public boolean doPostMessage(HttpServletRequest req, HttpServletResponse resp) {
-        MessageService.MessageSendRequest request = WebUtils.readRequestBody2Obj(req, MessageService.MessageSendRequest.class);
+        MessageServiceImpl.MessageSendRequest request = WebUtils.readRequestBody2Obj(req, MessageServiceImpl.MessageSendRequest.class);
         messageService.sendUserMessage(userRoles.getUid(), subMethod.getId(), request.message);
         return true;
     }

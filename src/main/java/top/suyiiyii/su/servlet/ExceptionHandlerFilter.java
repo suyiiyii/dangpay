@@ -31,7 +31,7 @@ public class ExceptionHandlerFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
-        log.info("开始处理请求： " + req.getRequestURI());
+        log.info("开始处理请求： " + req.getMethod() + " " + req.getRequestURI());
         try {
             filterChain.doFilter(servletRequest, servletResponse);
         } catch (Exception e) {
@@ -43,6 +43,9 @@ public class ExceptionHandlerFilter implements Filter {
 
             int flag = -1;
             switch (e.getClass().getSimpleName()) {
+                case "Http_200_OK":
+                    resp.setStatus(200);
+                    break;
                 case "Http_400_BadRequestException", "IllegalArgumentException":
                     resp.setStatus(400);
                     break;
@@ -73,7 +76,7 @@ public class ExceptionHandlerFilter implements Filter {
                 WebUtils.respWrite(resp, e.getMessage());
             }
         }
-        log.info("请求处理完成： " + req.getRequestURI());
+        log.info("请求处理完成： " + req.getMethod() + " " + req.getRequestURI());
     }
 
     @Override

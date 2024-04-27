@@ -31,7 +31,7 @@ public class Wallet {
             case "createGroupWallet":
                 walletService.createGroupWallet(type.getId());
                 break;
-            case "createSubWallet":
+            case "createSubWallet": // deprecated
                 walletService.createSubWallet(type.getId(), type.getId2());
                 break;
         }

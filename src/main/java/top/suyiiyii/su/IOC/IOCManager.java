@@ -1,7 +1,10 @@
 package top.suyiiyii.su.IOC;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import top.suyiiyii.dto.UserRoles;
+import top.suyiiyii.service.ApproveService;
+import top.suyiiyii.service.EventService;
 import top.suyiiyii.service.RBACService;
 import top.suyiiyii.su.orm.core.Session;
 
@@ -27,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author suyiiyii
  */
 @Slf4j
-public class IOCmanager {
+public class IOCManager {
     private static final Map<Class<?>, Class<?>> Interface2Impl = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Object> globalBeans = new ConcurrentHashMap<>();
     private final Map<Class<?>, Object> localBeans = new ConcurrentHashMap<>();
@@ -147,6 +150,10 @@ public class IOCmanager {
             if (clazz.isInterface()) {
                 clazzInterface = clazz;
                 clazz = (Class<T>) Interface2Impl.get(clazz);
+                if (clazz == null) {
+                    log.error("没有找到接口{}的实现类", clazzInterface.getSimpleName());
+                    throw new RuntimeException("没有找到接口" + clazzInterface.getSimpleName() + "的实现类");
+                }
             }
             // 如果保存过这个类的局部实例，直接返回
             if (localBeans.containsKey(clazz)) {
@@ -188,12 +195,10 @@ public class IOCmanager {
                 return obj;
             } else {
                 // 否则创建代理对象
-//                log.info("创建代理对象: {}", clazz.getSimpleName());
-                ProxyInvocationHandler handler = new ProxyInvocationHandler(obj,
-                        getObj(UserRoles.class, true, false),
-                        getObj(RBACService.class, true, false),
-                        getObj(Session.class, true, false),
-                        isNeedAuthorization);
+                log.info("创建代理对象: {}", clazz.getSimpleName());
+                ProxyInvocationHandler handler = getObj(ProxyInvocationHandler.class,true,false);
+                handler.setNeedAuthorization(isNeedAuthorization);
+                handler.setTarget(obj);
                 return (T) java.lang.reflect.Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), handler);
             }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
@@ -209,6 +214,7 @@ public class IOCmanager {
      * 销毁一个对象
      * 递归调用字段的destroy方法，除了单例对象
      */
+    @SneakyThrows
     public void destroyObj(Object obj, boolean force) {
         // 跳过null
         if (obj == null) {
@@ -259,8 +265,10 @@ public class IOCmanager {
                 // 没有destroy方法，跳过
             }
 //            log.info("销毁对象完成: {}", obj.getClass().getSimpleName());
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw e.getTargetException();
         } finally {
             // 减少这个类的实例数量
             if (!force) {
@@ -296,6 +304,10 @@ public class IOCmanager {
      */
     public void destroy() {
         for (Map.Entry entry : localBeans.entrySet()) {
+            //跳过自己，避免循环引用
+            if (entry.getValue() == this) {
+                continue;
+            }
             destroyObj(entry.getValue(), true);
         }
     }

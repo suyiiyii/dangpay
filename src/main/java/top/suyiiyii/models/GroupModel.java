@@ -4,9 +4,11 @@ import lombok.Data;
 import top.suyiiyii.su.orm.annotation.ColumnSetting;
 import top.suyiiyii.su.orm.annotation.TableRegister;
 
+import java.io.Serializable;
+
 @Data
 @TableRegister("group")
-public class GroupModel {
+public class GroupModel implements Serializable {
     @ColumnSetting(isPrimaryKey = true, isAutoIncrement = true)
     private int id;
     @ColumnSetting(stringLength = 100, isNotNull = true, isUnique = true)

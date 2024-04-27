@@ -11,10 +11,7 @@ import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -33,7 +30,7 @@ public class Session {
     // 待插入数据暂存区
     private final Map<Class<?>, List<Object>> insertCache = new HashMap<>();
     // 对象备份
-    private final Map<Object, Object> cache = new HashMap<>();
+    private final List<Map.Entry<Object, Object>> cache = new ArrayList<>();
     // 归属于的orm对象
     private final ModelManger modelManger;
     private final SqlExecutor sqlExecutor;
@@ -288,7 +285,7 @@ public class Session {
             ResultSet rs = sqlExecutor.query(ps);
             List<T> list = (List<T>) SuRowMapper.rowMapper(wrapper.getClazz(), rs);
             for (T obj : list) {
-                cache.put(obj, UniversalUtils.clone(obj));
+                cache.add(new AbstractMap.SimpleEntry<>(obj, UniversalUtils.clone(obj)));
             }
             return list;
         });
@@ -339,7 +336,7 @@ public class Session {
      */
     private void checkUpdate() throws SQLException {
         List<Object> toUpdate = new ArrayList<>();
-        for (Map.Entry<Object, Object> entry : cache.entrySet()) {
+        for (Map.Entry<Object, Object> entry : cache) {
             Object ori = entry.getValue();
             Object cur = entry.getKey();
             if (!UniversalUtils.equal(ori, cur)) {
@@ -347,7 +344,8 @@ public class Session {
                 toUpdate.add(cur);
             }
         }
-        cache.clear();
+//        cache.clear();
+        // 这里遇到了问题，一个方法调用的其他方法可能会提交事务，这样会把原来的方法之前查找的数据都删除掉，这样就用不了全自动更新数据了
         if (!toUpdate.isEmpty()) {
             for (Object obj : toUpdate) {
                 this.update(obj);

@@ -8,8 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
+import top.suyiiyii.service.LockService;
 import top.suyiiyii.su.ConfigManger;
-import top.suyiiyii.su.IOC.IOCmanager;
+import top.suyiiyii.su.IOC.IOCManager;
+import top.suyiiyii.su.MailSender;
+import top.suyiiyii.su.S3Client;
 import top.suyiiyii.su.orm.core.ModelManger;
 import top.suyiiyii.su.orm.utils.ConnectionBuilder;
 
@@ -41,9 +44,9 @@ public class ContextInitializer implements ServletContextListener {
         ServletContext servletContext = sce.getServletContext();
         servletContext.setAttribute("ModelManger", modelManger);
         servletContext.setAttribute("ConfigManger", configManger);
-        IOCmanager.registerGlobalBean(modelManger);
-        IOCmanager.registerGlobalBean(configManger);
-        IOCmanager.implScan("top.suyiiyii.service");
+        IOCManager.registerGlobalBean(modelManger);
+        IOCManager.registerGlobalBean(configManger);
+        IOCManager.implScan("top.suyiiyii.service");
         // redis
         Config config = new Config();
         if (configManger.get("REDIS_PASSWORD").isEmpty()) {
@@ -57,9 +60,30 @@ public class ContextInitializer implements ServletContextListener {
         log.error("REDIS_URL: {}", configManger.get("REDIS_URL"));
         log.error("REDIS_PASSWORD: {}", configManger.get("REDIS_PASSWORD"));
         RedissonClient redisson = Redisson.create(config);
-        IOCmanager.registerGlobalBean(redisson);
+        IOCManager.registerGlobalBean(redisson);
         // 由于RedissonClient是接口，所以需要注册实现类
-        IOCmanager.registerInterface2Impl(RedissonClient.class, Redisson.class);
+        IOCManager.registerInterface2Impl(RedissonClient.class, Redisson.class);
+
+        // S3服务
+        String endpoint = configManger.get("S3_ENDPOINT");
+        String accessKey = configManger.get("S3_ACCESS_KEY");
+        String secretKey = configManger.get("S3_SECRET_KEY");
+        String bucket = configManger.get("S3_BUKET_NAME");
+        S3Client s3Client = new S3Client(endpoint, accessKey, secretKey, bucket);
+        IOCManager.registerGlobalBean(s3Client);
+
+        // 邮件服务
+        MailSender mailSender = new MailSender(
+                configManger.get("MAIL_HOST"),
+                configManger.get("MAIL_PORT"),
+                configManger.get("MAIL_USERNAME"),
+                configManger.get("MAIL_PASSWORD")
+        );
+        IOCManager.registerGlobalBean(mailSender);
+
+        // 锁服务
+        LockService lockService = new LockService(redisson);
+        IOCManager.registerGlobalBean(lockService);
 
         log.info("依赖注入完成");
     }

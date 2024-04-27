@@ -17,12 +17,12 @@ import top.suyiiyii.su.validator.Regex;
 import java.util.List;
 
 public class GroupID {
-    private GroupService groupService;
-    private IngressServlet.SubMethod subMethod;
-    private RBACService rbacService;
-    private UserRoles userRoles;
-    private WalletService walletService;
-    private MessageService messageService;
+    private final GroupService groupService;
+    private final IngressServlet.SubMethod subMethod;
+    private final RBACService rbacService;
+    private final UserRoles userRoles;
+    private final WalletService walletService;
+    private final MessageService messageService;
 
     public GroupID(GroupService groupService,
                    IngressServlet.SubMethod subMethod,
@@ -155,7 +155,7 @@ public class GroupID {
     }
 
     public boolean doPostMessage(HttpServletRequest req, HttpServletResponse resp) {
-        MessageService.MessageSendRequest request = WebUtils.readRequestBody2Obj(req, MessageService.MessageSendRequest.class);
+        MessageServiceImpl.MessageSendRequest request = WebUtils.readRequestBody2Obj(req, MessageServiceImpl.MessageSendRequest.class);
         messageService.sendGroupMessage(subMethod.getId(), userRoles.getUid(), request.message);
         return true;
     }
@@ -168,10 +168,12 @@ public class GroupID {
 
     @Data
     public static class AllocateDto {
+        // 限制为正整数
         @Regex("[0-9]+")
-        private int id;
-        @Regex("-?[0-9]+")
-        private int amount;
+        int id;
+        // 限制为10位以内的正整数
+        @Regex("-?[0-9]{1,10}")
+        int amount;
     }
 
 

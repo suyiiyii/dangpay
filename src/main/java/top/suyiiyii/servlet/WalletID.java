@@ -26,7 +26,7 @@ public class WalletID {
     private final WalletService walletService;
     private final TransactionService transactionService;
     private final ConfigManger configManger;
-    private IngressServlet.SubMethod subMethod;
+    private final IngressServlet.SubMethod subMethod;
 
     public WalletID(GroupService groupService, UserRoles userRoles, WalletService walletService, IngressServlet.SubMethod subMethod, TransactionService transactionService, ConfigManger configManger) {
         this.groupService = groupService;
@@ -40,12 +40,13 @@ public class WalletID {
     /**
      * deprecated
      * 使用groupID 内的 allocate 方法代替
+     *
      * @param req
      * @param resp
      * @return
      */
     public boolean doPostAllocate(HttpServletRequest req, HttpServletResponse resp) {
-        allocateDto idDto = WebUtils.readRequestBody2Obj(req, allocateDto.class);
+        GroupID.AllocateDto idDto = WebUtils.readRequestBody2Obj(req, GroupID.AllocateDto.class);
         walletService.allocate(subMethod.getId(), idDto.id, idDto.amount);
         return true;
     }
@@ -93,12 +94,5 @@ public class WalletID {
         int amount;
         String description;
     }
-
-    @Data
-    public static class allocateDto {
-        int id;
-        int amount;
-    }
-
 
 }

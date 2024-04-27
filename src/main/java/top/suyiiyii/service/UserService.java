@@ -19,7 +19,8 @@ public interface UserService {
 
     List<User> getUsers(UserRoles userRoles);
 
-    User register(String username, String password, String phone);
+    @Proxy(isTransaction = true)
+    User register(String username, String password, String phone, String email);
 
     User banUser(int uid);
 

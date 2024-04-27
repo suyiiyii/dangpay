@@ -28,10 +28,10 @@ public class Group {
     }
 
     public GroupModel doPost(HttpServletRequest req, HttpServletResponse resp) {
-        GroupDto groupDto = WebUtils.readRequestBody2Obj(req, GroupDto.class);
+        CreateGroupRequest createGroupRequest = WebUtils.readRequestBody2Obj(req, CreateGroupRequest.class);
         GroupModel groupModel = new GroupModel();
-        UniversalUtils.updateObj(groupModel, groupDto);
-        return groupService.createGroup(userRoles, groupModel);
+        UniversalUtils.updateObj(groupModel, createGroupRequest);
+        return groupService.createGroup(userRoles.uid, groupModel);
     }
 
     public List<GroupService.GroupDto> doGet(HttpServletRequest req, HttpServletResponse resp) {
@@ -39,7 +39,7 @@ public class Group {
     }
 
     @Data
-    static class GroupDto {
+    static class CreateGroupRequest {
         @Regex(".{3,20}")
         String name;
         @Regex(".{0,20}")

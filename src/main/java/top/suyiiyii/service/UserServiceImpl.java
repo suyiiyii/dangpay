@@ -105,12 +105,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUser(int uid, UserRoles userRoles) {
-        // 管理员可以查看任何用户信息,普通用户只能查看自己的信息
-        if (userRoles != null && !rbacService.isAdmin(userRoles) && userRoles.uid != uid) {
-            throw new Http_403_ForbiddenException("普通用户只能查看自己的信息");
-        }
+        // 管理员可以查看任何用户信息,普通用户只能查看基础信息，看不到手机号
+//        if (userRoles != null && !rbacService.isAdmin(userRoles) && userRoles.uid != uid) {
+//            throw new Http_403_ForbiddenException("普通用户只能查看自己的信息");
+//        }
         try {
-            return db.query(User.class).eq("id", uid).first();
+            User user = db.query(User.class).eq("id", uid).first();
+            if (userRoles.getUid() != -1 && !rbacService.isAdmin(userRoles)) {
+                user.setPhone("");
+            }
+            return user;
         } catch (NoSuchElementException e) {
             throw new Http_400_BadRequestException("用户不存在");
         }
@@ -125,17 +129,22 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Proxy(isTransaction = true)
-    public User register(String username, String password, String phone) {
+    public User register(String username, String password, String phone, String email) {
         // 判断用户名是否存在
         if (db.query(User.class).eq("username", username).exists()) {
             throw new Http_400_BadRequestException("用户名已存在");
+        }
+        // 判断邮箱是否存在
+        if (db.query(User.class).eq("email", email).exists()) {
+            throw new Http_400_BadRequestException("邮箱已存在");
         }
         User user = new User();
         user.setUsername(username);
         user.setPassword(getHashed(password));
         user.setPhone(phone);
-        user.setIconUrl("");
+        user.setIconUrl("https://buk.s3.99.suyiiyii.top/buk/5112ddcc-c3bb-4c72-a1c1-6b3391fbdb7b14.png");
         user.setStatus("normal");
+        user.setEmail(email);
         int id = db.insert(user, true);
         List<User> users = db.query(User.class).all();
         log.debug("用户列表：{}", users);

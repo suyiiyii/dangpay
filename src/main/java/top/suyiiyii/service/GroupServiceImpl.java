@@ -23,7 +23,10 @@ public class GroupServiceImpl implements GroupService {
     RBACService rbacService;
     UserRoles userRoles;
 
-    public GroupServiceImpl(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService, UserRoles userRoles) {
+
+    public GroupServiceImpl(Session db,
+                            @Proxy(isNeedAuthorization = false, isNotProxy = true) RBACService rbacService,
+                            UserRoles userRoles) {
         this.db = db;
         this.rbacService = rbacService;
         this.userRoles = userRoles;
@@ -32,12 +35,12 @@ public class GroupServiceImpl implements GroupService {
     /**
      * 创建群组
      *
-     * @param userRoles  用户角色
+     * @param uid        用户id
      * @param groupModel 群组信息
      * @return 群组信息
      */
     @Override
-    public GroupModel createGroup(UserRoles userRoles, GroupModel groupModel) {
+    public GroupModel createGroup(int uid, GroupModel groupModel) {
         try {
             db.query(GroupModel.class).eq("name", groupModel.getName()).first();
             throw new Http_400_BadRequestException("群组名已存在");
@@ -50,9 +53,9 @@ public class GroupServiceImpl implements GroupService {
             groupModel.setHide("false");
             int id = db.insert(groupModel, true);
             // 添加群组管理员
-            rbacService.addUserRole(userRoles.getUid(), "GroupCreator/g" + id);
-            rbacService.addUserRole(userRoles.getUid(), "GroupAdmin/g" + id);
-            rbacService.addUserRole(userRoles.getUid(), "GroupMember/g" + id);
+            rbacService.addUserRole(uid, "GroupCreator/g" + id);
+            rbacService.addUserRole(uid, "GroupAdmin/g" + id);
+            rbacService.addUserRole(uid, "GroupMember/g" + id);
             db.commitTransaction();
             return groupModel;
         } catch (Exception e) {
@@ -66,6 +69,7 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void updateGroup(@SubRegion(areaPrefix = "g") int gid, UserRoles userRoles, GroupModel groupModel) {
+        checkGroupStatus(gid);
         GroupModel groupModel1 = db.query(GroupModel.class).eq("id", gid).first();
         if (!groupModel1.getName().equals(groupModel.getName())) {
             try {
@@ -74,7 +78,11 @@ public class GroupServiceImpl implements GroupService {
             } catch (NoSuchElementException ignored) {
             }
         }
-        UniversalUtils.updateObj(groupModel1, groupModel);
+        groupModel1.setName(groupModel.getName());
+        groupModel1.setEnterpriseScale(groupModel.getEnterpriseScale());
+        groupModel1.setIndustry(groupModel.getIndustry());
+        groupModel1.setAddress(groupModel.getAddress());
+        groupModel1.setContact(groupModel.getContact());
         db.commit();
     }
 
@@ -95,7 +103,7 @@ public class GroupServiceImpl implements GroupService {
         List<GroupDto> groupDtos = groupModels.stream().map(groupModel -> {
             GroupDto groupDto = new GroupDto();
             UniversalUtils.updateObj(groupDto, groupModel);
-            groupDto.setPepoleCount(String.valueOf(db.query(RBACUser.class).eq("role", "GroupMember/g" + userRoles.getUid()).count()));
+            groupDto.setPepoleCount(String.valueOf(db.query(RBACUser.class).eq("role", "GroupMember/g" + groupDto.getId()).count()));
             groupDto.setAmIAdmin(rbacService.checkUserRole(userRoles.getUid(), "GroupAdmin/g" + groupModel.getId()));
             RBACUser creator = db.query(RBACUser.class).eq("role", "GroupCreator/g" + groupModel.getId()).first();
             groupDto.setGroupCreatorId(creator.getUid());
@@ -127,7 +135,7 @@ public class GroupServiceImpl implements GroupService {
         List<GroupDto> groupDtos = groupModels.stream().map(groupModel -> {
             GroupDto groupDto = new GroupDto();
             UniversalUtils.updateObj(groupDto, groupModel);
-            groupDto.setPepoleCount(String.valueOf(db.query(RBACUser.class).eq("role", "GroupMember/g" +  groupModel.getId()).count()));
+            groupDto.setPepoleCount(String.valueOf(db.query(RBACUser.class).eq("role", "GroupMember/g" + groupModel.getId()).count()));
             groupDto.setAmIAdmin(rbacUsers.stream().anyMatch(rbacUser -> rbacUser.getRole().equals("GroupAdmin/g" + groupModel.getId())));
             RBACUser creator = db.query(RBACUser.class).eq("role", "GroupCreator/g" + groupModel.getId()).first();
             groupDto.setGroupCreatorId(creator.getUid());
@@ -184,6 +192,14 @@ public class GroupServiceImpl implements GroupService {
         // 封禁群组
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         groupModel.setStatus("ban");
+        // 封禁群组的钱包
+        db.update(Wallet.class).set("status", "ban").eq("owner_id", gid).eq("owner_type", "group").execute();
+        // 封禁群组的子钱包
+        try {
+            Wallet mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+            db.update(Wallet.class).set("status", "ban").eq("father_wallet_id", mainWallet.getId()).execute();
+        } catch (NoSuchElementException ignore) {
+        }
         db.commit();
     }
 
@@ -200,6 +216,11 @@ public class GroupServiceImpl implements GroupService {
         }
         GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
         groupModel.setStatus("normal");
+        // 解封群组的钱包
+        db.update(Wallet.class).set("status", "normal").eq("owner_id", gid).eq("owner_type", "group").execute();
+        // 解封群组的子钱包
+        Wallet mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+        db.update(Wallet.class).set("status", "normal").eq("father_wallet_id", mainWallet.getId()).execute();
         db.commit();
     }
 
@@ -211,6 +232,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public void hideGroup(@SubRegion(areaPrefix = "g") int gid) {
+        checkGroupStatus(gid);
         // 判断是否已经隐藏
         if (db.query(GroupModel.class).eq("id", gid).eq("hide", "true").exists()) {
             throw new Http_400_BadRequestException("群组已隐藏");
@@ -228,6 +250,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public void unhideGroup(@SubRegion(areaPrefix = "g") int gid) {
+        checkGroupStatus(gid);
         // 判断是否已经隐藏
         if (db.query(GroupModel.class).eq("id", gid).eq("hide", "false").exists()) {
             throw new Http_400_BadRequestException("群组未隐藏");
@@ -246,6 +269,7 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void joinGroup(@SubRegion(areaPrefix = "g") int gid, int uid) {
+        checkGroupStatus(gid);
         if (!rbacService.isAdmin(userRoles)) {
             // 判断群组是否存在，是否被封禁，是否隐藏
             if (!db.query(GroupModel.class).eq("id", gid).eq("status", "normal").eq("hide", "false").exists()) {
@@ -268,8 +292,33 @@ public class GroupServiceImpl implements GroupService {
             if (db.query(RBACUser.class).eq("uid", uid).eq("role", "GroupCreator/g" + gid).exists()) {
                 throw new Http_400_BadRequestException("群主不能退出");
             }
+            Wallet wallet;
+            // 检查用户关连的群组子钱包是否为空
+            try {
+                Wallet mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+                wallet = db.query(Wallet.class).eq("owner_id", uid).eq("owner_type", "user").eq("father_wallet_id", mainWallet.getId()).first();
+                if (wallet.getAmount() != 0 || wallet.getAmountInFrozen() != 0) {
+                    throw new Http_400_BadRequestException("请清空该成员的钱包后再试");
+                }
+                // 删除子钱包
+                db.delete(Wallet.class).eq("id", wallet.getId()).execute();
+            } catch (NoSuchElementException ignore) {
+            }
+
+            // 删除用户的群组身份
             rbacService.deleteUserRole(uid, "GroupMember/g" + gid);
             rbacService.deleteUserRole(uid, "GroupAdmin/g" + gid);
+            try {
+                // 删除用户的钱包管理员身份
+                wallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+                rbacService.deleteUserRole(uid, "WalletAdmin/w" + wallet.getId());
+                // 删除用户的子钱包观察者身份
+                List<Wallet> subWallets = db.query(Wallet.class).eq("father_wallet_id", wallet.getId()).all();
+                for (Wallet subWallet : subWallets) {
+                    rbacService.deleteUserRole(uid, "WalletSpectator/w" + subWallet.getId());
+                }
+            } catch (NoSuchElementException ignore) {
+            }
             db.commitTransaction();
         } catch (Exception e) {
             db.rollbackTransaction();
@@ -285,28 +334,22 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void kickGroupMember(@SubRegion(areaPrefix = "g") int gid, int uid) {
-        try {
-            db.beginTransaction();
-            if (!rbacService.checkUserRole(uid, "GroupMember/g" + gid)) {
-                throw new Http_400_BadRequestException("用户不是群组成员");
-            }
-            if (uid == userRoles.getUid()) {
-                throw new Http_400_BadRequestException("不能踢自己");
-            }
-            // 群主能踢管理员和普通成员，管理员只能踢普通成员
-            if (rbacService.checkUserRole(uid, "GroupCreator/g" + gid)) {
-                throw new Http_400_BadRequestException("不能踢群主");
-            }
-            if (!rbacService.checkUserRole(userRoles, "GroupCreator/g" + gid) && rbacService.checkUserRole(uid, "GroupAdmin/g" + gid)) {
-                throw new Http_400_BadRequestException("只有群主能踢管理员");
-            }
-            rbacService.deleteUserRole(uid, "GroupMember/g" + gid);
-            rbacService.deleteUserRole(uid, "GroupAdmin/g" + gid);
-            db.commitTransaction();
-        } catch (Exception e) {
-            db.rollbackTransaction();
-            throw e;
+        checkGroupStatus(gid);
+        db.beginTransaction();
+        if (!rbacService.checkUserRole(uid, "GroupMember/g" + gid)) {
+            throw new Http_400_BadRequestException("用户不是群组成员");
         }
+        if (uid == userRoles.getUid()) {
+            throw new Http_400_BadRequestException("不能踢自己");
+        }
+        // 群主能踢管理员和普通成员，管理员只能踢普通成员
+        if (rbacService.checkUserRole(uid, "GroupCreator/g" + gid)) {
+            throw new Http_400_BadRequestException("不能踢群主");
+        }
+        if (!rbacService.checkUserRole(userRoles, "GroupCreator/g" + gid) && rbacService.checkUserRole(uid, "GroupAdmin/g" + gid)) {
+            throw new Http_400_BadRequestException("只有群主能踢管理员");
+        }
+        leaveGroup(gid, uid);
     }
 
     /**
@@ -351,6 +394,7 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void inviteUser(@SubRegion(areaPrefix = "g") int gid, int uid) {
+        checkGroupStatus(gid);
         rbacService.addUserRole(uid, "GroupMember/g" + gid);
     }
 
@@ -367,7 +411,19 @@ public class GroupServiceImpl implements GroupService {
         if (!rbacService.checkUserRole(uid, "GroupMember/g" + gid)) {
             throw new Http_400_BadRequestException("用户不是群组成员");
         }
+        // 添加管理员身份
         rbacService.addUserRole(uid, "GroupAdmin/g" + gid);
+        try {
+            // 添加钱包管理员身份
+            Wallet wallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+            rbacService.addUserRole(uid, "WalletAdmin/w" + wallet.getId());
+            // 添加子钱包观察者身份
+            List<Wallet> subWallets = db.query(Wallet.class).eq("father_wallet_id", wallet.getId()).all();
+            for (Wallet subWallet : subWallets) {
+                rbacService.addUserRole(uid, "WalletSpectator/w" + subWallet.getId());
+            }
+        } catch (NoSuchElementException ignore) {
+        }
     }
 
     /**
@@ -376,6 +432,7 @@ public class GroupServiceImpl implements GroupService {
      */
     @Override
     public void transferGroupCreator(@SubRegion(areaPrefix = "g") int gid, int uid) {
+        checkGroupStatus(gid);
         try {
             db.beginTransaction();
             if (!rbacService.checkUserRole(userRoles, "GroupCreator/g" + gid)) {
@@ -383,6 +440,9 @@ public class GroupServiceImpl implements GroupService {
             }
             if (!rbacService.checkUserRole(uid, "GroupAdmin/g" + gid)) {
                 throw new Http_400_BadRequestException("用户不是群组管理员");
+            }
+            if (uid == userRoles.getUid()) {
+                throw new Http_400_BadRequestException("不能转让给自己");
             }
             rbacService.deleteUserRole(userRoles.getUid(), "GroupCreator/g" + gid);
             rbacService.addUserRole(uid, "GroupCreator/g" + gid);
@@ -408,14 +468,22 @@ public class GroupServiceImpl implements GroupService {
             throw new Http_400_BadRequestException("群组内还有其他成员，请先清理其他成员后再试");
         }
         // 检查主钱包是否为空
-        Wallet mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
-        if (mainWallet.getAmount() != 0 || mainWallet.getAmountInFrozen() != 0) {
-            throw new Http_400_BadRequestException("群组主钱包还有余额或未完成的订单，请先转移后再试");
+        Wallet mainWallet = new Wallet();
+        mainWallet.setId(-1);
+        try {
+            mainWallet = db.query(Wallet.class).eq("owner_id", gid).eq("owner_type", "group").first();
+            if (mainWallet.getAmount() != 0 || mainWallet.getAmountInFrozen() != 0) {
+                throw new Http_400_BadRequestException("群组主钱包还有余额或未完成的订单，请先转移后再试");
+            }
+        } catch (NoSuchElementException e) {
         }
         // 检查是否有子钱包非空
-        List<Wallet> subWallets = db.query(Wallet.class).eq("father_wallet_id", mainWallet.getId()).all();
-        if (subWallets.stream().anyMatch(wallet -> wallet.getAmount() != 0 || wallet.getAmountInFrozen() != 0)) {
-            throw new Http_400_BadRequestException("群组内还有子钱包有余额或未完成的订单，请先转移后再试");
+        try {
+            List<Wallet> subWallets = db.query(Wallet.class).eq("father_wallet_id", mainWallet.getId()).all();
+            if (subWallets.stream().anyMatch(wallet -> wallet.getAmount() != 0 || wallet.getAmountInFrozen() != 0)) {
+                throw new Http_400_BadRequestException("群组内还有子钱包有余额或未完成的订单，请先转移后再试");
+            }
+        } catch (NoSuchElementException e) {
         }
         // 删除群组
         db.delete(GroupModel.class).eq("id", gid).execute();
@@ -428,4 +496,13 @@ public class GroupServiceImpl implements GroupService {
         db.delete(RBACUser.class).eq("role", "GroupAdmin/g" + gid).execute();
         db.delete(RBACUser.class).eq("role", "GroupMember/g" + gid).execute();
     }
+
+    @Override
+    public void checkGroupStatus(int gid) {
+        GroupModel groupModel = db.query(GroupModel.class).eq("id", gid).first();
+        if (groupModel.getStatus().equals("ban")) {
+            throw new Http_400_BadRequestException("群组已被封禁");
+        }
+    }
+
 }

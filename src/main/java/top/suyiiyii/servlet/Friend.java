@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import top.suyiiyii.dto.UserRoles;
-import top.suyiiyii.models.Message;
 import top.suyiiyii.service.*;
 import top.suyiiyii.su.IOC.Proxy;
 import top.suyiiyii.su.WebUtils;
@@ -14,13 +13,13 @@ import top.suyiiyii.su.servlet.IngressServlet;
 import java.util.List;
 
 public class Friend {
-    private GroupService groupService;
-    private IngressServlet.SubMethod subMethod;
-    private RBACService rbacService;
-    private UserRoles userRoles;
-    private WalletService walletService;
-    private MessageService messageService;
-    private FriendService friendService;
+    private final GroupService groupService;
+    private final IngressServlet.SubMethod subMethod;
+    private final RBACService rbacService;
+    private final UserRoles userRoles;
+    private final WalletService walletService;
+    private final MessageService messageService;
+    private final FriendService friendService;
 
     public Friend(GroupService groupService,
                   IngressServlet.SubMethod subMethod,
@@ -44,10 +43,9 @@ public class Friend {
         return true;
     }
 
-    public List<FriendService.FriendDto> doGet(HttpServletRequest req, HttpServletResponse resp) {
+    public List<FriendServiceImpl.FriendDto> doGet(HttpServletRequest req, HttpServletResponse resp) {
         return friendService.getMyFriends(userRoles.getUid());
     }
-
 
 
     @Data

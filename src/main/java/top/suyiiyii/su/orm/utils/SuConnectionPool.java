@@ -100,6 +100,7 @@ public class SuConnectionPool implements ConnectionPool {
                 usedConnections.remove(connection);
                 connection = this.getConnection();
             }
+            log.info("返回一个有效的连接：" + connection + "，当前已使用连接数：" + usedConnections.size());
             return connection;
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -120,6 +121,7 @@ public class SuConnectionPool implements ConnectionPool {
             if (usedConnections.contains(conn)) {
                 usedConnections.remove(conn);
                 availableConnections.add(conn);
+                log.info("归还一个连接：" + conn + "，当前已使用连接数：" + usedConnections.size());
                 // 唤醒等待连接的线程，重新平衡连接池
                 waitConnection.signalAll();
                 waitBalance.signalAll();
@@ -144,6 +146,7 @@ public class SuConnectionPool implements ConnectionPool {
                 while (num-- > 0) {
                     Connection connection = newConnection.call();
                     availableConnections.add(connection);
+                    log.info("获取到一个连接：" + connection);
                 }
             } catch (Exception e) {
                 log.warn("Add connection error: %s".formatted(e));

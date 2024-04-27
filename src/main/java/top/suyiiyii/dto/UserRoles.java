@@ -2,7 +2,9 @@ package top.suyiiyii.dto;
 
 import lombok.Data;
 import top.suyiiyii.service.RBACService;
+import top.suyiiyii.service.RBACServiceImpl;
 import top.suyiiyii.su.IOC.Proxy;
+import top.suyiiyii.su.orm.core.Session;
 
 import java.util.List;
 
@@ -17,6 +19,12 @@ public class UserRoles {
     public int uid;
     public List<String> roles;
 
+    public UserRoles(int uid, Session db) {
+        this.uid = uid;
+        RBACService rbacService = new RBACServiceImpl(db);
+        this.roles = rbacService.getRoles(uid);
+    }
+
     public UserRoles(TokenData tokenData,
                      @Proxy(isNeedAuthorization = false, isNotProxy = true) RBACService rbacService) {
         this.uid = tokenData.uid;
@@ -26,5 +34,7 @@ public class UserRoles {
     public UserRoles() {
     }
 
-
+    public UserRoles(int uid) {
+        this.uid = uid;
+    }
 }

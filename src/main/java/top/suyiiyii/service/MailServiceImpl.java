@@ -1,5 +1,6 @@
 package top.suyiiyii.service;
 
+import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
 import top.suyiiyii.dao.TransactionDao;
 import top.suyiiyii.models.User;
@@ -35,7 +36,23 @@ public class MailServiceImpl implements MailService {
 
     @Override
     public void sendMail(String to, String subject, String content) {
+        String keyPrefix = "mailCount_";
+        long now = System.currentTimeMillis();
+        String key = keyPrefix + to + now;
+        // 检查过去24小时发送的邮件数量
+        int count = 0;
+        Iterable<String> keys = redissonClient.getKeys().getKeysByPattern(keyPrefix + "*");
+        for (String k : keys) {
+            count++;
+        }
+        if (count >= 100) {
+            throw new Http_400_BadRequestException("邮件发送数量超过24小时内的100封限制");
+        }
+        // 发送邮件
         mailSender.sendMail(to, subject, content);
+        // 创建一个新的key，并在24小时后过期
+        RBucket<String> bucket = redissonClient.getBucket(key);
+        bucket.set("sent", Duration.ofDays(1));
     }
 
     @Override

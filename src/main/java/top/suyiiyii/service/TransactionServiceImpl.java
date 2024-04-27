@@ -525,6 +525,25 @@ public class TransactionServiceImpl implements TransactionService {
         return db.query(Transaction.class).limit(page, size).all();
     }
 
+    @Override
+    public void setReimburse(int tid, String url, int uid) {
+        Transaction transaction = db.query(Transaction.class).eq("id", tid).first();
+        if (transaction == null) {
+            log.error("交易不存在");
+            throw new Http_400_BadRequestException("交易不存在");
+        }
+        if (transaction.getRelateUserId() != uid) {
+            log.error("用户无权操作此交易");
+            throw new Http_400_BadRequestException("用户无权操作此交易");
+        }
+        if (!"".equals(transaction.getReimburse())) {
+            log.error("交易已经报销");
+            throw new Http_400_BadRequestException("交易已经报销，请勿重复上传");
+        }
+        transaction.setReimburse(url);
+        db.commit();
+    }
+
     private record StartTransactionResult(Transaction transaction, StartTransactionResponse startTransactionResponse) {
     }
 

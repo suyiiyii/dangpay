@@ -27,6 +27,8 @@ public interface TransactionService {
 
     List<Transaction> getAllTransactions(int page, int size);
 
+    void setReimburse(int tid, String url, int uid);
+
     @Data
     class UserPayRequest {
         public String code;

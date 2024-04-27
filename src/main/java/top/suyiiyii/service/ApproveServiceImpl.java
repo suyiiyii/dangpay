@@ -68,12 +68,7 @@ public class ApproveServiceImpl implements ApproveService {
             // 加群申请
             String uuid = submitApplicant(uid, reason, method, args);
             // 给管理员发送消息
-            List<Integer> admins = rbacService.getUserByRole("GroupAdmin/g" + gid);
-            String message = "用户" + uid + "申请加入群组" + gid + "，理由：" + reason;
-
-            for (Integer admin : admins) {
-                messageService.sendSystemMessage(admin, message, uuid);
-            }
+            messageService.sendSystemMessage2Role("GroupAdmin/g" + gid, "用户" + uid + "申请加入群组" + gid + "，理由：" + reason, uuid);
             return true;
         }
         // 邀请用户加入群组
@@ -111,11 +106,7 @@ public class ApproveServiceImpl implements ApproveService {
             // 创建群组申请
             String uuid = submitApplicant(uid, reason, method, args);
             // 给管理员发送消息
-            List<Integer> admins = rbacService.getUserByRole("admin");
-            String message = "用户" + uid + "申请创建群组，理由：" + reason;
-            for (Integer admin : admins) {
-                messageService.sendSystemMessage(admin, message, uuid);
-            }
+            messageService.sendSystemMessage2Role("admin", "用户" + uid + "申请创建群组，理由：" + reason, uuid);
             return true;
         }
         // 好友申请
@@ -159,11 +150,7 @@ public class ApproveServiceImpl implements ApproveService {
             // 解封群组申请
             String uuid = submitApplicant(uid, reason, method, args);
             // 给管理员发送消息
-            List<Integer> admins = rbacService.getUserByRole("admin");
-            String message = "用户" + uid + "申请解封群组" + gid + "，理由：" + reason;
-            for (Integer admin : admins) {
-                messageService.sendSystemMessage(admin, message, uuid);
-            }
+            messageService.sendSystemMessage2Role("admin", "用户" + uid + "申请解封群组" + gid + "，理由：" + reason, uuid);
             return true;
         }
 

@@ -16,6 +16,8 @@ public interface MessageService {
 
     void sendSystemMessage(int receiverId, String message, String uuid);
 
+    void sendSystemMessage2Role(String gid, String message, String callbackUuid);
+
     List<Message> getUserMessage(int uid, int senderId);
 
     List<Message> getGroupMessage(@SubRegion(areaPrefix = "g") int gid);

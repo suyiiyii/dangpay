@@ -35,8 +35,15 @@ public class TransactionServiceImpl implements TransactionService {
     TransactionDao transactionDao;
     WalletService walletService;
     LockService lockService;
+    MessageService messageService;
 
-    public TransactionServiceImpl(Session db, @Proxy(isNeedAuthorization = false) RBACService rbacService, @Proxy(isNeedAuthorization = false) UserService userService, ConfigManger configManger, TransactionDao transactionDao, @Proxy(isNeedAuthorization = false, isNotProxy = true) WalletService walletService, LockService lockService) {
+    public TransactionServiceImpl(Session db,
+                                  @Proxy(isNeedAuthorization = false) RBACService rbacService,
+                                  @Proxy(isNeedAuthorization = false) UserService userService,
+                                  ConfigManger configManger, TransactionDao transactionDao,
+                                  @Proxy(isNeedAuthorization = false, isNotProxy = true) WalletService walletService,
+                                  LockService lockService,
+                                  @Proxy(isNeedAuthorization = false) MessageService messageService) {
         this.db = db;
         this.userService = userService;
         this.rbacService = rbacService;
@@ -44,6 +51,7 @@ public class TransactionServiceImpl implements TransactionService {
         this.transactionDao = transactionDao;
         this.walletService = walletService;
         this.lockService = lockService;
+        this.messageService = messageService;
     }
 
     @Override
@@ -424,6 +432,12 @@ public class TransactionServiceImpl implements TransactionService {
                 // 我方收款，直接增加用户资金
                 wallet.setAmount(wallet.getAmount() - transaction.getAmount());
             }
+            // 给用户发送通知
+            messageService.sendSystemMessage(wallet.getOwnerId(), "交易成功，钱包" + wallet.getId() + "动账" + transaction.getAmount() + "元", "");
+            // 如果是群组钱包，给群组的管理员发送通知
+            if (wallet.getOwnerType().equals("group")) {
+                messageService.sendSystemMessage(wallet.getOwnerId(), "交易成功，钱包" + wallet.getId() + "动账" + transaction.getAmount() + "元", "");
+            }
             db.commitTransaction();
         } finally {
             lockService.unlock("w" + wid);
@@ -523,6 +537,12 @@ public class TransactionServiceImpl implements TransactionService {
             } else {
                 // 我方收款，直接增加用户资金
                 wallet.setAmount(wallet.getAmount() - transaction.getAmount());
+            }
+            // 给用户发送通知
+            messageService.sendSystemMessage(wallet.getOwnerId(), "交易成功，钱包" + wallet.getId() + "动账" + transaction.getAmount() + "元", "");
+            // 如果是群组钱包，给群组的管理员发送通知
+            if (wallet.getOwnerType().equals("group")) {
+                messageService.sendSystemMessage(wallet.getOwnerId(), "交易成功，钱包" + wallet.getId() + "动账" + transaction.getAmount() + "元", "");
             }
             return true;
         } finally {

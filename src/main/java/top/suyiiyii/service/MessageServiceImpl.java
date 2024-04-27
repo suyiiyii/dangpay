@@ -56,9 +56,20 @@ public class MessageServiceImpl implements MessageService {
         if (uuid.isEmpty()) {
             messageDao.sendSystemMessage(receiverId, message, uuid);
         } else {
-            messageDao.sendSystemMessage(receiverId, message,  "/approve?uuid=" + uuid);
+            messageDao.sendSystemMessage(receiverId, message, "/approve?uuid=" + uuid);
         }
     }
+
+
+    @Override
+    public void sendSystemMessage2Role(String gid, String message, String callbackUuid) {
+        List<Integer> usersByRole = rbacService.getUserByRole(gid);
+
+        for (Integer user : usersByRole) {
+            sendSystemMessage(user, message, callbackUuid);
+        }
+    }
+
 
     @Override
     public List<Message> getUserMessage(int uid, int senderId) {

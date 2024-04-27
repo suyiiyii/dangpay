@@ -2,11 +2,13 @@ package top.suyiiyii.service;
 
 import org.redisson.api.RedissonClient;
 import top.suyiiyii.dao.TransactionDao;
+import top.suyiiyii.models.User;
 import top.suyiiyii.su.ConfigManger;
 import top.suyiiyii.su.IOC.Repository;
 import top.suyiiyii.su.MailSender;
 import top.suyiiyii.su.UniversalUtils;
 import top.suyiiyii.su.exception.Http_400_BadRequestException;
+import top.suyiiyii.su.orm.core.Session;
 
 import java.time.Duration;
 import java.util.NoSuchElementException;
@@ -17,15 +19,18 @@ public class MailServiceImpl implements MailService {
     private final ConfigManger configManger;
     private final RedissonClient redissonClient;
     private final TransactionDao transactionDao;
+    private final Session db;
 
     public MailServiceImpl(MailSender mailSender,
                            ConfigManger configManger,
                            RedissonClient redissonClient,
-                           TransactionDao transactionDao) {
+                           TransactionDao transactionDao,
+                           Session db) {
         this.mailSender = mailSender;
         this.configManger = configManger;
         this.redissonClient = redissonClient;
         this.transactionDao = transactionDao;
+        this.db = db;
     }
 
     @Override
@@ -35,6 +40,10 @@ public class MailServiceImpl implements MailService {
 
     @Override
     public void sendVerifyMail(String email) {
+        // 检查是邮箱是否已经注册
+        if (db.query(User.class).eq("email", email).exists()) {
+            throw new Http_400_BadRequestException("邮箱已被注册，请更换邮箱");
+        }
         String key = "verifyCode_" + email;
         String keyStamp = "verifyCode_stamp" + email;
         // 60s内只能发送一次

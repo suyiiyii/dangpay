@@ -8,7 +8,6 @@ import top.suyiiyii.dto.TokenData;
 import top.suyiiyii.service.CaptchaService;
 import top.suyiiyii.service.UserService;
 import top.suyiiyii.su.WebUtils;
-import top.suyiiyii.su.exception.Http_400_BadRequestException;
 import top.suyiiyii.su.validator.Regex;
 import top.suyiiyii.su.validator.Validator;
 
@@ -37,9 +36,7 @@ public class Login {
 
         log.info("校验验证码：" + request.captcha);
         // 验证码校验
-        if (!captchaService.verifyCaptcha(request.captcha)) {
-            throw new Http_400_BadRequestException("验证码错误");
-        }
+        captchaService.verifyCaptcha(request.captcha);
         log.info("验证码校验通过:" + request.captcha);
 
         log.info("用户请求登录：" + request.username);

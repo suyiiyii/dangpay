@@ -97,6 +97,10 @@ public class WebUtils {
                 String nodeStr = node.toString();
                 throw new Http_400_BadRequestException("传入的数字过大" + nodeStr);
             }
+            if (bigInteger.compareTo(BigInteger.valueOf(Integer.MIN_VALUE)) < 0) {
+                String nodeStr = node.toString();
+                throw new Http_400_BadRequestException("传入的数字过小" + nodeStr);
+            }
         } else if (node.isContainerNode()) {
             for (JsonNode subNode : node) {
                 checkNode(subNode);

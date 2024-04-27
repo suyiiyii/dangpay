@@ -281,6 +281,7 @@ public class TransactionServiceImpl implements TransactionService {
             transaction.setPlatform(requestTransactionResponse.getPlatform());
             transaction.setDescription("向 " + requestTransactionResponse.getPlatform() + " 平台的 " + wid + " 转账 " + transaction.getAmount() + " 元");
             transaction.setRelateUserId(uid);
+            transaction.setReimburse("");
             transaction.setId(db.insert(transaction, true));
             // 判断是付款还是收款
             Wallet wallet = db.query(Wallet.class).eq("id", wid).first();
@@ -455,6 +456,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setLastUpdate(UniversalUtils.getNow());
         transaction.setPlatform(request.getPlatform());
         transaction.setDescription(request.getTradeDescription());
+        transaction.setReimburse("");
         try {
 
             // 设置关联用户

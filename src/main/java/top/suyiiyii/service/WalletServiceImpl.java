@@ -227,6 +227,7 @@ public class WalletServiceImpl implements WalletService {
         transaction.setDescription(description);
         transaction.setWalletId(fatherWalletId);
         transaction.setRelateUserId(subWallet.getOwnerId());
+        transaction.setReimburse("N/A");
         db.insert(transaction);
         // 记录交易（子钱包收款）
         transaction.setWalletId(subWalletId);

@@ -32,5 +32,8 @@ public class Transaction {
     String platform;
     @ColumnSetting(isNotNull = true, stringLength = 200)
     String description;
+    @ColumnSetting(isNotNull = true, stringLength = 200)
+    String reimburse;
+
 
 }

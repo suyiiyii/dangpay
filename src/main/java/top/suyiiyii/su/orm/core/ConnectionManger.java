@@ -21,7 +21,7 @@ public class ConnectionManger {
     private final ConnectionPool connectionPool;
 
     public ConnectionManger(Callable<Connection> connectionBuilder) {
-        connectionPool = new SuConnectionPool(40, 2, connectionBuilder);
+        connectionPool = new SuConnectionPool(100, 2, connectionBuilder);
     }
 
     public SqlExecutor getSqlExecutor() {

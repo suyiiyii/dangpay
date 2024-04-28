@@ -6,7 +6,9 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
+import top.suyiiyii.su.IOC.IOCManager;
 import top.suyiiyii.su.WebUtils;
+import top.suyiiyii.su.orm.core.ModelManger;
 
 import java.io.IOException;
 
@@ -26,6 +28,12 @@ public class healthCheck extends HttpServlet {
             response.setServer("signleton");
         }
         WebUtils.respWrite(resp, response);
+
+        int connectionCount = IOCManager.getBean(ModelManger.class).getConnectionManger().getLeaveCapacity();
+        if (connectionCount < 20) {
+            resp.setStatus(500);
+            WebUtils.respWrite(resp, "数据库连接池不足");
+        }
     }
 
     @Data

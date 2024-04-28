@@ -22,4 +22,5 @@ public interface ConnectionPool {
      */
     void returnConnection(Connection conn);
 
+    int getLeaveCapacity();
 }

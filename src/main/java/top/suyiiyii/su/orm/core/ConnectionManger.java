@@ -32,5 +32,12 @@ public class ConnectionManger {
         connectionPool.returnConnection(conn);
     }
 
-
+    /**
+     * 获取剩余的连接容量
+     *
+     * @return 剩余的连接容量
+     */
+    public int getLeaveCapacity() {
+        return connectionPool.getLeaveCapacity();
+    }
 }

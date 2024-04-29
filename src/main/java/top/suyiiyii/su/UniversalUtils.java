@@ -310,6 +310,8 @@ public class UniversalUtils {
                 .replace(" ", "")
                 .replace("\n", "");
 
+        log.debug("opensshPrivateKey: {}", opensshPrivateKey);
+
         // base64解码
         byte[] keyData = Base64.getDecoder().decode(opensshPrivateKey);
 

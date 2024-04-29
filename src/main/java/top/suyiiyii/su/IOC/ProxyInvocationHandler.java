@@ -222,7 +222,8 @@ public class ProxyInvocationHandler implements InvocationHandler {
         this.eventId = db.insert(event, true);
 
         if (!result) {
-            String message = "权限校验失败，请求用户: " + userRoles.uid + " 用户角色: " + userRoles.roles + " 请求权限: " + permission;
+//            String message = "权限校验失败，请求用户: " + userRoles.uid + " 用户角色: " + userRoles.roles + " 请求权限: " + permission;
+            String message = "您无权执行此操作";
             log.info("权限校验失败，请求用户: {} 用户角色: {} 请求权限: {}", userRoles.uid, userRoles.roles, permission);
 //            throw new Http_403_ForbiddenException("权限不足");
             throw new Http_403_ForbiddenException(message);

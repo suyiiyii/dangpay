@@ -9,13 +9,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # 定义镜像标签，为"commit id"
+      IMAGE_TAG: ${{ github.sha }}
 
     steps:
       - uses: actions/checkout@v4
       - name: Build the Docker imag
-        run: docker build . --file Dockerfile --tag ${{ secrets.REPOSITORY }}:$(date +%s)
+        run: docker build . --file Dockerfile --tag ${{ secrets.REPOSITORY }}:${{ env.IMAGE_TAG }}
       - name: Login to Registry
         run: echo "${{ secrets.REPOSITORY_PASSWORD }}" | docker login -u "${{ secrets.REPOSITORY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY }}
       - name: Push the Docker image
-        run: docker push ${{ secrets.REPOSITORY }}:$(date +%s)
-
+        run: docker push ${{ secrets.REPOSITORY }}:${{ env.IMAGE_TAG }}

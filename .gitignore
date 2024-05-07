@@ -36,4 +36,17 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
 /src/main/resources/application.yaml
+
+
+*.aux
+*.bcf
+*.log
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+DOC/Beamer/GDUT_BeamerTemplate.pdf

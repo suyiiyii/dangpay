@@ -13,4 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build the Docker imag
-        run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+        run: docker build . --file Dockerfile --tag ${{ secrets.REPOSITORY }}:$(date +%s)
+      - name: Login to Registry
+        run: echo "${{ secrets.REPOSITORY_PASSWORD }}" | docker login -u "${{ secrets.REPOSITORY_USERNAME }}" --password-stdin
+      - name: Push the Docker image
+        run: docker push ${{ secrets.REPOSITORY }}:$(date +%s)
+

@@ -18,7 +18,7 @@ FROM tomcat:10.1.20-jre17-temurin-jammy as deploy
 RUN rm -rf /usr/local/tomcat/webapps/*
 
 # 将你的.war文件添加到Tomcat的webapps目录
-COPY --from=build  /target/dangpay.war /usr/local/tomcat/webapps/ROOT.war
+COPY --from=build  /app/target/dangpay.war /usr/local/tomcat/webapps/ROOT.war
 
 # 暴露8080端口
 EXPOSE 8080

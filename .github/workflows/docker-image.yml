@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     env:
       # 定义镜像标签，为"commit id"
       IMAGE_TAG: ${{ github.sha }}

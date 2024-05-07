@@ -21,7 +21,7 @@ public class ConnectionManger {
     private final ConnectionPool connectionPool;
 
     public ConnectionManger(Callable<Connection> connectionBuilder) {
-        connectionPool = new SuConnectionPool(40, 2, connectionBuilder);
+        connectionPool = new SuConnectionPool(100, 2, connectionBuilder);
     }
 
     public SqlExecutor getSqlExecutor() {
@@ -32,5 +32,12 @@ public class ConnectionManger {
         connectionPool.returnConnection(conn);
     }
 
-
+    /**
+     * 获取剩余的连接容量
+     *
+     * @return 剩余的连接容量
+     */
+    public int getLeaveCapacity() {
+        return connectionPool.getLeaveCapacity();
+    }
 }

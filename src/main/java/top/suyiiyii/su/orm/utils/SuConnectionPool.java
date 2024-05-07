@@ -248,5 +248,15 @@ public class SuConnectionPool implements ConnectionPool {
             lock.unlock();
         }
     }
+
+    /**
+     * 获取剩余的连接容量
+     *
+     * @return 剩余的连接容量
+     */
+    @Override
+    public int getLeaveCapacity() {
+        return maxSize - availableConnections.size() - usedConnections.size();
+    }
 }
 

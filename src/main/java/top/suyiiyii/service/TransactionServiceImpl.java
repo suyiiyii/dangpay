@@ -559,7 +559,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public List<Transaction> getAllTransactions(int page, int size) {
-        return db.query(Transaction.class).limit(page, size).all();
+        return db.query(Transaction.class).limit(page, size).orderBy("id", true).all();
     }
 
     @Override

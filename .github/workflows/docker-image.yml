@@ -2,17 +2,23 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master", "dev"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
+  workflow_dispatch:
 
 jobs:
-
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
+    env:
+      # 定义镜像标签，为"commit id"
+      IMAGE_TAG: ${{ github.sha }}
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      - uses: actions/checkout@v4
+      - name: Build the Docker imag
+        run: docker build . --file Dockerfile --tag ${{ secrets.REPOSITORY }}:${{ env.IMAGE_TAG }}
+      - name: Login to Registry
+        run: echo "${{ secrets.REPOSITORY_PASSWORD }}" | docker login -u "${{ secrets.REPOSITORY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY }}
+      - name: Push the Docker image
+        run: docker push ${{ secrets.REPOSITORY }}:${{ env.IMAGE_TAG }}
